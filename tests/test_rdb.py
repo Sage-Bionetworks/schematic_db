@@ -1,12 +1,8 @@
 """Testing for RDB.
 """
-# pylint: disable=redefined-outer-name
-# pylint: disable=too-many-arguments
-# pylint: disable=W0212
-# pylint: disable=E0401
 import os
-import pytest # type: ignore
-import pandas as pd # type: ignore
+import pytest
+import pandas as pd
 from rdb import RDB
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,8 +11,8 @@ CONFIG_PATH = os.path.join(DATA_DIR, "local_mysql_config.yml")
 if not os.path.exists(CONFIG_PATH):
     CONFIG_PATH = os.path.join(DATA_DIR, "mysql_config.yml")
 
-@pytest.fixture(scope = 'module')
-def rdb_mysql():
+@pytest.fixture(scope = 'module', name = "rdb_mysql")
+def fixture_rdb_mysql():
     """Yields a RDB object
     """
     rdb = RDB(config_yaml_path = CONFIG_PATH)

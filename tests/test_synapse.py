@@ -14,13 +14,9 @@ This file is ignored by git.
 If the the config doesn't exist, the file at 'tests/data/synapse_config.yml'
 will be used.
 """
-# pylint: disable=W0621
-# pylint: disable=E0401
-# pylint: disable=W0212
-# pylint: disable=E0611
 import os
-import pytest # type: ignore
-import pandas as pd # type: ignore
+import pytest
+import pandas as pd
 from yaml import safe_load
 from rdb_type import Synapse
 from db_object_config import DBDatatype
@@ -32,24 +28,24 @@ CONFIG_PATH = os.path.join(DATA_DIR, "local_synapse_config.yml")
 if not os.path.exists(CONFIG_PATH):
     CONFIG_PATH = os.path.join(DATA_DIR, "synapse_config.yml")
 
-@pytest.fixture(scope = "module")
-def config_dict():
+@pytest.fixture(scope = "module", name = "config_dict")
+def fixture_config_dict():
     """
     Yields a MYSQL config dict
     """
     with open(CONFIG_PATH, mode="rt", encoding="utf-8") as file:
-        config_dict = safe_load(file)
-    yield config_dict
+        config = safe_load(file)
+    yield config
 
-@pytest.fixture(scope = "module")
-def test_project_table_names():
+@pytest.fixture(scope = "module", name = "test_project_table_names")
+def fixture_test_project_table_names():
     """
     Yields a list of table names the testing project should start out with.
     """
     yield ["test_table_one"]
 
-@pytest.fixture(scope = "module")
-def synapse(config_dict, test_project_table_names, table_one_config):
+@pytest.fixture(scope = "module", name = "synapse")
+def fixture_synapse(config_dict, test_project_table_names, table_one_config):
     """
     Yields a Synapse object
     """

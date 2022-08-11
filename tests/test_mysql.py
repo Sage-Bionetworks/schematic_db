@@ -14,15 +14,11 @@ This file is ignored by git.
 If the the config doesn't exist, the file at 'tests/data/mysql_config.yml'
 will be used.
 """
-# pylint: disable=redefined-outer-name
-# pylint: disable=too-many-arguments
-# pylint: disable=W0212
-# pylint: disable=E0401
 import os
 from datetime import datetime
-import pytest # type: ignore
-import sqlalchemy as sa # type: ignore
-import pandas as pd # type: ignore
+import pytest
+import sqlalchemy as sa
+import pandas as pd
 from yaml import safe_load
 from rdb_type import MySQL
 
@@ -32,17 +28,17 @@ CONFIG_PATH = os.path.join(DATA_DIR, "local_mysql_config.yml")
 if not os.path.exists(CONFIG_PATH):
     CONFIG_PATH = os.path.join(DATA_DIR, "mysql_config.yml")
 
-@pytest.fixture(scope = "module")
-def config_dict():
+@pytest.fixture(scope = "module", name = "config_dict")
+def fixture_config_dict():
     """
     Yields a MYSQL config dict
     """
     with open(CONFIG_PATH, mode="rt", encoding="utf-8") as file:
-        config_dict = safe_load(file)
-    yield config_dict
+        config = safe_load(file)
+    yield config
 
-@pytest.fixture(scope = "module")
-def mysql(config_dict, table_one_config):
+@pytest.fixture(scope = "module", name = "mysql")
+def fixture_mysql(config_dict, table_one_config):
     """
     Yields a MYSQL object
     """
@@ -73,7 +69,7 @@ class TestMYSQL:
         Testing for MYSQL.get_columns_from_table()
         """
         assert mysql.get_table_names() == ["table_one"]
-        columns = mysql._get_columns_from_table("table_one")
+        columns = mysql.get_columns_from_table("table_one")
         assert isinstance(columns, list)
         assert isinstance(columns[0], dict)
 
@@ -90,13 +86,13 @@ class TestMYSQL:
         """
         Testing for MYSQL.get_schemas()
         """
-        assert isinstance(mysql._get_schemas(), list)
+        assert isinstance(mysql.get_schemas(), list)
 
     def test_get_current_schema(self, mysql):
         """
         Testing for MYSQL.get_current_schema()
         """
-        assert mysql._get_current_schema() == "test_schema"
+        assert mysql.get_current_schema() == "test_schema"
 
 class TestMYSQLUpdateTables:
     """Testing for MYSQL methods that update tables

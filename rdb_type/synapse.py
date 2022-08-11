@@ -1,9 +1,8 @@
 """Synapse
 """
-# pylint: disable=E0401
 from typing import List
-import synapseclient as sc # type: ignore
-import pandas as pd # type: ignore
+import synapseclient as sc
+import pandas as pd
 from db_object_config import DBObjectConfig, DBDatatype
 from .rdb_type import RDBType
 

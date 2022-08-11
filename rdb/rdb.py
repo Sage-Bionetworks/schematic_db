@@ -1,9 +1,8 @@
 """RDB
 """
-# pylint: disable=E0401
 from typing import List
 from yaml import safe_load
-import pandas as pd # type: ignore
+import pandas as pd
 from db_object_config import DBObjectConfig
 from rdb_type import MySQL, Synapse
 

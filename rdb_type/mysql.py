@@ -1,11 +1,10 @@
 """MYSQL
 """
-# pylint: disable=E0401
 from typing import List, Dict
-import pandas as pd # type: ignore
-import numpy as np # type: ignore
-import sqlalchemy as sa # type: ignore
-from sqlalchemy.dialects.mysql import insert # type: ignore
+import pandas as pd
+import numpy as np
+import sqlalchemy as sa
+from sqlalchemy.dialects.mysql import insert
 from db_object_config import DBObjectConfig, DBDatatype
 from .rdb_type import RDBType
 
@@ -144,11 +143,11 @@ class MySQL(RDBType):
         return inspector.get_table_names()
 
     def get_column_names_from_table(self, table_name: str) -> List[str]:
-        columns = self._get_columns_from_table(table_name)
+        columns = self.get_columns_from_table(table_name)
         names = [col.get("name") for col in columns]
         return names
 
-    def _get_columns_from_table(self, table_name: str) -> List[Dict]:
+    def get_columns_from_table(self, table_name: str) -> List[Dict]:
         """Gets the columns form the given table
 
         Args:
@@ -160,7 +159,7 @@ class MySQL(RDBType):
         inspector = sa.inspect(self.engine)
         return inspector.get_columns(table_name)
 
-    def _get_schemas(self) -> List[str]:
+    def get_schemas(self) -> List[str]:
         """Gets the database schemas
 
         Returns:
@@ -169,7 +168,7 @@ class MySQL(RDBType):
         inspector = sa.inspect(self.engine)
         return inspector.get_schema_names()
 
-    def _get_current_schema(self) -> str:
+    def get_current_schema(self) -> str:
         """Gets the current database schema
 
         Returns:

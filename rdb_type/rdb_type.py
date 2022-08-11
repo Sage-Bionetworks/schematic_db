@@ -1,9 +1,8 @@
 """RDBType
 """
-# pylint: disable=E0401
 from abc import ABC, abstractmethod
 from typing import List
-import pandas as pd # type: ignore
+import pandas as pd
 from db_object_config import DBObjectConfig
 
 class RDBType(ABC):
