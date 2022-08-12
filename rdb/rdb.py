@@ -47,30 +47,32 @@ class RDB():
         manifest_table_names: List[List[str]],
         table_configs: List[DBObjectConfig]
     ):
-        """
-        Updates all tables in the list of table_configs
+        """Updates all tables in the list of table_configs.
 
-        Args:
-            manifest_table_names (List[List[str]]): A list where each item is a list of the
+        :param manifest_table_names: A list where each item is a list of the
              names of tables in the manifest store
-            table_config (List[DBObjectConfig]): A list of generic representations of each
+        :type manifest_table_names: List[List[str]]
+        :param table_configs: A list of generic representations of each
              table as a DBObjectConfig object. The list must be in the correct order to
              update in regards to relationships.
+        :type table_configs: List[DBObjectConfig]
         """
         zipped_list = zip(manifest_table_names, table_configs)
         for tup in zipped_list:
             self.update_database_table(*tup)
 
     def update_database_table(self, manifest_table_names: List[str], table_config: DBObjectConfig):
-        """
-        Updates a table in the database based on one or more manifests.
+        """Updates a table in the database based on one or more manifests.
         If any of the manifests don't exist an exception will be raised.
         If the table doesn't exist in the database it will be built with the table config.
 
-        Args:
-            manifest_table_names (List[str]): A list of the names of tables in the manifest store
-            table_config (DBObjectConfig): A generic representation of the table as a
+        :param manifest_table_names:  A list of the names of tables in the manifest store
+        :type manifest_table_names: List[str]
+        :param table_config: A generic representation of the table as a
             DBObjectConfig object.
+        :type table_config: DBObjectConfig
+        :raises ValueError: ValueError when there is not a table in the manifest store with the name
+            that matches the table_name
         """
         manifest_store_table_names = self.manifest_store.get_table_names()
         manifest_tables = []
