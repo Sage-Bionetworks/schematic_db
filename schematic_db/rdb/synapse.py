@@ -1,8 +1,9 @@
 """SynapseDatabase"""
 import pandas as pd
+from synapseclient.core.exceptions import SynapseHTTPError  # type: ignore
 from schematic_db.db_config import DBObjectConfig
 from schematic_db.synapse import Synapse
-from .rdb import RelationalDatabase
+from .rdb import RelationalDatabase, UpdateDBTableError
 
 
 class SynapseDatabase(RelationalDatabase):
@@ -20,12 +21,25 @@ class SynapseDatabase(RelationalDatabase):
     ) -> pd.DataFrame:
         return self.synapse.execute_sql_query(query, include_row_data)
 
-    def update_table(self, data: pd.DataFrame, table_config: DBObjectConfig) -> None:
+    def update_table(
+        self,
+        data: pd.DataFrame,
+        table_config: DBObjectConfig,
+        replace_table: bool = False,
+    ) -> None:
         table_names = self.synapse.get_table_names()
         table_name = table_config.name
+        if replace_table:
+            self.synapse.replace_table(table_name, data)
+            return
         if table_name not in table_names:
             self.synapse.add_table(table_name, table_config)
-        # self.upsert_table_rows(table_name, data)
+        try:
+            self.synapse.upsert_table_rows(table_name, data, table_config)
+        except SynapseHTTPError as error:
+            table_id = self.synapse.get_synapse_id_from_table_name(table_name)
+            error_msg = f"Synapse error; synapse id: {table_id}"
+            raise UpdateDBTableError(table_name, error_msg) from error
 
     def drop_table(self, table_name: str) -> None:
         self.synapse.drop_table(table_name)

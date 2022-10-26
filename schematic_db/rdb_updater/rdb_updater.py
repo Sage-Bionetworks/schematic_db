@@ -42,7 +42,9 @@ class RDBUpdater:
         self.rdb = rdb
         self.schema = schema
 
-    def update_all_database_tables(self, strict: bool = True, replace_table: bool = False) -> None:
+    def update_all_database_tables(
+        self, strict: bool = True, replace_table: bool = False
+    ) -> None:
         """Updates all tables in the db_config
 
         Args:
@@ -54,7 +56,10 @@ class RDBUpdater:
             self.update_database_table(config, strict, replace_table)
 
     def update_database_table(
-        self, table_config: DBObjectConfig, strict: bool = True, replace_table: bool = False,
+        self,
+        table_config: DBObjectConfig,
+        strict: bool = True,
+        replace_table: bool = False,
     ) -> None:
         """
         Updates a table in the database based on one or more manifests.
