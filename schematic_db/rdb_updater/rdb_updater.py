@@ -1,6 +1,5 @@
 """RDBUpdater"""
 import warnings
-import typing
 import pandas as pd
 from schematic_db.db_config import DBObjectConfig
 from schematic_db.rdb import RelationalDatabase, UpdateDBTableError
@@ -43,18 +42,19 @@ class RDBUpdater:
         self.rdb = rdb
         self.schema = schema
 
-    def update_all_database_tables(self, strict: typing.Optional[bool] = True) -> None:
+    def update_all_database_tables(self, strict: bool = True, replace_table: bool = False) -> None:
         """Updates all tables in the db_config
 
         Args:
             strict (bool): If false, some errors are turned into warnings.
+            replace_table (bool): Wether or not to delete the table before updating
         """
         db_config = self.schema.create_db_config()
         for config in db_config.configs:
-            self.update_database_table(config, strict)
+            self.update_database_table(config, strict, replace_table)
 
     def update_database_table(
-        self, table_config: DBObjectConfig, strict: typing.Optional[bool] = True
+        self, table_config: DBObjectConfig, strict: bool = True, replace_table: bool = False,
     ) -> None:
         """
         Updates a table in the database based on one or more manifests.
@@ -65,6 +65,7 @@ class RDBUpdater:
             table_config (DBObjectConfig): A generic representation of the table as a
                 DBObjectConfig object.
             strict (bool): If false, some errors are turned into warnings.
+            replace_table (bool): Wether or not to delete the table before updating
 
         Raises:
             NoManifestError: If strict = True, and Schema.get_manifests returns no manifests
@@ -86,9 +87,9 @@ class RDBUpdater:
 
         # If not strict try to update the table and return a warning instead of an error
         if strict:
-            self.rdb.update_table(manifest_table, table_config)
+            self.rdb.update_table(manifest_table, table_config, replace_table)
         else:
             try:
-                self.rdb.update_table(manifest_table, table_config)
+                self.rdb.update_table(manifest_table, table_config, replace_table)
             except UpdateDBTableError as error:
                 warnings.warn(UpdateTableWarning(error.message))

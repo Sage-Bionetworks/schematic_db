@@ -69,9 +69,16 @@ class MySQLDatabase(RelationalDatabase):
         table = pd.DataFrame(result)
         return table
 
-    def update_table(self, data: pd.DataFrame, table_config: DBObjectConfig) -> None:
+    def update_table(
+        self,
+        data: pd.DataFrame,
+        table_config: DBObjectConfig,
+        replace_table: bool = False,
+    ) -> None:
         table_names = self.get_table_names()
         table_name = table_config.name
+        if replace_table:
+            self.drop_table(table_name)
         if table_name not in table_names:
             self.add_table(table_name, table_config)
         try:

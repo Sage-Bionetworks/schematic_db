@@ -34,16 +34,22 @@ class RelationalDatabase(ABC):
         """
 
     @abstractmethod
-    def update_table(self, data: pd.DataFrame, table_config: DBObjectConfig) -> None:
+    def update_table(
+        self,
+        data: pd.DataFrame,
+        table_config: DBObjectConfig,
+        replace_table: bool = False,
+    ) -> None:
         """Updates or inserts rows into the given table
         If table does not exist the table is created
-
-        Raises:
-            UpdateDBTableError: When the subclass returns an error
 
         Args:
             table_name (str): The id(name) of the table the rows will be updated or added to
             data (pd.DataFrame): A pandas.DataFrame
+            replace_table (bool): Wether or not to delete the table before updating
+
+        Raises:
+            UpdateDBTableError: When the subclass returns an error
         """
 
     @abstractmethod
