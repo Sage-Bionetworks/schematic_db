@@ -1,7 +1,7 @@
 # adapted from : https://jacobian.org/til/github-actions-poetry/
 
-name: Test schematic_db mysql
-on: [push, pull_request]
+name: Test schematic_db
+on: [pull_request]
 
 jobs:
   test:
@@ -10,16 +10,28 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      # install mysql
-      # use to create a database:
-      # env:
-      #   DB_DATABASE: test_db
-      #   DB_USER: root
-      #   DB_PASSWORD: root
-      # mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+      # setup mysql
       - name: Set up MySQL
         run: |
           sudo /etc/init.d/mysql start
+      # Create the secrets config file
+      - name: create secrets config
+        run: |
+          import yaml
+          dict = {
+            "synapse": {
+              "username": "${{secrets.SYNAPSE_LOGIN}}",
+              "auth_token": "${{secrets.SYNAPSE_AUTH_TOKEN}}"
+            },
+            "mysql": {
+              "username": "${{secrets.MYSQL_USERNAME}}",
+              "password": "${{secrets.MYSQL_PASSWORD}}",
+              "host": "${{secrets.MYSQL_HOST}}"
+            }
+          }
+          with open('tests/data/secrets.yml', 'w') as file:
+              yaml.dump(dict, file)
+        shell: python
 
       # If you wanted to use multiple Python versions, you'd have specify a matrix in the job and
       # reference the matrix python version here.
@@ -75,6 +87,22 @@ jobs:
       # they'll be installed and working.
       - run: poetry install --no-interaction
 
+      # This checks if code if statically typed
+      - name: Static typing with mypy
+        run: |
+          mkdir .mypy_cache
+          poetry run mypy --install-types --non-interactive ./
+          poetry run mypy --disallow-untyped-defs .
+      # This checks if code has been formatted with black
+      - name: Code formatting with black
+        uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+
+      # This checks for pylint score
+      - name: Code formatting with pylint
+        run: poetry run pylint schematic_db/* tests/*
+
       # And finally run tests. I'm using pytest and all my pytest config is in my `pyproject.toml`
       # so this line is super-simple. But it could be as complex as you need.
-      - run: poetry run pytest
+      - run: poetry run pytest -vvs -m "not schematic"

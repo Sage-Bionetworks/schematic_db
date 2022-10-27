@@ -1,0 +1,3 @@
+table_name,query,
+result_one,SELECT * FROM table_one;
+result_two,SELECT * FROM table_two;
