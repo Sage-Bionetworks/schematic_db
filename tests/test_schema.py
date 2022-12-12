@@ -15,6 +15,7 @@ from schematic_db.schema import (
     get_manifest_ids_for_object,
     get_dataset_ids_for_object,
     get_manifest,
+    get_manifest_datatypes,
 )
 
 
@@ -120,6 +121,17 @@ class TestAPIUtils:
                 test_synapse_asset_view_id,
             )
 
+    def test_get_manifest_datatypes(
+        self, secrets_dict: dict, test_synapse_asset_view_id: str
+    ) -> None:
+        """Testing for get_manifest_datatypes()"""
+        datatypes = get_manifest_datatypes(
+            secrets_dict["synapse"]["auth_token"],
+            "syn30988380",
+            test_synapse_asset_view_id,
+        )
+        assert isinstance(datatypes, dict)
+
 
 @pytest.mark.fast
 class TestMockSchema:  # pylint: disable=too-few-public-methods
@@ -148,7 +160,7 @@ class TestSchema:
         assert obj.create_attributes("Patient") == [
             DBAttributeConfig(name="sex", datatype=DBDatatype.TEXT, required=True),
             DBAttributeConfig(
-                name="yearofBirth", datatype=DBDatatype.TEXT, required=False
+                name="yearofBirth", datatype=DBDatatype.INT, required=False
             ),
             DBAttributeConfig(
                 name="diagnosis", datatype=DBDatatype.TEXT, required=True
