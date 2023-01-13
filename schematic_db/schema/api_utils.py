@@ -13,6 +13,7 @@ API_SERVER = "v1"
 # Currently this is the url for the API when running locally.
 LOCAL_API_URL = "http://0.0.0.0:3001"
 
+
 class SchematicAPIError(Exception):
     """When schematic API response status code is anything other than 200"""
 
@@ -33,7 +34,10 @@ class SchematicAPIError(Exception):
 
 
 def create_schematic_api_response(
-    endpoint_path: str, params: dict, api_url: str = API_URL, api_server: str = API_SERVER
+    endpoint_path: str,
+    params: dict,
+    api_url: str = API_URL,
+    api_server: str = API_SERVER,
 ) -> requests.Response:
     """Performs a GET request on the schematic API
 
