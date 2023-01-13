@@ -6,10 +6,12 @@ import requests
 import networkx
 import pandas
 
-# Currently this is the url for the API when running locally.
-API_URL = "http://0.0.0.0:3001"
+
+API_URL = "https://schematic.dnt-dev.sagebase.org"
 API_SERVER = "v1"
 
+# Currently this is the url for the API when running locally.
+LOCAL_API_URL = "http://0.0.0.0:3001"
 
 class SchematicAPIError(Exception):
     """When schematic API response status code is anything other than 200"""
@@ -31,13 +33,15 @@ class SchematicAPIError(Exception):
 
 
 def create_schematic_api_response(
-    endpoint_path: str, params: dict
+    endpoint_path: str, params: dict, api_url: str = API_URL, api_server: str = API_SERVER
 ) -> requests.Response:
     """Performs a GET request on the schematic API
 
     Args:
         endpoint_path (str): The path for the endpoint in the schematic API
         params (dict): The parameters in dict form for the requested endpoint
+        api_url (str): The URL to the API server
+        api_server(str): The server of the API
 
     Raises:
         SchematicAPIError: When response code is anything other than 200
@@ -45,7 +49,7 @@ def create_schematic_api_response(
     Returns:
         requests.Response: The response from the API
     """
-    endpoint_url = f"{API_URL}/{API_SERVER}/{endpoint_path}"
+    endpoint_url = f"{api_url}/{api_server}/{endpoint_path}"
     response = requests.get(endpoint_url, params=params, timeout=45)
     if response.status_code != 200:
         raise SchematicAPIError(endpoint_url, response.status_code, response.reason)
