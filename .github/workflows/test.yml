@@ -116,5 +116,5 @@ jobs:
         run: poetry run pylint schematic_db/* tests/*
 
       - name: pytest
-        run: poetry run pytest -vvs -m "not schematic"
+        run: poetry run pytest -vvs -m "not gff"
 
