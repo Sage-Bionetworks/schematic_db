@@ -2,6 +2,7 @@ name: Publish pdoc to github pages
 
 # build the documentation whenever there are new commits on main
 on:
+  [pull_request]
   push:
     branches:
       - develop
