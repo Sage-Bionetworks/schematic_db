@@ -17,6 +17,7 @@ from schematic_db.schema import (
     get_dataset_ids_for_object,
     get_manifest,
     get_manifest_datatypes,
+    get_node_validation_rules,
 )
 
 
@@ -133,6 +134,11 @@ class TestAPIUtils:
         )
         assert isinstance(datatypes, dict)
 
+    def test_get_node_validation_rules(self, test_schema_json_url: str) -> None:
+        """Testing for get_node_validation_rules"""
+        rules = get_node_validation_rules(test_schema_json_url, "Family History")
+        assert isinstance(rules, list)
+
 
 @pytest.mark.schematic
 class TestSchema:
@@ -148,7 +154,7 @@ class TestSchema:
         assert config.get_config_names() == [
             "Patient",
             "Biospecimen",
-            "BulkRNA-seqAssay",
+            "BulkRnaSeq",
         ]
 
     def test_create_attributes(self, test_schema: Schema) -> None:
@@ -159,6 +165,7 @@ class TestSchema:
             DBAttributeConfig(
                 name="yearofBirth", datatype=DBDatatype.INT, required=False
             ),
+            DBAttributeConfig(name="weight", datatype=DBDatatype.FLOAT, required=False),
             DBAttributeConfig(
                 name="diagnosis", datatype=DBDatatype.TEXT, required=True
             ),
@@ -169,6 +176,15 @@ class TestSchema:
             ),
             DBAttributeConfig(
                 name="tissueStatus", datatype=DBDatatype.TEXT, required=True
+            ),
+        ]
+        assert obj.create_attributes("BulkRnaSeq") == [
+            DBAttributeConfig(
+                name="biospecimenId", datatype=DBDatatype.TEXT, required=True
+            ),
+            DBAttributeConfig(name="filename", datatype=DBDatatype.TEXT, required=True),
+            DBAttributeConfig(
+                name="fileFormat", datatype=DBDatatype.TEXT, required=True
             ),
         ]
 
@@ -183,7 +199,7 @@ class TestSchema:
                 foreign_attribute_name="patientId",
             )
         ]
-        assert obj.create_foreign_keys("BulkRNA-seqAssay") == [
+        assert obj.create_foreign_keys("BulkRnaSeq") == [
             DBForeignKey(
                 name="biospecimenId",
                 foreign_object_name="Biospecimen",

@@ -62,7 +62,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.local
-          key: poetry-1.1.12-0
+          key: poetry-1.2.0rc1
 
       # Install Poetry. You could do this manually, or there are several actions that do this.
       # `snok/install-poetry` seems to be minimal yet complete, and really just calls out to
@@ -75,7 +75,7 @@ jobs:
       # cache it.
       - uses: snok/install-poetry@v1
         with:
-          version: 1.1.12
+          version: 1.2.0rc1
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -92,14 +92,14 @@ jobs:
       # Install dependencies. `--no-root` means "install all dependencies but not the project
       # itself", which is what you want to avoid caching _your_ code. The `if` statement
       # ensures this only runs on a cache miss.
-      - run: poetry install --no-interaction --no-root
+      - run: poetry install --no-interaction --no-root --all-extras
         if: steps.cache-deps.outputs.cache-hit != 'true'
 
       # Now install _your_ project. This isn't necessary for many types of projects -- particularly
       # things like Django apps don't need this. But it's a good idea since it fully-exercises the
       # pyproject.toml and makes that if you add things like console-scripts at some point that
       # they'll be installed and working.
-      - run: poetry install --no-interaction
+      - run: poetry install --no-interaction --all-extras
 
       - name: Static typing with mypy
         run: |

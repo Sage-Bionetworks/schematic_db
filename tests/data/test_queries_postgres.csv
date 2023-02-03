@@ -1,4 +1,4 @@
 table_name,query
 Patient,SELECT * FROM "Patient"
 Biospecimen,SELECT * FROM "Biospecimen"
-BulkRNA-seqAssay,SELECT * FROM "BulkRNA-seqAssay"
+BulkRnaSeq,SELECT * FROM "BulkRnaSeq"

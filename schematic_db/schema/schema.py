@@ -1,6 +1,7 @@
 """Schema class"""
 
 from typing import Optional, Callable, Union
+from dataclasses import dataclass
 import warnings
 import networkx
 import pandas as pd
@@ -19,17 +20,9 @@ from .api_utils import (
     get_project_manifests,
     get_manifest,
     is_node_required,
-    get_manifest_datatypes,
+    get_node_validation_rules,
     ManifestSynapseConfig,
 )
-
-DATATYPES = {
-    "string": DBDatatype.TEXT,
-    "object": DBDatatype.TEXT,
-    "Int64": DBDatatype.INT,
-    "float64": DBDatatype.FLOAT,
-    "datetime64[ns]": DBDatatype.DATE,
-}
 
 
 class NoAttributesWarning(Warning):
@@ -120,6 +113,24 @@ def get_dataset_ids_for_object(
     ]
 
 
+@dataclass
+class SchemaConfig:
+    """
+    A config for a Schema.
+    Properties:
+        schema_url (str): A url to the jsonld schema file
+        synapse_project_id (str): The synapse id to the project where the manifests are stored.
+        synapse_asset_view_id (str): The synapse id to the asset view that tracks the manifests.
+        synapse_input_token (str): A synapse token with download permissions for both the
+         synapse_project_id and synapse_asset_view_id
+    """
+
+    schema_url: str
+    synapse_project_id: str
+    synapse_asset_view_id: str
+    synapse_input_token: str
+
+
 class Schema:  # pylint: disable=too-many-instance-attributes
     """
     The Schema class interacts with the Schematic API to create a DBConfig
@@ -128,10 +139,7 @@ class Schema:  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        schema_url: str,
-        synapse_project_id: str,
-        synapse_asset_view_id: str,
-        synapse_input_token: str,
+        config: SchemaConfig,
         primary_key_getter: Callable[[str], str] = get_key_attribute,
         foreign_key_getter: Callable[[str], str] = get_key_attribute,
     ) -> None:
@@ -143,7 +151,7 @@ class Schema:  # pylint: disable=too-many-instance-attributes
         determined from the objects name, and that the primary_key_getter will do that.
 
         By default get_key_attribute is used for primary keys. This assumes that all primary keys
-        are of the form "<object_name>_id". For example if the object was named "patient" then the
+        are of the from "<object_name>_id". For example if the object was named "patient" then the
         primary key would be named "patient_id".
 
         Also by default get_key_attribute is used for foreign keys. This assumes that all foreign
@@ -153,23 +161,19 @@ class Schema:  # pylint: disable=too-many-instance-attributes
         to be different to reflect that.
 
         Args:
-            schema_url (str): A url to the jsonld schema file
-            synapse_project_id (str): The synapse id to the project where the manifests are stored.
-            synapse_asset_view_id (str): The synapse id to the asset view that tracks the manifests.
-            synapse_input_token (str): A synapse token with download permissions for both the
-                synapse_project_id and synapse_asset_view_id
+            config(SchemaConfig): A config object
             primary_key_getter (Callable[[str], str], optional):
                 Defaults to get_key_attribute.
             foreign_key_getter (Callable[[str], str], optional):
                 Defaults to get_key_attribute.
         """
-        self.schema_url = schema_url
-        self.schema_graph = self.create_schema_graph()
-        self.synapse_project_id = synapse_project_id
-        self.synapse_asset_view_id = synapse_asset_view_id
-        self.synapse_input_token = synapse_input_token
+        self.schema_url = config.schema_url
+        self.synapse_project_id = config.synapse_project_id
+        self.synapse_asset_view_id = config.synapse_asset_view_id
+        self.synapse_input_token = config.synapse_input_token
         self.primary_key_getter = primary_key_getter
         self.foreign_key_getter = foreign_key_getter
+        self.schema_graph = self.create_schema_graph()
         self.update_manifest_configs()
         self.update_db_config()
 
@@ -257,10 +261,7 @@ class Schema:  # pylint: disable=too-many-instance-attributes
         """
         # the names of the attributes to be created, in label(not display) form
         attribute_names = find_class_specific_properties(self.schema_url, object_name)
-        datatype_dict = self.create_datatype_dict(object_name)
-        attributes = [
-            self.create_attribute(name, datatype_dict) for name in attribute_names
-        ]
+        attributes = [self.create_attribute(name) for name in attribute_names]
         # Some components will not have any attributes for various reasons
         if not attributes:
             warnings.warn(
@@ -271,48 +272,7 @@ class Schema:  # pylint: disable=too-many-instance-attributes
             return None
         return attributes
 
-    def create_datatype_dict(self, object_name: str) -> dict[str, str]:
-        """Creates a dictionary of attributes in label form , and their datatypes
-
-        Args:
-            object_name (str): The name of the object to get the datatypes for
-
-        Returns:
-            dict[str, str]: A dictionary of attributes and their datatypes
-        """
-        manifest_ids = get_manifest_ids_for_object(
-            object_name, self.get_manifest_configs()
-        )
-        # creates a list of dictionaries and their datatypes, one for each manifest
-        datatype_dicts = [
-            get_manifest_datatypes(
-                self.synapse_input_token, id, self.synapse_asset_view_id
-            )
-            for id in manifest_ids
-        ]
-        # combines all the dictionaries into one
-        datatype_dict: dict[str, str] = {}
-        for d_dict in datatype_dicts:
-            for attribute, new_attribute_type in d_dict.items():
-                current_attribute_type = datatype_dict.get(attribute)
-                if current_attribute_type is None:
-                    datatype_dict[attribute] = new_attribute_type
-                elif current_attribute_type == new_attribute_type:
-                    pass
-                # when there is a conflict between different manifests, cast as string
-                else:
-                    datatype_dict[attribute] = "string"
-
-        # replaces the display names with labels
-        datatype_dict = {
-            get_property_label_from_display_name(self.schema_url, k): v
-            for (k, v) in datatype_dict.items()
-        }
-        return datatype_dict
-
-    def create_attribute(
-        self, name: str, datatypes: dict[str, str]
-    ) -> DBAttributeConfig:
+    def create_attribute(self, name: str) -> DBAttributeConfig:
         """Creates an attribute
 
         Args:
@@ -322,9 +282,18 @@ class Schema:  # pylint: disable=too-many-instance-attributes
         Returns:
             DBAttributeConfig: The DBAttributeConfig for the attribute
         """
+        rules = get_node_validation_rules(self.schema_url, name)
+        if "str" in rules:
+            datatype = DBDatatype.TEXT
+        if "float" in rules or "num" in rules:
+            datatype = DBDatatype.FLOAT
+        elif "int" in rules:
+            datatype = DBDatatype.INT
+        else:
+            datatype = DBDatatype.TEXT
         return DBAttributeConfig(
             name=name,
-            datatype=DATATYPES[datatypes.get(name, "string")],
+            datatype=datatype,
             required=is_node_required(self.schema_url, name),
         )
 
