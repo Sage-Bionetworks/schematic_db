@@ -10,8 +10,8 @@ from schematic_db.rdb import (
     PostgresDatabase,
 )
 from schematic_db.synapse import SynapseConfig
-from schematic_db.schema import Schema
-from schematic_db.rdb_updater import RDBUpdater, ColumnCastingWarning
+from schematic_db.schema import Schema, SchemaConfig
+from schematic_db.rdb_updater import RDBUpdater
 from schematic_db.query_store import QueryStore, SynapseQueryStore
 from schematic_db.rdb_queryer import RDBQueryer
 from schematic_db.db_config import DBConfig
@@ -111,12 +111,13 @@ def fixture_schema(
         "https://raw.githubusercontent.com/nf-osi/"
         "nf-research-tools-schema/main/nf-research-tools.jsonld"
     )
-    obj = Schema(
+    config = SchemaConfig(
         schema_url,
         gff_synapse_project_id,
         gff_synapse_asset_view_id,
         secrets_dict["synapse"]["auth_token"],
     )
+    obj = Schema(config)
     yield obj
 
 
@@ -236,13 +237,12 @@ class TestRDBUpdater:
         self, rdb_updater_postgres: RDBUpdater, gff_database_table_names: list[str]
     ) -> None:
         """Builds and updates gff database in Postgres"""
-        with pytest.warns(ColumnCastingWarning):
-            obj = rdb_updater_postgres
-            assert obj.rdb.get_table_names() == []
-            obj.build_database()
-            assert obj.rdb.get_table_names() == gff_database_table_names
-            obj.update_database()
-            assert obj.rdb.get_table_names() == gff_database_table_names
+        obj = rdb_updater_postgres
+        assert obj.rdb.get_table_names() == []
+        obj.build_database()
+        assert obj.rdb.get_table_names() == gff_database_table_names
+        obj.update_database()
+        assert obj.rdb.get_table_names() == gff_database_table_names
 
     def test_build_and_update_synapse(
         self, rdb_updater_synapse: RDBUpdater, gff_database_table_names: list[str]

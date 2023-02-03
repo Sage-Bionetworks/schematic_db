@@ -20,7 +20,7 @@ from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.synapse_database import SynapseDatabase
 from schematic_db.rdb_queryer import RDBQueryer
 from schematic_db.synapse import Synapse, SynapseConfig
-from schematic_db.schema import Schema
+from schematic_db.schema import Schema, SchemaConfig
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(TESTS_DIR, "data")
@@ -67,7 +67,7 @@ def fixture_test_schema_table_names() -> Generator:
     """
     table_names = [
         "Biospecimen",
-        "BulkRNA-seqAssay",
+        "BulkRnaSeq",
         "Patient",
     ]
     yield table_names
@@ -78,7 +78,20 @@ def fixture_test_schema_json_url() -> Generator:
     """Yields the url for the main test schema json"""
     url = (
         "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "schematic/develop-rdb-merge-develop/tests/data/example.rdb.model.jsonld"
+        "Schematic-DB-Test-Schemas/main/test_schema.jsonld"
+    )
+    yield url
+
+
+@pytest.fixture(scope="session", name="test_schema_json_url2")
+def fixture_test_schema_json_url2() -> Generator:
+    """
+    Yields the url for the secondary test schema json.
+    This schema has display names that cna be used in a database.
+    """
+    url = (
+        "https://raw.githubusercontent.com/Sage-Bionetworks/"
+        "Schematic-DB-Test-Schemas/main/test_schema2.jsonld"
     )
     yield url
 
@@ -145,12 +158,34 @@ def fixture_test_schema(
     test_schema_json_url: str,
 ) -> Generator:
     """Yields a Schema using the database specific test schema"""
-    obj = Schema(
+    config = SchemaConfig(
         test_schema_json_url,
         test_synapse_project_id,
         test_synapse_asset_view_id,
         secrets_dict["synapse"]["auth_token"],
     )
+    obj = Schema(config)
+    yield obj
+
+
+@pytest.fixture(scope="session", name="test_schema2")
+def fixture_test_schema2(
+    test_synapse_project_id: str,
+    test_synapse_asset_view_id: str,
+    secrets_dict: dict,
+    test_schema_json_url2: str,
+) -> Generator:
+    """
+    Yields a Schema using the database specific test schema where display names are intended to be
+     used
+    """
+    config = SchemaConfig(
+        test_schema_json_url2,
+        test_synapse_project_id,
+        test_synapse_asset_view_id,
+        secrets_dict["synapse"]["auth_token"],
+    )
+    obj = Schema(config)
     yield obj
 
 

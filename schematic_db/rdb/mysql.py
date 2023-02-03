@@ -205,7 +205,6 @@ class MySQLDatabase(RelationalDatabase):  # pylint: disable=too-many-instance-at
         )
 
     def update_table(self, data: pd.DataFrame, table_config: DBObjectConfig) -> None:
-
         table_names = self.get_table_names()
         table_name = table_config.name
         if table_name not in table_names:

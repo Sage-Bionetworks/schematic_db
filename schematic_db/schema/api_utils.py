@@ -286,3 +286,23 @@ def get_manifest_datatypes(
     }
     response = create_schematic_api_response("get/datatype/manifest", params)
     return response.json()
+
+
+def get_node_validation_rules(schema_url: str, node_display_name: str) -> list[str]:
+    """Gets the validation rules for the node
+
+    Args:
+        schema_url (str): Data Model URL
+        node_display_name (str): Label/display name for the node to check
+
+    Returns:
+        list[str]: A list of validation rules
+    """
+    params = {
+        "schema_url": schema_url,
+        "node_display_name": node_display_name,
+    }
+    response = create_schematic_api_response(
+        "schemas/get_node_validation_rules", params
+    )
+    return response.json()

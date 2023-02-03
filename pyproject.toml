@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "schematic_db"
-version = "0.0.6"
+version = "0.0.8"
 description = ""
 authors = ["andrewelamb <andrewelamb@gmail.com>"]
 
@@ -14,7 +14,7 @@ requests = "^2.28.1"
 synapseclient = {version = "^2.7.0", optional = true}
 pandas = "^1.4.3"
 pdoc = "^12.1.0"
-black = "^22.6.0"
+black = "23.1.0"
 networkx = "^2.8.6"
 pylint = "^2.15.4"
 mypy = "^0.982"

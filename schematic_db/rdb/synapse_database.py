@@ -385,7 +385,6 @@ class SynapseDatabase(RelationalDatabase):
         """
         reverse_dependencies = db_config.get_reverse_dependencies(table_name)
         for rd_table_name in reverse_dependencies:
-
             # gathering data about the reverse dependency
             table_id = self.synapse.get_synapse_id_from_table_name(rd_table_name)
             primary_key = db_config.get_config_by_name(rd_table_name).primary_key
