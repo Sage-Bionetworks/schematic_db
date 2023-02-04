@@ -3,6 +3,7 @@ These are a set of classes for defining a database table in a dialect agnostic w
 """
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Optional
 
 from sqlalchemy import ForeignKey
 
@@ -23,6 +24,7 @@ class DBAttributeConfig:
 
     name: str
     datatype: DBDatatype
+    required: bool
 
     def __post_init__(self) -> None:
         if not isinstance(self.datatype, DBDatatype):
@@ -36,6 +38,18 @@ class DBForeignKey:
     name: str
     foreign_object_name: str
     foreign_attribute_name: str
+
+    def get_attribute_dict(self) -> dict[str, str]:
+        """Returns the foreign key in dict form
+
+        Returns:
+            dict[str, str]: A dictionary of the foriegn key attributes
+        """
+        return {
+            "name": self.name,
+            "foreign_object_name": self.foreign_object_name,
+            "foreign_attribute_name": self.foreign_attribute_name,
+        }
 
 
 class ConfigAttributeError(Exception):
@@ -53,7 +67,9 @@ class ConfigAttributeError(Exception):
 class ConfigKeyError(Exception):
     """ConfigKeyError"""
 
-    def __init__(self, message: str, object_name: str, key: str = None) -> None:
+    def __init__(
+        self, message: str, object_name: str, key: Optional[str] = None
+    ) -> None:
         self.message = message
         self.object_name = object_name
         self.key = key
@@ -71,12 +87,14 @@ class DBObjectConfig:
 
     name: str
     attributes: list[DBAttributeConfig]
-    primary_keys: list[str]
+    primary_key: str
     foreign_keys: list[DBForeignKey]
 
     def __post_init__(self) -> None:
+        self.attributes.sort(key=lambda x: x.name)
+        self.foreign_keys.sort(key=lambda x: x.name)
         self._check_attributes()
-        self._check_primary_keys()
+        self._check_primary_key()
         self._check_foreign_keys()
 
     def get_attribute_names(self) -> list[str]:
@@ -86,6 +104,14 @@ class DBObjectConfig:
             List[str]: A list of names of the attributes
         """
         return [att.name for att in self.attributes]
+
+    def get_foreign_key_dependencies(self) -> list[str]:
+        """Returns a list of object names the current object depends on
+
+        Returns:
+            list[str]: A list of object names
+        """
+        return [key.foreign_object_name for key in self.foreign_keys]
 
     def get_foreign_key_names(self) -> list[str]:
         """Returns a list of names of the foreign keys
@@ -106,22 +132,27 @@ class DBObjectConfig:
         """
         return [key for key in self.foreign_keys if key.name == name][0]
 
+    def get_attribute_by_name(self, name: str) -> DBAttributeConfig:
+        """Returns the attribute
+
+        Args:
+            name (str): name of the attribute
+
+        Returns:
+            DBAttributeConfig: The DBAttributeConfig asked for
+        """
+        return [att for att in self.attributes if att.name == name][0]
+
     def _check_attributes(self) -> None:
         if len(self.attributes) == 0:
             raise ConfigAttributeError("Attributes is empty", self.name)
         if len(self.get_attribute_names()) != len(set(self.get_attribute_names())):
             raise ConfigAttributeError("Attributes has duplicates", self.name)
 
-    def _check_primary_keys(self) -> None:
-        if len(self.primary_keys) == 0:
-            raise ConfigKeyError("Primary keys is empty", self.name)
-        for key in self.primary_keys:
-            self._check_primary_key(key)
-
-    def _check_primary_key(self, key: ForeignKey) -> None:
-        if key not in self.get_attribute_names():
+    def _check_primary_key(self) -> None:
+        if self.primary_key not in self.get_attribute_names():
             raise ConfigKeyError(
-                "Primary key is missing from attributes", self.name, key
+                "Primary key is missing from attributes", self.name, self.primary_key
             )
 
     def _check_foreign_keys(self) -> None:
@@ -194,6 +225,40 @@ class DBConfig:
     def __post_init__(self) -> None:
         for config in self.configs:
             self._check_foreign_keys(config)
+
+    def __eq__(self, other: Any) -> bool:
+        """Overrides the default implementation"""
+        if isinstance(other, DBConfig):
+            self_configs = self.configs.copy().sort(key=lambda x: x.name)
+            other_configs = self.configs.copy().sort(key=lambda x: x.name)
+            return self_configs == other_configs
+        return False
+
+    def get_dependencies(self, object_name: str) -> list[str]:
+        """Gets the objects dependencies
+
+        Args:
+            object_name (str): The name of the object
+
+        Returns:
+            list[str]: A list of objects names the object depends on
+        """
+        return self.get_config_by_name(object_name).get_foreign_key_dependencies()
+
+    def get_reverse_dependencies(self, object_name: str) -> list[str]:
+        """Gets the names of Objects that depend on the input object
+
+        Args:
+            object_name (str): The name of the object
+
+        Returns:
+            list[str]: A list of object names that depend on the input object
+        """
+        return [
+            config.name
+            for config in self.configs
+            if object_name in config.get_foreign_key_dependencies()
+        ]
 
     def get_config_names(self) -> list[str]:
         """Returns a list of names of the configs

@@ -1,0 +1,4 @@
+table_name,query
+Patient,SELECT * FROM Patient
+Biospecimen,SELECT * FROM Biospecimen
+BulkRnaSeq,SELECT * FROM `BulkRnaSeq`

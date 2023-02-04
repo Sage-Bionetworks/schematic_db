@@ -46,7 +46,7 @@ def create_schematic_api_response(
         requests.Response: The response from the API
     """
     endpoint_url = f"{API_URL}/{API_SERVER}/{endpoint_path}"
-    response = requests.get(endpoint_url, params=params, timeout=30)
+    response = requests.get(endpoint_url, params=params, timeout=45)
     if response.status_code != 200:
         raise SchematicAPIError(endpoint_url, response.status_code, response.reason)
     return response
@@ -244,4 +244,65 @@ def get_manifest(
         "as_json": True,
     }
     response = create_schematic_api_response("manifest/download", params)
-    return pandas.DataFrame(response.json())
+    manifest = pandas.DataFrame(response.json())
+    return manifest
+
+
+def is_node_required(schema_url: str, node_label: str) -> bool:
+    """Checks if node is required
+
+    Args:
+        schema_url (str): Data Model URL
+        node_label (str): Label/display name for the node to check
+
+    Returns:
+        bool: Wether or not the node is required
+    """
+
+    params = {"schema_url": schema_url, "node_display_name": node_label}
+    response = create_schematic_api_response("schemas/is_node_required", params)
+    return response.json()
+
+
+def get_manifest_datatypes(
+    input_token: str, manifest_id: str, asset_view: str
+) -> dict[str, str]:
+    """Gets the datatypes for all  attributes in a manifest
+
+    Args:
+        input_token (str): Access token
+        manifest_id (str): The id of the manifest
+        asset_view (str): The id of the view listing all project data assets. For example,
+            for Synapse this would be the Synapse ID of the fileview listing all
+            data assets for a given project.(i.e. master_fileview in config.yml)
+
+    Returns:
+        dict[str, str]: A dict of attribute names and their datatype
+    """
+    params = {
+        "input_token": input_token,
+        "manifest_id": manifest_id,
+        "asset_view": asset_view,
+    }
+    response = create_schematic_api_response("get/datatype/manifest", params)
+    return response.json()
+
+
+def get_node_validation_rules(schema_url: str, node_display_name: str) -> list[str]:
+    """Gets the validation rules for the node
+
+    Args:
+        schema_url (str): Data Model URL
+        node_display_name (str): Label/display name for the node to check
+
+    Returns:
+        list[str]: A list of validation rules
+    """
+    params = {
+        "schema_url": schema_url,
+        "node_display_name": node_display_name,
+    }
+    response = create_schematic_api_response(
+        "schemas/get_node_validation_rules", params
+    )
+    return response.json()

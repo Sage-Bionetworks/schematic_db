@@ -1,19 +1,21 @@
 # adapted from : https://jacobian.org/til/github-actions-poetry/
 
-name: Test schematic_db
+name: Unit testing
 on: [pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
     steps:
 
       - uses: actions/checkout@v2
 
-      # setup mysql
-      - name: Set up MySQL
-        run: |
-          sudo /etc/init.d/mysql start
       # Create the secrets config file
       - name: create secrets config
         run: |
@@ -27,17 +29,36 @@ jobs:
               "username": "${{secrets.MYSQL_USERNAME}}",
               "password": "${{secrets.MYSQL_PASSWORD}}",
               "host": "${{secrets.MYSQL_HOST}}"
+            },
+            "postgres": {
+                "username": "${{secrets.POSTGRES_USERNAME}}",
+                "password": "${{secrets.POSTGRES_PASSWORD}}",
+                "host": "${{secrets.POSTGRES_HOST}}"
             }
           }
           with open('tests/data/secrets.yml', 'w') as file:
               yaml.dump(dict, file)
         shell: python
 
+      - name: Set up MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+
+      - name: Set up Postgres
+        env:
+          username: ${{secrets.POSTGRES_USERNAME}}
+          password: ${{secrets.POSTGRES_PASSWORD}}
+        run: |
+          sudo apt install postgresql postgresql-contrib
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "ALTER USER $username PASSWORD '$password';"
+
       # If you wanted to use multiple Python versions, you'd have specify a matrix in the job and
       # reference the matrix python version here.
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
+
 
       # Cache the installation of Poetry itself, e.g. the next step. This prevents the workflow
       # from installing Poetry every time, which can be slow. Note the use of the Poetry version
@@ -48,7 +69,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.local
-          key: poetry-1.1.12-0
+          key: poetry-1.2.0rc1-0
 
       # Install Poetry. You could do this manually, or there are several actions that do this.
       # `snok/install-poetry` seems to be minimal yet complete, and really just calls out to
@@ -61,7 +82,7 @@ jobs:
       # cache it.
       - uses: snok/install-poetry@v1
         with:
-          version: 1.1.12
+          version: 1.2.0rc1
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -78,31 +99,15 @@ jobs:
       # Install dependencies. `--no-root` means "install all dependencies but not the project
       # itself", which is what you want to avoid caching _your_ code. The `if` statement
       # ensures this only runs on a cache miss.
-      - run: poetry install --no-interaction --no-root
+      - run: poetry install --no-interaction --no-root --all-extras
         if: steps.cache-deps.outputs.cache-hit != 'true'
 
       # Now install _your_ project. This isn't necessary for many types of projects -- particularly
       # things like Django apps don't need this. But it's a good idea since it fully-exercises the
       # pyproject.toml and makes that if you add things like console-scripts at some point that
       # they'll be installed and working.
-      - run: poetry install --no-interaction
+      - run: poetry install --no-interaction --all-extras
 
-      # This checks if code if statically typed
-      - name: Static typing with mypy
-        run: |
-          mkdir .mypy_cache
-          poetry run mypy --install-types --non-interactive ./
-          poetry run mypy --disallow-untyped-defs .
-      # This checks if code has been formatted with black
-      - name: Code formatting with black
-        uses: psf/black@stable
-        with:
-          options: "--check --verbose"
+      - name: pytest
+        run: poetry run pytest -vvs -m "not schematic"
 
-      # This checks for pylint score
-      - name: Code formatting with pylint
-        run: poetry run pylint schematic_db/* tests/*
-
-      # And finally run tests. I'm using pytest and all my pytest config is in my `pyproject.toml`
-      # so this line is super-simple. But it could be as complex as you need.
-      - run: poetry run pytest -vvs -m "not schematic"
