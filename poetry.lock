@@ -761,7 +761,7 @@ tenacity = ["tenacity"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "2c7ed4cfa2f5e863c87f7476d62f811d0d775bcea7a7ab51c3868c36059b842f"
+content-hash = "b86774ad2ce096f37a64e73edfe12c408010fae5a4c965c3d5b0b2cddad00acf"
 
 [metadata.files]
 astroid = [

@@ -140,7 +140,7 @@ class Schema:  # pylint: disable=too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
         config: SchemaConfig,
-        primary_key_getter: Callable[[str], str] = get_key_attribute,
+        primary_key_getter: Callable[[str], str] = lambda _: "id",
         foreign_key_getter: Callable[[str], str] = get_key_attribute,
     ) -> None:
         """Init
@@ -150,12 +150,12 @@ class Schema:  # pylint: disable=too-many-instance-attributes
         It is assumed that all objects(tables) have one primary key that can be systematically
         determined from the objects name, and that the primary_key_getter will do that.
 
-        By default get_key_attribute is used for primary keys. This assumes that all primary keys
-        are of the from "<object_name>_id". For example if the object was named "patient" then the
-        primary key would be named "patient_id".
+        By default a lambda function that returns "id" is used for primary keys. This assumes that
+         all primary keys are named "id".
 
-        Also by default get_key_attribute is used for foreign keys. This assumes that all foreign
-        keys match the name of the the primary key they refer to.
+        By default get_key_attribute is used for foreign keys. This assumes that all foreign
+        keys match the name of the the primary key they refer to. For example if the object the
+        foreign key referred to was named "patient" then the foreign would be named "patient_id".
 
         If foreign keys do not match the primary key they refer to then the functions would need
         to be different to reflect that.

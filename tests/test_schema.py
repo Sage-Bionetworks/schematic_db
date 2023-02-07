@@ -196,14 +196,14 @@ class TestSchema:
             DBForeignKey(
                 name="patientId",
                 foreign_object_name="Patient",
-                foreign_attribute_name="patientId",
+                foreign_attribute_name="id",
             )
         ]
         assert obj.create_foreign_keys("BulkRnaSeq") == [
             DBForeignKey(
                 name="biospecimenId",
                 foreign_object_name="Biospecimen",
-                foreign_attribute_name="biospecimenId",
+                foreign_attribute_name="id",
             )
         ]
 
