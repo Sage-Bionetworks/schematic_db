@@ -169,6 +169,7 @@ class TestSchema:
             DBAttributeConfig(
                 name="diagnosis", datatype=DBDatatype.TEXT, required=True
             ),
+            DBAttributeConfig(name="date", datatype=DBDatatype.DATE, required=False),
         ]
         assert obj.create_attributes("Biospecimen") == [
             DBAttributeConfig(
