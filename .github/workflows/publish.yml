@@ -2,7 +2,7 @@ name: Publish schematic_db to PYPI
 on:
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   test:

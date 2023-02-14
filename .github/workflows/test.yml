@@ -1,11 +1,17 @@
 # adapted from : https://jacobian.org/til/github-actions-poetry/
 
-name: Test schematic_db
+name: Unit testing
 on: [pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
     steps:
 
       - uses: actions/checkout@v2
@@ -51,7 +57,8 @@ jobs:
       # reference the matrix python version here.
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
+
 
       # Cache the installation of Poetry itself, e.g. the next step. This prevents the workflow
       # from installing Poetry every time, which can be slow. Note the use of the Poetry version
@@ -62,7 +69,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.local
-          key: poetry-1.2.0rc1
+          key: poetry-1.2.0rc1-0
 
       # Install Poetry. You could do this manually, or there are several actions that do this.
       # `snok/install-poetry` seems to be minimal yet complete, and really just calls out to
@@ -100,20 +107,6 @@ jobs:
       # pyproject.toml and makes that if you add things like console-scripts at some point that
       # they'll be installed and working.
       - run: poetry install --no-interaction --all-extras
-
-      - name: Static typing with mypy
-        run: |
-          mkdir .mypy_cache
-          poetry run mypy --install-types --non-interactive ./
-          poetry run mypy --disallow-untyped-defs .
-
-      - name: Code formatting with black
-        uses: psf/black@stable
-        with:
-          options: "--check --verbose"
-
-      - name: Code formatting with pylint
-        run: poetry run pylint schematic_db/* tests/*
 
       - name: pytest
         run: poetry run pytest -vvs -m "not gff"

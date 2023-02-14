@@ -38,6 +38,7 @@ def create_schematic_api_response(
     params: dict,
     api_url: str = API_URL,
     api_server: str = API_SERVER,
+    timeout: int = 30,
 ) -> requests.Response:
     """Performs a GET request on the schematic API
 
@@ -46,6 +47,7 @@ def create_schematic_api_response(
         params (dict): The parameters in dict form for the requested endpoint
         api_url (str): The URL to the API server
         api_server(str): The server of the API
+        timeout (int): The amount of seconds the API call has to run
 
     Raises:
         SchematicAPIError: When response code is anything other than 200
@@ -54,7 +56,7 @@ def create_schematic_api_response(
         requests.Response: The response from the API
     """
     endpoint_url = f"{api_url}/{api_server}/{endpoint_path}"
-    response = requests.get(endpoint_url, params=params, timeout=45)
+    response = requests.get(endpoint_url, params=params, timeout=timeout)
     if response.status_code != 200:
         raise SchematicAPIError(endpoint_url, response.status_code, response.reason)
     return response
@@ -216,7 +218,9 @@ def get_project_manifests(
         "project_id": project_id,
         "asset_view": asset_view,
     }
-    response = create_schematic_api_response("storage/project/manifests", params)
+    response = create_schematic_api_response(
+        "storage/project/manifests", params, timeout=60
+    )
     manifests = [
         ManifestSynapseConfig(
             dataset_id=item[0][0],
@@ -251,7 +255,7 @@ def get_manifest(
         "asset_view": asset_view,
         "as_json": True,
     }
-    response = create_schematic_api_response("manifest/download", params)
+    response = create_schematic_api_response("manifest/download", params, timeout=120)
     manifest = pandas.DataFrame(response.json())
     return manifest
 
@@ -292,7 +296,9 @@ def get_manifest_datatypes(
         "manifest_id": manifest_id,
         "asset_view": asset_view,
     }
-    response = create_schematic_api_response("get/datatype/manifest", params)
+    response = create_schematic_api_response(
+        "get/datatype/manifest", params, timeout=120
+    )
     return response.json()
 
 

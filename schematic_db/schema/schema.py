@@ -24,6 +24,14 @@ from .api_utils import (
     ManifestSynapseConfig,
 )
 
+SCHEMATIC_TYPE_DATATYPES = {
+    "str": DBDatatype.TEXT,
+    "float": DBDatatype.FLOAT,
+    "num": DBDatatype.FLOAT,
+    "int": DBDatatype.INT,
+    "date": DBDatatype.DATE,
+}
+
 
 class NoAttributesWarning(Warning):
     """
@@ -57,6 +65,26 @@ class ManifestMissingPrimaryKeyError(Exception):
             f"{self.message}; object name:{self.object_name}; "
             f"dataset_id:{self.dataset_id}; primary keys:{self.primary_key}; "
             f"manifest columns:{self.manifest_columns}"
+        )
+
+
+class MoreThanOneTypeRule(Exception):
+    """Raised when an attribute has more than one validation type rule"""
+
+    def __init__(
+        self,
+        attribute_name: str,
+        type_rules: list[str],
+    ):
+        self.message = "Attribute has more than one validation type rule"
+        self.attribute_name = attribute_name
+        self.type_rules = type_rules
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.message}; attribute name:{self.attribute_name}; "
+            f"type_rules:{self.type_rules}"
         )
 
 
@@ -140,7 +168,7 @@ class Schema:  # pylint: disable=too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
         config: SchemaConfig,
-        primary_key_getter: Callable[[str], str] = get_key_attribute,
+        primary_key_getter: Callable[[str], str] = lambda _: "id",
         foreign_key_getter: Callable[[str], str] = get_key_attribute,
     ) -> None:
         """Init
@@ -150,12 +178,12 @@ class Schema:  # pylint: disable=too-many-instance-attributes
         It is assumed that all objects(tables) have one primary key that can be systematically
         determined from the objects name, and that the primary_key_getter will do that.
 
-        By default get_key_attribute is used for primary keys. This assumes that all primary keys
-        are of the from "<object_name>_id". For example if the object was named "patient" then the
-        primary key would be named "patient_id".
+        By default a lambda function that returns "id" is used for primary keys. This assumes that
+         all primary keys are named "id".
 
-        Also by default get_key_attribute is used for foreign keys. This assumes that all foreign
-        keys match the name of the the primary key they refer to.
+        By default get_key_attribute is used for foreign keys. This assumes that all foreign
+        keys match the name of the the primary key they refer to. For example if the object the
+        foreign key referred to was named "patient" then the foreign would be named "patient_id".
 
         If foreign keys do not match the primary key they refer to then the functions would need
         to be different to reflect that.
@@ -283,12 +311,11 @@ class Schema:  # pylint: disable=too-many-instance-attributes
             DBAttributeConfig: The DBAttributeConfig for the attribute
         """
         rules = get_node_validation_rules(self.schema_url, name)
-        if "str" in rules:
-            datatype = DBDatatype.TEXT
-        if "float" in rules or "num" in rules:
-            datatype = DBDatatype.FLOAT
-        elif "int" in rules:
-            datatype = DBDatatype.INT
+        type_rules = [rule for rule in rules if rule in SCHEMATIC_TYPE_DATATYPES]
+        if len(type_rules) > 1:
+            raise MoreThanOneTypeRule(name, type_rules)
+        if len(type_rules) == 1:
+            datatype = SCHEMATIC_TYPE_DATATYPES[type_rules[0]]
         else:
             datatype = DBDatatype.TEXT
         return DBAttributeConfig(

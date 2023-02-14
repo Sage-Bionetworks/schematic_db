@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "schematic_db"
-version = "0.0.8"
+version = "0.0.12"
 description = ""
 authors = ["andrewelamb <andrewelamb@gmail.com>"]
 
@@ -8,27 +8,28 @@ authors = ["andrewelamb <andrewelamb@gmail.com>"]
 python = "^3.9"
 SQLAlchemy = "^1.4.39"
 PyYAML = "^6.0"
-mysqlclient = {version = "^2.1.1", optional = true}
 SQLAlchemy-Utils = "^0.38.3"
 requests = "^2.28.1"
-synapseclient = {version = "^2.6.0", optional = true}
 pandas = "^1.4.3"
-pdoc = "^12.1.0"
-black = "23.1.0"
 networkx = "^2.8.6"
-pylint = "^2.15.4"
-mypy = "^0.982"
-pytest-mock = "^3.10.0"
-psycopg2 = {version = "^2.9.5", optional = true}
 tenacity = "^8.1.0"
+mysqlclient = {version = "^2.1.1", optional = true}
+synapseclient = {version = "^2.7.0", optional = true}
+psycopg2-binary = {version = "^2.9.5", optional = true}
 
 [tool.poetry.extras]
 mysql = ["mysqlclient"]
-postgres = ["psycopg2"]
+postgres = ["psycopg2-binary"]
 synapse = ["synapseclient"]
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.2.1"
+pytest-mock = "^3.10.0"
+pdoc = "^12.1.0"
+mypy = "1.0.0"
+mypy-extensions = "1.0.0"
+pylint = "2.16.1"
+black = "23.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

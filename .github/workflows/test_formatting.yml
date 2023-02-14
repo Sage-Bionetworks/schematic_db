@@ -1,27 +1,24 @@
-name: Publish pdoc to github pages
+# adapted from : https://jacobian.org/til/github-actions-poetry/
 
-# build the documentation whenever there are new commits on main
-on:
-  push:
-    branches:
-      - develop
-
-# security: restrict permissions for CI jobs.
-permissions:
-  contents: read
+name: Test black, mypy, pylint
+on: [pull_request]
 
 jobs:
-  # Build the documentation and upload the static HTML files as an artifact.
-  build:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
       # If you wanted to use multiple Python versions, you'd have specify a matrix in the job and
       # reference the matrix python version here.
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
 
       # Cache the installation of Poetry itself, e.g. the next step. This prevents the workflow
       # from installing Poetry every time, which can be slow. Note the use of the Poetry version
@@ -71,23 +68,16 @@ jobs:
       # they'll be installed and working.
       - run: poetry install --no-interaction --all-extras
 
-      - run: poetry run pdoc --docformat google -o docs schematic_db
+      - name: Static typing with mypy
+        run: |
+          mkdir .mypy_cache
+          poetry run mypy --install-types --non-interactive ./
+          poetry run mypy --disallow-untyped-defs .
 
-      - uses: actions/upload-pages-artifact@v1
+      - name: Code formatting with black
+        uses: psf/black@stable
         with:
-          path: docs/
+          options: "--check --verbose"
 
-  # Deploy the artifact to GitHub pages.
-  # This is a separate job so that only actions/deploy-pages has the necessary permissions.
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v1
+      - name: Code formatting with pylint
+        run: poetry run pylint schematic_db/* tests/*
