@@ -18,7 +18,7 @@ from schematic_db.db_config import (
 from .rdb import RelationalDatabase, UpdateDBTableError
 
 MYSQL_DATATYPES = {
-    DBDatatype.TEXT: sa.VARCHAR(5000),
+    DBDatatype.TEXT: sa.VARCHAR(1000),
     DBDatatype.DATE: sa.Date,
     DBDatatype.INT: sa.Integer,
     DBDatatype.FLOAT: sa.Float,
@@ -165,7 +165,7 @@ class MySQLDatabase(RelationalDatabase):  # pylint: disable=too-many-instance-at
         db_exists = sqlalchemy_utils.functions.database_exists(url)
         if not db_exists:
             sqlalchemy_utils.functions.create_database(url)
-        engine = sa.create_engine(url, encoding="utf-8", echo=self.verbose)
+        engine = sa.create_engine(url, echo=self.verbose)
         self.engine = engine
 
     def drop_all_tables(self) -> None:
@@ -216,12 +216,12 @@ class MySQLDatabase(RelationalDatabase):  # pylint: disable=too-many-instance-at
             raise UpdateDBTableError(table_name, error_msg) from error
 
     def drop_table(self, table_name: str) -> None:
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        table = self._get_table_object(table_name)
         table.drop(self.engine)
         self.metadata.clear()
 
     def delete_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        table = self._get_table_object(table_name)
         i = sa.inspect(table)
         pkey_column = list(column for column in i.columns if column.primary_key)[0]
         values = data[pkey_column.name].values.tolist()
@@ -252,7 +252,7 @@ class MySQLDatabase(RelationalDatabase):  # pylint: disable=too-many-instance-at
         """
         data = data.replace({np.nan: None})
         rows = data.to_dict("records")
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        table = self._get_table_object(table_name)
         for row in rows:
             statement = insert(table).values(row).on_duplicate_key_update(**row)
             with self.engine.connect().execution_options(autocommit=True) as conn:
@@ -262,6 +262,17 @@ class MySQLDatabase(RelationalDatabase):  # pylint: disable=too-many-instance-at
         query = f"SELECT * FROM {table_name};"
         table = self.execute_sql_query(query)
         return table
+
+    def add_index_to_column(self, table_name: str, column_name: str) -> None:
+        '''
+        in progess
+        '''
+        column = self._get_column_object(table_name, column_name)
+        index = sa.Index(f"{table_name}_{column_name}", column)
+        import logging
+        logging.warning(index)
+        x = index.create(bind=self.engine)
+        logging.warning(x)
 
     def _execute_sql_statement(self, statement: str) -> Any:
         with self.engine.connect().execution_options(autocommit=True) as conn:
@@ -301,3 +312,12 @@ class MySQLDatabase(RelationalDatabase):  # pylint: disable=too-many-instance-at
 
     def _get_datatype(self, attribute: DBAttributeConfig) -> Any:
         MYSQL_DATATYPES.get(attribute.datatype)
+
+    def _get_table_object(self, table_name: str) -> sa.Table:
+        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        return table
+
+    def _get_column_object(self, table_name: str, column_name) -> sa.Column:
+        table = self._get_table_object(table_name)
+        column = [column for column in table.columns if column.key == column_name][0]
+        return column

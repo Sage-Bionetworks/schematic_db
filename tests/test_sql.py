@@ -82,6 +82,30 @@ class TestSQLGetters:
             assert isinstance(result, pd.DataFrame)
             obj.delete_all_tables()
 
+    def test_get_table_object(
+        self,
+        sql_databases: list[MySQLDatabase],
+        table_one_config: DBObjectConfig,
+    ) -> None:
+        """Tests RelationalDatabase._get_table_object"""
+        for obj in sql_databases:
+            obj.add_table("table_one", table_one_config)
+            table = obj._get_table_object("table_one") #pylint: disable=protected-access
+            assert table.name == "table_one"
+            obj.delete_all_tables()
+
+    def test_get_column_object(
+        self,
+        sql_databases: list[MySQLDatabase],
+        table_one_config: DBObjectConfig,
+    ) -> None:
+        """Tests RelationalDatabase._get_table_object"""
+        for obj in sql_databases:
+            obj.add_table("table_one", table_one_config)
+            column = obj._get_column_object("table_one", "string_one_col") #pylint: disable=protected-access
+            assert column.key == "string_one_col"
+            obj.delete_all_tables()
+
 
 @pytest.mark.fast
 class TestSQLUpdateTables:
@@ -126,6 +150,30 @@ class TestSQLUpdateTables:
             assert obj.get_table_names() == ["table_one", "table_three", "table_two"]
             obj.drop_all_tables()
             assert obj.get_table_names() == []
+
+    def test_add_index_to_column(
+        self,
+        sql_databases: list[MySQLDatabase],
+        table_one_config: DBObjectConfig,
+     ) -> None:
+        """Testing for MySQLDatabase.add_index_to_column"""
+        for obj in sql_databases:
+            obj.add_table("table_one", table_one_config)
+            obj.add_index_to_column("table_one", "string_one_col")
+            column = obj._get_column_object("table_one", "string_one_col")
+            import logging
+            logging.warning(column)
+            logging.warning(column.index)
+            logging.warning(obj.metadata.tables["table_one"])
+            from sqlalchemy.inspection import inspect
+            logging.warning(inspect(obj.metadata.tables["table_one"]))
+            assert False
+            '''
+            engine = obj.engine
+            indexes = engine.dialect.get_indexes(engine.connect(), "table_one")
+            import logging
+            logging.warning(indexes)
+            '''
 
 
 @pytest.mark.fast
