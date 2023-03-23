@@ -61,7 +61,8 @@ class TestAPIUtils:
             asset_view=test_synapse_asset_view_id,
         )
         assert len(manifests) == 5
-        assert False
+        for manifest in manifests:
+            assert manifest.manifest_id
 
     def test_get_manifest(self, secrets_dict: dict) -> None:
         "Testing for get_manifest"
