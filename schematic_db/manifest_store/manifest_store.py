@@ -36,20 +36,20 @@ class ManifestMissingPrimaryKeyError(Exception):
         )
 
 
-def get_dataset_ids_for_component(
+def get_manifest_ids_for_component(
     object_name: str, manifests: list[ManifestSynapseConfig]
 ) -> list[str]:
-    """Gets the dataset ids from a list of manifests matching the object name
+    """Gets the manifest ids from a list of manifests matching the object name
 
     Args:
         object_name (str): The name of the object to get the manifests for
         manifests (list[ManifestSynapseConfig]): A list of manifests in Synapse
 
     Returns:
-        list[str]: A list of synapse ids for the manifest datasets
+        list[str]: A list of synapse ids for the manifests
     """
     return [
-        manifest.dataset_id
+        manifest.manifest_id
         for manifest in manifests
         if manifest.component_name == object_name and manifest.manifest_id != ""
     ]
@@ -128,13 +128,9 @@ class ManifestStore:  # pylint: disable=too-many-instance-attributes
         Returns:
             list[pd.DataFrame]: A list of manifests in dataframe form for the component
         """
-        dataset_ids = get_dataset_ids_for_component(name, self.manifest_configs)
+        manifest_ids = get_manifest_ids_for_component(name, self.manifest_configs)
         manifests = [
-            get_manifest(
-                self.synapse_input_token,
-                dataset_id,
-                self.synapse_asset_view_id,
-            )
-            for dataset_id in dataset_ids
+            get_manifest(self.synapse_input_token, manifest_id)
+            for manifest_id in manifest_ids
         ]
         return manifests

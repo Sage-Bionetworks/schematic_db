@@ -61,27 +61,18 @@ class TestAPIUtils:
             asset_view=test_synapse_asset_view_id,
         )
         assert len(manifests) == 5
+        assert False
 
-    def test_get_manifest(
-        self, secrets_dict: dict, test_synapse_asset_view_id: str
-    ) -> None:
+    def test_get_manifest(self, secrets_dict: dict) -> None:
         "Testing for get_manifest"
-        manifest = get_manifest(
-            secrets_dict["synapse"]["auth_token"],
-            "syn47996410",
-            test_synapse_asset_view_id,
-        )
+        manifest = get_manifest(secrets_dict["synapse"]["auth_token"], "syn47996491")
         assert isinstance(manifest, pd.DataFrame)
 
         with pytest.raises(
             SchematicAPIError,
             match="Error accessing Schematic endpoint",
         ):
-            get_manifest(
-                secrets_dict["synapse"]["auth_token"],
-                "1",
-                test_synapse_asset_view_id,
-            )
+            get_manifest(secrets_dict["synapse"]["auth_token"], "1")
 
     def test_is_node_required(self, test_schema_json_url: str) -> None:
         """Testing for is_node_required"""
