@@ -1,7 +1,7 @@
 """Synapse Query Store
 """
 import pandas as pd
-from schematic_db.synapse import Synapse, SynapseConfig
+from schematic_db.synapse.synapse import Synapse, SynapseConfig
 from .query_store import QueryStore
 
 

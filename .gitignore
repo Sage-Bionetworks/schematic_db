@@ -1,5 +1,5 @@
 # Local DB configs/scripts
-tests/data/local*
+tests/data/secrets.yml
 tests/scripts/*
 
 # Ignore VS Code files and settings

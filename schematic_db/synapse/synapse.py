@@ -1,22 +1,9 @@
 """Synapse"""
 from dataclasses import dataclass
-from functools import partial
 from typing import Any
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 import synapseclient as sc  # type: ignore
 import pandas as pd  # type: ignore
-from schematic_db.db_config import DBObjectConfig, DBDatatype
-
-
-SYNAPSE_DATATYPES = {
-    DBDatatype.TEXT: partial(sc.Column, columnType="LARGETEXT"),
-    DBDatatype.DATE: partial(sc.Column, columnType="DATE"),
-    DBDatatype.INT: partial(sc.Column, columnType="INTEGER"),
-    DBDatatype.FLOAT: partial(sc.Column, columnType="DOUBLE"),
-    DBDatatype.BOOLEAN: partial(sc.Column, columnType="BOOLEAN"),
-}
-
-PANDAS_DATATYPES = {DBDatatype.INT: "Int64", DBDatatype.BOOLEAN: "boolean"}
 
 
 class SynapseTableNameError(Exception):
@@ -51,20 +38,6 @@ class SynapseConfig:
     username: str
     auth_token: str
     project_id: str
-
-
-def create_synapse_column(name: str, datatype: DBDatatype) -> sc.Column:
-    """Creates a Synapse column object
-
-    Args:
-        name (str): The name of the column
-        datatype (DBDatatype): The datatype of the column
-
-    Returns:
-        sc.Column: _description_
-    """
-    func = SYNAPSE_DATATYPES[datatype]
-    return func(name=name)
 
 
 class Synapse:  # pylint: disable=too-many-public-methods
@@ -210,23 +183,18 @@ class Synapse:  # pylint: disable=too-many-public-methods
         table_copy = sc.table.build_table(table_name, project, table_copy)
         self.syn.store(table_copy)
 
-    def add_table(self, table_name: str, table_config: DBObjectConfig) -> None:
+    def add_table(self, table_name: str, columns: list[sc.Column]) -> None:
         """Adds a synapse table
 
         Args:
             table_name (str): The name of the table to be added
-            table_config (DBObjectConfig): The config the table to be added
+            columns (list[sc.Column]): The columns to be added
         """
-        columns: list[sc.Column] = []
-        values: dict[str, list] = {}
-        for att in table_config.attributes:
-            column = create_synapse_column(att.name, att.datatype)
-            columns.append(column)
-            values[att.name] = []
-
+        # create a dictionary with a key for every column, and value of an empty list
+        values: dict[str, list] = {column.name: [] for column in columns}
         schema = sc.Schema(name=table_name, columns=columns, parent=self.project_id)
         table = sc.Table(schema, values)
-        table = self.syn.store(table)
+        self.syn.store(table)
 
     def delete_table(self, synapse_id: str) -> None:
         """Deletes a Synapse table
@@ -250,7 +218,7 @@ class Synapse:  # pylint: disable=too-many-public-methods
 
             self.delete_all_table_rows(synapse_id)
             self.delete_all_table_columns(synapse_id)
-            self.add_table_columns2(synapse_id, table)
+            self.add_table_columns(synapse_id, sc.as_table_columns(table))
             self.insert_table_rows(synapse_id, table)
 
     def insert_table_rows(self, synapse_id: str, data: pd.DataFrame) -> None:
@@ -328,40 +296,17 @@ class Synapse:  # pylint: disable=too-many-public-methods
         wait=wait_fixed(1),
         retry=retry_if_exception_type(sc.core.exceptions.SynapseHTTPError),
     )
-    def add_table_columns(self, synapse_id: str, table_config: DBObjectConfig) -> None:
-        """Add columns to synapse table from config
+    def add_table_columns(self, synapse_id: str, columns: list[sc.Column]) -> None:
+        """Add columns to synapse table
 
         Args:
             synapse_id (str): The Synapse id of the table to add the columns to
-            table_config (pd.DataFrame): The config for the table to add the columns to
+            columns (list[sc.Column]): The columns to be added
         """
-        new_columns = [
-            create_synapse_column(att.name, att.datatype)
-            for att in table_config.attributes
-        ]
-
         table = self.syn.get(synapse_id)
-        for col in new_columns:
+        for col in columns:
             table.addColumn(col)
         self.syn.store(table)
-
-    @retry(
-        stop=stop_after_attempt(5),
-        wait=wait_fixed(1),
-        retry=retry_if_exception_type(sc.core.exceptions.SynapseHTTPError),
-    )
-    def add_table_columns2(self, synapse_id: str, data: pd.DataFrame) -> None:
-        """Add columns to synapse table from dataframe
-
-        Args:
-            synapse_id (str): The Synapse id of the table to add the columns to
-            data (pd.DataFrame): The dataframe the columns will be made from
-        """
-        current_table = self.syn.get(synapse_id)
-        new_columns = sc.as_table_columns(data)
-        for col in new_columns:
-            current_table.addColumn(col)
-        self.syn.store(current_table)
 
     def get_entity_annotations(self, synapse_id: str) -> sc.Annotations:
         """Gets the annotations for the Synapse entity

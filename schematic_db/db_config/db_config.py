@@ -3,7 +3,7 @@ These are a set of classes for defining a database table in a dialect agnostic w
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 from sqlalchemy import ForeignKey
 
@@ -18,17 +18,38 @@ class DBDatatype(Enum):
     BOOLEAN = "boolean"
 
 
+# mypy types so that a class can refer to its own type
+X = TypeVar("X", bound="DBAttributeConfig")
+Y = TypeVar("Y", bound="DBObjectConfig")
+T = TypeVar("T", bound="DBConfig")
+
+
 @dataclass
 class DBAttributeConfig:
     """A config for a table attribute(column)."""
 
     name: str
     datatype: DBDatatype
-    required: bool
+    required: bool = False
+    index: bool = False
 
-    def __post_init__(self) -> None:
-        if not isinstance(self.datatype, DBDatatype):
-            raise TypeError(f"Param datatype is not of type DBDatatype:{self.datatype}")
+    def is_equivalent(self, other: X) -> bool:
+        """Use instead of == when determining if schema's are equivalent
+
+        Args:
+            other (DBAttributeConfig): Another DBAttributeConfig to compare to self
+
+        Returns:
+            bool: True if both DBAttributeConfigs are equivalent
+        """
+
+        return all(
+            [
+                self.name == other.name,
+                self.datatype == other.datatype,
+                self.required == other.required,
+            ]
+        )
 
 
 @dataclass
@@ -43,7 +64,7 @@ class DBForeignKey:
         """Returns the foreign key in dict form
 
         Returns:
-            dict[str, str]: A dictionary of the foriegn key attributes
+            dict[str, str]: A dictionary of the foreign key attributes
         """
         return {
             "name": self.name,
@@ -96,6 +117,44 @@ class DBObjectConfig:
         self._check_attributes()
         self._check_primary_key()
         self._check_foreign_keys()
+
+    def __eq__(self, other: Any) -> bool:
+        """Overrides the default implementation"""
+        return self.get_sorted_attributes() == other.get_sorted_attributes()
+
+    def is_equivalent(self, other: Y) -> bool:
+        """
+        Use instead of == when determining if schema's are equivalent
+        Args:
+            other (DBObjectConfig): Another instance of DBObjectConfig
+
+        Returns:
+            bool
+        """
+        attributes_equivalent = all(
+            x.is_equivalent(y)
+            for x, y in zip(
+                self.get_sorted_attributes(),
+                other.get_sorted_attributes(),
+            )
+        )
+
+        return all(
+            [
+                attributes_equivalent,
+                self.name == other.name,
+                self.primary_key == other.primary_key,
+                self.foreign_keys == other.foreign_keys,
+            ]
+        )
+
+    def get_sorted_attributes(self) -> list[DBAttributeConfig]:
+        """Gets the configs attributes sorted by name
+
+        Returns:
+            list[DBAttributeConfig]: Sorted list of attributes
+        """
+        return sorted(self.attributes, key=lambda x: x.name)
 
     def get_attribute_names(self) -> list[str]:
         """Returns a list of names of the attributes
@@ -228,11 +287,32 @@ class DBConfig:
 
     def __eq__(self, other: Any) -> bool:
         """Overrides the default implementation"""
-        if isinstance(other, DBConfig):
-            self_configs = self.configs.copy().sort(key=lambda x: x.name)
-            other_configs = self.configs.copy().sort(key=lambda x: x.name)
-            return self_configs == other_configs
-        return False
+        return self.get_sorted_configs() == other.get_sorted_configs()
+
+    def is_equivalent(self, other: T) -> bool:
+        """
+        Use instead of == when determining if schema's are equivalent
+        Args:
+            other (DBConfig): Another instance of DBConfig
+
+        Returns:
+            bool
+        """
+        return all(
+            x.is_equivalent(y)
+            for x, y in zip(
+                self.get_sorted_configs(),
+                other.get_sorted_configs(),
+            )
+        )
+
+    def get_sorted_configs(self) -> list[DBObjectConfig]:
+        """Gets the the configs sorted by name
+
+        Returns:
+            list[DBObjectConfig]: The list of sorted configs
+        """
+        return sorted(self.configs, key=lambda x: x.name)
 
     def get_dependencies(self, object_name: str) -> list[str]:
         """Gets the objects dependencies

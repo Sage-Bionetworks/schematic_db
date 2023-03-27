@@ -2,22 +2,23 @@
 from typing import Any, Generator
 import pytest
 import pandas as pd
+import synapseclient as sc  # type: ignore
 from schematic_db.db_config.db_config import DBObjectConfig
-from schematic_db.synapse import Synapse, SynapseConfig
+from schematic_db.synapse.synapse import Synapse, SynapseConfig
 
 
 @pytest.fixture(name="synapse_with_test_table_one", scope="class")
 def fixture_synapse_with_test_table_one(
-    synapse_database_project: Synapse,
-    table_one_config: DBObjectConfig,
+    synapse_object: Synapse,
+    table_one_columns: list[sc.Column],
     table_one: pd.DataFrame,
 ) -> Generator:
     """
     Yields a Synapse object with "test_table_one" added, used only for tests that
      don't alter the state of the Synapse project
     """
-    obj = synapse_database_project
-    obj.add_table("test_table_one", table_one_config)
+    obj = synapse_object
+    obj.add_table("test_table_one", table_one_columns)
     synapse_id = obj.get_synapse_id_from_table_name("test_table_one")
     obj.insert_table_rows(synapse_id, table_one)
     obj.set_entity_annotations(synapse_id, {"test_annotation": "test_value"})
@@ -26,11 +27,11 @@ def fixture_synapse_with_test_table_one(
 
 
 @pytest.fixture(name="synapse_with_no_tables")
-def fixture_synapse_with_no_tables(synapse_database_project: Synapse) -> Generator:
+def fixture_synapse_with_no_tables(synapse_object: Synapse) -> Generator:
     """
     Yields a Synapse object
     """
-    obj = synapse_database_project
+    obj = synapse_object
     yield obj
     table_names = obj.get_table_names()
     for name in table_names:
@@ -40,13 +41,14 @@ def fixture_synapse_with_no_tables(synapse_database_project: Synapse) -> Generat
 
 @pytest.fixture(name="synapse_with_empty_table_one")
 def fixture_synapse_with_empty_table_one(
-    synapse_with_no_tables: Synapse, table_one_config: DBObjectConfig
+    synapse_with_no_tables: Synapse,
+    table_one_columns: list[sc.Column],
 ) -> Generator:
     """
     Yields a Synapse object with table one added
     """
     obj = synapse_with_no_tables
-    obj.add_table("table_one", table_one_config)
+    obj.add_table("table_one", table_one_columns)
     yield obj
 
 
@@ -139,10 +141,9 @@ class TestSynapseGetters:
         self, synapse_with_test_table_one: Synapse, table_one_config: DBObjectConfig
     ) -> None:
         """Testing for Synapse.get_table_column_names()"""
-        assert (
+        assert sorted(
             synapse_with_test_table_one.get_table_column_names("test_table_one")
-            == table_one_config.get_attribute_names()
-        )
+        ) == sorted(table_one_config.get_attribute_names())
 
     def test_get_table_id_and_name(self, synapse_with_test_table_one: Synapse) -> None:
         """Testing for Synapse.get_table_id_from_name()"""
@@ -196,14 +197,12 @@ class TestSynapseModifyTables:
         assert obj.get_table_names() == ["table_one"]
 
     def test_add_table(
-        self,
-        synapse_with_no_tables: Synapse,
-        table_one_config: DBObjectConfig,
+        self, synapse_with_no_tables: Synapse, table_one_columns: list[sc.Column]
     ) -> None:
         """Testing for Synapse.add_table()"""
         obj = synapse_with_no_tables
         assert obj.get_table_names() == []
-        obj.add_table("table_one", table_one_config)
+        obj.add_table("table_one", table_one_columns)
         assert obj.get_table_names() == ["table_one"]
 
     def test_replace_table(
@@ -301,7 +300,7 @@ class TestSynapseModifyColumns:
         self,
         synapse_with_filled_table_one: Synapse,
         table_one: pd.DataFrame,
-        table_one_config: DBObjectConfig,
+        table_one_columns: list[sc.Column],
     ) -> None:
         """Testing for synapse.add_table_columns()"""
         obj = synapse_with_filled_table_one
@@ -312,7 +311,7 @@ class TestSynapseModifyColumns:
 
         obj.delete_all_table_columns(synapse_id)
         assert obj.get_table_column_names("table_one") == []
-        obj.add_table_columns(synapse_id, table_one_config)
+        obj.add_table_columns(synapse_id, table_one_columns)
         assert sorted(obj.get_table_column_names("table_one")) == sorted(
             (table_one.columns)
         )

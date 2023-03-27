@@ -62,11 +62,11 @@ class TestSQLGetters:
             obj.add_table("table_three", table_three_config)
             assert obj.get_table_names() == ["table_one", "table_three", "table_two"]
 
-            assert obj.get_table_config("table_one") == table_one_config
-            assert obj.get_table_config("table_two") == table_two_config
-            assert obj.get_table_config("table_three") == table_three_config
+            assert obj.get_table_config("table_one").is_equivalent(table_one_config)
+            assert obj.get_table_config("table_two").is_equivalent(table_two_config)
+            assert obj.get_table_config("table_three").is_equivalent(table_three_config)
 
-            obj.delete_all_tables()
+            obj.drop_all_tables()
 
     def test_execute_sql_query(
         self,
@@ -80,7 +80,24 @@ class TestSQLGetters:
             assert obj.get_table_names() == ["table_one"]
             result = obj.execute_sql_query("SELECT * FROM table_one;")
             assert isinstance(result, pd.DataFrame)
-            obj.delete_all_tables()
+            obj.drop_all_tables()
+
+    def test_query_table(
+        self,
+        sql_databases: list[MySQLDatabase],
+        table_one_config: DBObjectConfig,
+    ) -> None:
+        """Tests RelationalDatabase.execute_sql_query()"""
+        for obj in sql_databases:
+            obj.add_table("table_one", table_one_config)
+            result1 = obj.query_table("table_one")
+            assert isinstance(result1, pd.DataFrame)
+
+            obj.add_table("Table_one", table_one_config)
+            result2 = obj.query_table("Table_one")
+            assert isinstance(result2, pd.DataFrame)
+
+            obj.drop_all_tables()
 
 
 @pytest.mark.fast
@@ -263,30 +280,3 @@ class TestSQLUpdateRows:
 
             obj.drop_table("table_one")
             assert obj.get_table_names() == []
-
-    def test_update_table(
-        self,
-        sql_databases: list[MySQLDatabase],
-        table_one_config: DBObjectConfig,
-        table_one: pd.DataFrame,
-    ) -> None:
-        """Testing for RelationalDatabase.update_table()"""
-        for obj in sql_databases:
-            assert obj.get_table_names() == []
-
-            obj.update_table(table_one, table_one_config)
-            assert obj.get_table_names() == ["table_one"]
-            result1 = obj.query_table("table_one")
-            assert result1["pk_one_col"].to_list() == ["key1", "key2", "key3"]
-
-            obj.update_table(table_one, table_one_config)
-            assert obj.get_table_names() == ["table_one"]
-            result1 = obj.query_table("table_one")
-            assert result1["pk_one_col"].to_list() == ["key1", "key2", "key3"]
-
-            table_copy = table_one.copy()
-            table_copy["string_one_col"] = [1, 2, 3]
-            obj.update_table(table_copy, table_one_config)
-            result2 = obj.query_table("table_one")
-            assert result2["pk_one_col"].to_list() == ["key1", "key2", "key3"]
-            assert result2["string_one_col"].to_list() == ["1", "2", "3"]

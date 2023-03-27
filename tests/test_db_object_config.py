@@ -3,7 +3,7 @@ Testing for DBConfig.
 """
 from typing import Generator
 import pytest
-from schematic_db.db_config import (
+from schematic_db.db_config.db_config import (
     DBConfig,
     DBObjectConfig,
     DBAttributeConfig,
@@ -22,6 +22,17 @@ def fixture_pk_col1_attribute() -> Generator:
     Yields a DBAttributeConfig
     """
     att = DBAttributeConfig(name="pk_col1", datatype=DBDatatype.TEXT, required=True)
+    yield att
+
+
+@pytest.fixture(name="pk_col1b_attribute", scope="module")
+def fixture_pk_col1b_attribute() -> Generator:
+    """
+    Yields a DBAttributeConfig
+    """
+    att = DBAttributeConfig(
+        name="pk_col1", datatype=DBDatatype.TEXT, required=True, index=True
+    )
     yield att
 
 
@@ -44,8 +55,61 @@ def fixture_pk_col3_attribute() -> Generator:
 
 
 @pytest.mark.fast
+class TestDBForeignKey:  # pylint: disable=too-few-public-methods
+    """Testing for DBForeignKey"""
+
+    def test_get_attribute_dict(self) -> None:
+        """Testing for DBForeignKey.get_attribute_dict"""
+        obj = DBForeignKey(
+            name="test",
+            foreign_object_name="test_object",
+            foreign_attribute_name="test_name",
+        )
+        assert isinstance(obj, DBForeignKey)
+        assert obj.get_attribute_dict() == {
+            "name": "test",
+            "foreign_object_name": "test_object",
+            "foreign_attribute_name": "test_name",
+        }
+
+
+@pytest.mark.fast
 class TestDBObjectConfig:
     """Testing for DBObjectConfig"""
+
+    def test_is_equivalent(
+        self,
+        pk_col1_attribute: DBAttributeConfig,
+        pk_col1b_attribute: DBAttributeConfig,
+    ) -> None:
+        """Testing for DBObjectConfig.is_equivalent"""
+        obj1 = DBObjectConfig(
+            name="table",
+            attributes=[pk_col1_attribute],
+            primary_key="pk_col1",
+            foreign_keys=[],
+        )
+
+        obj2 = DBObjectConfig(
+            name="table",
+            attributes=[pk_col1_attribute],
+            primary_key="pk_col1",
+            foreign_keys=[],
+        )
+
+        obj3 = DBObjectConfig(
+            name="table",
+            attributes=[pk_col1b_attribute],
+            primary_key="pk_col1",
+            foreign_keys=[],
+        )
+
+        # obj1 and 2 are the same
+        assert obj1 == obj2
+        assert obj1.is_equivalent(obj2)
+
+        # obj1 and 3 are the same except the index
+        assert obj1 != obj3
 
     def test_get_foreign_key_dependencies(
         self, pk_col1_attribute: DBAttributeConfig
@@ -164,14 +228,13 @@ class TestDBObjectConfig:
 class TestDBConfig:
     """Testing for DBConfig"""
 
-    def test_get_reverse_dependencies(
+    def test_equality(
         self,
         pk_col1_attribute: DBAttributeConfig,
         pk_col2_attribute: DBAttributeConfig,
-        pk_col3_attribute: DBAttributeConfig,
     ) -> None:
-        """Testing for DBConfig.get_reverse_dependencies()"""
-        obj = DBConfig(
+        """Testing for DBConfig.__eq__"""
+        obj1 = DBConfig(
             [
                 DBObjectConfig(
                     name="table1",
@@ -185,32 +248,26 @@ class TestDBConfig:
                     primary_key="pk_col2",
                     foreign_keys=[],
                 ),
+            ]
+        )
+        obj2 = DBConfig(
+            [
                 DBObjectConfig(
-                    name="table3",
-                    attributes=[
-                        pk_col1_attribute,
-                        pk_col2_attribute,
-                        pk_col3_attribute,
-                    ],
-                    primary_key="pk_col3",
-                    foreign_keys=[
-                        DBForeignKey(
-                            name="pk_col1",
-                            foreign_object_name="table1",
-                            foreign_attribute_name="pk_col1",
-                        ),
-                        DBForeignKey(
-                            name="pk_col2",
-                            foreign_object_name="table2",
-                            foreign_attribute_name="pk_col2",
-                        ),
-                    ],
+                    name="table2",
+                    attributes=[pk_col2_attribute],
+                    primary_key="pk_col2",
+                    foreign_keys=[],
+                ),
+                DBObjectConfig(
+                    name="table1",
+                    attributes=[pk_col1_attribute],
+                    primary_key="pk_col1",
+                    foreign_keys=[],
                 ),
             ]
         )
-        assert obj.get_reverse_dependencies("table1") == ["table3"]
-        assert obj.get_reverse_dependencies("table2") == ["table3"]
-        assert obj.get_reverse_dependencies("table3") == []
+        assert obj1 == obj2
+        assert obj1.is_equivalent(obj2)
 
     def test_db_object_config_list_success(
         self, pk_col1_attribute: DBAttributeConfig, pk_col2_attribute: DBAttributeConfig

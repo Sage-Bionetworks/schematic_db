@@ -1,14 +1,9 @@
 """Functions that interact with the schematic API"""
 
 from dataclasses import dataclass
-import pickle
+from os import getenv
 import requests
-import networkx
 import pandas
-
-# Currently this is the url for the API when running locally.
-API_URL = "http://0.0.0.0:3001"
-API_SERVER = "v1"
 
 
 class SchematicAPIError(Exception):
@@ -31,7 +26,9 @@ class SchematicAPIError(Exception):
 
 
 def create_schematic_api_response(
-    endpoint_path: str, params: dict, timeout: int = 30
+    endpoint_path: str,
+    params: dict,
+    timeout: int = 30,
 ) -> requests.Response:
     """Performs a GET request on the schematic API
 
@@ -46,7 +43,8 @@ def create_schematic_api_response(
     Returns:
         requests.Response: The response from the API
     """
-    endpoint_url = f"{API_URL}/{API_SERVER}/{endpoint_path}"
+    api_url = getenv("API_URL", "https://schematic.api.sagebionetworks.org/v1/")
+    endpoint_url = f"{api_url}/{endpoint_path}"
     response = requests.get(endpoint_url, params=params, timeout=timeout)
     if response.status_code != 200:
         raise SchematicAPIError(endpoint_url, response.status_code, response.reason)
@@ -67,56 +65,6 @@ def find_class_specific_properties(schema_url: str, schema_class: str) -> list[s
     response = create_schematic_api_response(
         "explorer/find_class_specific_properties", params
     )
-    return response.json()
-
-
-def get_node_dependencies(
-    schema_url: str,
-    source_node: str,
-    return_display_names: bool = True,
-    return_schema_ordered: bool = True,
-) -> list[str]:
-    """Get the immediate dependencies that are related to a given source node
-
-    Args:
-        schema_url (str): Data Model URL
-        source_node (str): The node whose dependencies are needed
-        return_display_names (bool, optional): _description_. Defaults to True.
-        return_schema_ordered (bool, optional): _description_. Defaults to True.
-
-    Returns:
-        list[str]: List of nodes that are dependent on the source node.
-    """
-    params = {
-        "schema_url": schema_url,
-        "source_node": source_node,
-        "return_display_names": return_display_names,
-        "return_schema_ordered": return_schema_ordered,
-    }
-    response = create_schematic_api_response("explorer/get_node_dependencies", params)
-    return response.json()
-
-
-def get_node_range(
-    schema_url: str, node_label: str, return_display_names: bool = True
-) -> list[str]:
-    """Get all the valid values that are associated with a node label
-
-    Args:
-        schema_url (str): Data Model URL
-        node_label (str): Label/display name for the node to get values for
-        return_display_names (bool, optional): If true returns the display names of the nodes.
-            Defaults to True.
-
-    Returns:
-        list[str]: Valid values that are associated with a node label
-    """
-    params = {
-        "schema_url": schema_url,
-        "node_label": node_label,
-        "return_display_names": return_display_names,
-    }
-    response = create_schematic_api_response("explorer/get_node_range", params)
     return response.json()
 
 
@@ -159,23 +107,6 @@ def get_graph_by_edge_type(schema_url: str, relationship: str) -> list[tuple[str
     params = {"schema_url": schema_url, "relationship": relationship}
     response = create_schematic_api_response("schemas/get/graph_by_edge_type", params)
     return response.json()
-
-
-def get_schema(schema_url: str) -> networkx.MultiDiGraph:
-    """Return schema as a pickle file
-
-    Args:
-        schema_url (str): Data Model URL
-
-    Returns:
-        str: The path to the downloaded pickle file.
-    """
-    params = {"schema_url": schema_url}
-    response = create_schematic_api_response("schemas/get/schema", params)
-    schema_path = response.text
-    with open(schema_path, "rb") as file:
-        schema = pickle.load(file)
-    return schema
 
 
 @dataclass
@@ -264,32 +195,6 @@ def is_node_required(schema_url: str, node_label: str) -> bool:
 
     params = {"schema_url": schema_url, "node_display_name": node_label}
     response = create_schematic_api_response("schemas/is_node_required", params)
-    return response.json()
-
-
-def get_manifest_datatypes(
-    input_token: str, manifest_id: str, asset_view: str
-) -> dict[str, str]:
-    """Gets the datatypes for all  attributes in a manifest
-
-    Args:
-        input_token (str): Access token
-        manifest_id (str): The id of the manifest
-        asset_view (str): The id of the view listing all project data assets. For example,
-            for Synapse this would be the Synapse ID of the fileview listing all
-            data assets for a given project.(i.e. master_fileview in config.yml)
-
-    Returns:
-        dict[str, str]: A dict of attribute names and their datatype
-    """
-    params = {
-        "input_token": input_token,
-        "manifest_id": manifest_id,
-        "asset_view": asset_view,
-    }
-    response = create_schematic_api_response(
-        "get/datatype/manifest", params, timeout=120
-    )
     return response.json()
 
 

@@ -1,22 +1,12 @@
 """Represents a Postgres database."""
-from typing import Any
 import sqlalchemy as sa
 import sqlalchemy.dialects.postgresql as sa_postgres
 import pandas as pd
 import numpy as np
-from schematic_db.db_config import DBDatatype, DBAttributeConfig
-from .mysql import MySQLDatabase, MySQLConfig
-
-POSTGRES_DATATYPES = {
-    DBDatatype.TEXT: sa.VARCHAR,
-    DBDatatype.DATE: sa.Date,
-    DBDatatype.INT: sa.Integer,
-    DBDatatype.FLOAT: sa.Float,
-    DBDatatype.BOOLEAN: sa.Boolean,
-}
+from .sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
 
 
-class PostgresDatabase(MySQLDatabase):
+class PostgresDatabase(SQLAlchemyDatabase):
     """PostgresDatabase
     - Represents a Postgres database.
     - Implements the RelationalDatabase interface.
@@ -25,7 +15,7 @@ class PostgresDatabase(MySQLDatabase):
 
     def __init__(
         self,
-        config: MySQLConfig,
+        config: SQLConfig,
         verbose: bool = False,
     ):
         """Init
@@ -54,5 +44,6 @@ class PostgresDatabase(MySQLDatabase):
             with self.engine.connect().execution_options(autocommit=True) as conn:
                 conn.execute(statement)
 
-    def _get_datatype(self, attribute: DBAttributeConfig) -> Any:
-        POSTGRES_DATATYPES.get(attribute.datatype)
+    def query_table(self, table_name: str) -> pd.DataFrame:
+        query = f'SELECT * FROM "{table_name}"'
+        return self.execute_sql_query(query)

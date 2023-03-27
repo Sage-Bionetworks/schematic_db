@@ -6,7 +6,8 @@ import pytest
 import pandas as pd
 import numpy as np
 from yaml import safe_load
-from schematic_db.db_config import (
+import synapseclient as sc  # type: ignore
+from schematic_db.db_config.db_config import (
     DBConfig,
     DBObjectConfig,
     DBAttributeConfig,
@@ -14,19 +15,25 @@ from schematic_db.db_config import (
     DBForeignKey,
 )
 
-from schematic_db.query_store import QueryStore, SynapseQueryStore
-from schematic_db.rdb import MySQLDatabase, MySQLConfig
+from schematic_db.manifest_store.manifest_store import (
+    ManifestStore,
+    ManifestStoreConfig,
+)
+
+from schematic_db.query_store.query_store import QueryStore
+from schematic_db.query_store.synapse_query_store import SynapseQueryStore
+from schematic_db.rdb.sql_alchemy_database import SQLConfig
+from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.synapse_database import SynapseDatabase
-from schematic_db.rdb_queryer import RDBQueryer
-from schematic_db.synapse import Synapse, SynapseConfig
-from schematic_db.schema import Schema, SchemaConfig
+from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
+from schematic_db.synapse.synapse import Synapse, SynapseConfig
+from schematic_db.schema.schema import Schema, SchemaConfig
+from schematic_db.schema.database_config import DatabaseConfig
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(TESTS_DIR, "data")
-SECRETS_PATH = os.path.join(DATA_DIR, "local_secrets.yml")
-if not os.path.exists(SECRETS_PATH):
-    SECRETS_PATH = os.path.join(DATA_DIR, "secrets.yml")
+SECRETS_PATH = os.path.join(DATA_DIR, "secrets.yml")
 
 # files -----------------------------------------------------------------------
 
@@ -83,23 +90,10 @@ def fixture_test_schema_json_url() -> Generator:
     yield url
 
 
-@pytest.fixture(scope="session", name="test_schema_json_url2")
-def fixture_test_schema_json_url2() -> Generator:
-    """
-    Yields the url for the secondary test schema json.
-    This schema has display names that cna be used in a database.
-    """
-    url = (
-        "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/main/test_schema2.jsonld"
-    )
-    yield url
-
-
 @pytest.fixture(scope="session", name="mysql_config")
 def fixture_mysql_config(secrets_dict: dict) -> Generator:
     """Yields a MYSQlConfig object"""
-    yield MySQLConfig(
+    yield SQLConfig(
         username=secrets_dict["mysql"]["username"],
         password=secrets_dict["mysql"]["password"],
         host=secrets_dict["mysql"]["host"],
@@ -109,8 +103,8 @@ def fixture_mysql_config(secrets_dict: dict) -> Generator:
 
 @pytest.fixture(scope="session", name="postgres_config")
 def fixture_postgres_config(secrets_dict: dict) -> Generator:
-    """Yields a MYSQlConfig object"""
-    yield MySQLConfig(
+    """Yields a SQlConfig object"""
+    yield SQLConfig(
         username=secrets_dict["postgres"]["username"],
         password=secrets_dict["postgres"]["password"],
         host=secrets_dict["postgres"]["host"],
@@ -118,24 +112,50 @@ def fixture_postgres_config(secrets_dict: dict) -> Generator:
     )
 
 
+@pytest.fixture(scope="session", name="synapse_config")
+def fixture_synapse_config(secrets_dict: dict[str, Any]) -> Generator:
+    """
+    Yields a Synapse Config
+    """
+    yield SynapseConfig(
+        project_id=secrets_dict["synapse"]["project_id"],
+        username=secrets_dict["synapse"]["username"],
+        auth_token=secrets_dict["synapse"]["auth_token"],
+    )
+
+
 @pytest.fixture(scope="session", name="mysql_database")
-def fixture_mysql_database(mysql_config: MySQLConfig) -> Generator:
-    """
-    Yields a MYSQL object
-    """
+def fixture_mysql_database(mysql_config: SQLConfig) -> Generator:
+    """Yields a SQlConfig object"""
     obj = MySQLDatabase(mysql_config)
     yield obj
     obj.drop_database()
 
 
 @pytest.fixture(scope="session", name="postgres_database")
-def fixture_postgres_database(postgres_config: MySQLConfig) -> Generator:
+def fixture_postgres_database(postgres_config: SQLConfig) -> Generator:
     """
     Yields a Postgres object
     """
     obj = PostgresDatabase(postgres_config)
     yield obj
     obj.drop_database()
+
+
+@pytest.fixture(scope="session", name="synapse_object")
+def fixture_synapse_object(synapse_config: SynapseConfig) -> Generator:
+    """
+    Yields a Synapse object
+    """
+    yield Synapse(synapse_config)
+
+
+@pytest.fixture(scope="session", name="synapse_database")
+def fixture_synapse_database(synapse_config: SynapseConfig) -> Generator:
+    """
+    Yields a SynapseDatabase
+    """
+    yield SynapseDatabase(synapse_config)
 
 
 @pytest.fixture(scope="session", name="test_synapse_project_id")
@@ -150,8 +170,8 @@ def fixture_test_synapse_asset_view_id() -> Generator:
     yield "syn47997084"
 
 
-@pytest.fixture(scope="session", name="test_schema")
-def fixture_test_schema(
+@pytest.fixture(scope="session", name="test_schema1")
+def fixture_test_schema1(
     test_synapse_project_id: str,
     test_synapse_asset_view_id: str,
     secrets_dict: dict,
@@ -173,20 +193,62 @@ def fixture_test_schema2(
     test_synapse_project_id: str,
     test_synapse_asset_view_id: str,
     secrets_dict: dict,
-    test_schema_json_url2: str,
+    test_schema_json_url: str,
 ) -> Generator:
-    """
-    Yields a Schema using the database specific test schema where display names are intended to be
-     used
-    """
+    """Yields a Schema using the database specific test schema"""
     config = SchemaConfig(
-        test_schema_json_url2,
+        test_schema_json_url,
         test_synapse_project_id,
         test_synapse_asset_view_id,
         secrets_dict["synapse"]["auth_token"],
     )
-    obj = Schema(config)
+    database_config = DatabaseConfig(
+        [
+            {
+                "name": "Patient",
+                "primary_key": "id",
+                "attributes": [
+                    {
+                        "attribute_name": "sex",
+                        "datatype": "str",
+                        "required": True,
+                        "index": True,
+                    },
+                ],
+            },
+            {
+                "name": "BulkRnaSeq",
+                "primary_key": "id",
+                "foreign_keys": [
+                    {
+                        "attribute_name": "biospecimenId",
+                        "foreign_object_name": "Biospecimen",
+                        "foreign_attribute_name": "id",
+                    }
+                ],
+            },
+        ]
+    )
+    obj = Schema(config, database_config=database_config)
     yield obj
+
+
+@pytest.fixture(scope="session", name="manifest_store")
+def fixture_manifest_store(
+    test_synapse_project_id: str,
+    test_synapse_asset_view_id: str,
+    secrets_dict: dict,
+    test_schema_json_url: str,
+) -> Generator:
+    """Yields a ManifestStore object"""
+    yield ManifestStore(
+        ManifestStoreConfig(
+            test_schema_json_url,
+            test_synapse_project_id,
+            test_synapse_asset_view_id,
+            secrets_dict["synapse"]["auth_token"],
+        )
+    )
 
 
 @pytest.fixture(scope="session", name="synapse_test_query_store")
@@ -207,36 +269,6 @@ def fixture_synapse_test_query_store(secrets_dict: dict) -> Generator:
 # other test objects ----------------------------------------------------------
 # objects that don't have a test schema or manifests, but interact with
 # config objects and pandas dataframes
-
-
-@pytest.fixture(scope="session", name="synapse_database_project")
-def fixture_synapse_project(secrets_dict: dict[str, Any]) -> Generator:
-    """
-    Yields a Synapse object used for testing databases
-    """
-    obj = Synapse(
-        SynapseConfig(
-            project_id="syn33832432",
-            username=secrets_dict["synapse"]["username"],
-            auth_token=secrets_dict["synapse"]["auth_token"],
-        )
-    )
-    yield obj
-
-
-@pytest.fixture(scope="session", name="synapse_database")
-def fixture_synapse_database(secrets_dict: dict[str, Any]) -> Generator:
-    """
-    Yields a SynapseDatabase object used for testing databases
-    """
-    obj = SynapseDatabase(
-        SynapseConfig(
-            project_id="syn33832432",
-            username=secrets_dict["synapse"]["username"],
-            auth_token=secrets_dict["synapse"]["auth_token"],
-        )
-    )
-    yield obj
 
 
 @pytest.fixture(scope="module", name="rdb_queryer_mysql")
@@ -280,10 +312,16 @@ def fixture_table_one_config() -> Generator:
         name="table_one",
         attributes=[
             DBAttributeConfig(
-                name="pk_one_col", datatype=DBDatatype.TEXT, required=True
+                name="pk_one_col",
+                datatype=DBDatatype.TEXT,
+                required=True,
+                index=True,
             ),
             DBAttributeConfig(
-                name="string_one_col", datatype=DBDatatype.TEXT, required=False
+                name="string_one_col",
+                datatype=DBDatatype.TEXT,
+                required=False,
+                index=True,
             ),
             DBAttributeConfig(
                 name="int_one_col", datatype=DBDatatype.INT, required=False
@@ -304,6 +342,19 @@ def fixture_table_one_config() -> Generator:
     yield table_config
 
 
+@pytest.fixture(name="table_one_columns", scope="session")
+def fixture_table_one_columns() -> Generator:
+    """Yields a list of synapse columns for table one"""
+    yield [
+        sc.Column(name="pk_one_col", columnType="LARGETEXT"),
+        sc.Column(name="string_one_col", columnType="LARGETEXT"),
+        sc.Column(name="int_one_col", columnType="INTEGER"),
+        sc.Column(name="double_one_col", columnType="DOUBLE"),
+        sc.Column(name="date_one_col", columnType="DATE"),
+        sc.Column(name="bool_one_col", columnType="BOOLEAN"),
+    ]
+
+
 @pytest.fixture(scope="session")
 def table_two() -> Generator:
     """
@@ -316,6 +367,15 @@ def table_two() -> Generator:
         }
     )
     yield dataframe
+
+
+@pytest.fixture(name="table_two_columns", scope="session")
+def fixture_table_two_columns() -> Generator:
+    """Yields a list of synapse columns for table two"""
+    yield [
+        sc.Column(name="pk_two_col", columnType="LARGETEXT"),
+        sc.Column(name="string_two_col", columnType="LARGETEXT"),
+    ]
 
 
 @pytest.fixture(scope="session")
@@ -426,6 +486,17 @@ def fixture_table_three_config() -> Generator:
         ],
     )
     yield table_config
+
+
+@pytest.fixture(name="table_three_columns", scope="session")
+def fixture_table_three_columns() -> Generator:
+    """Yields a list of synapse columns for table three"""
+    yield [
+        sc.Column(name="pk_zero_col", columnType="LARGETEXT"),
+        sc.Column(name="pk_one_col", columnType="LARGETEXT"),
+        sc.Column(name="pk_two_col", columnType="LARGETEXT"),
+        sc.Column(name="string_three_col", columnType="LARGETEXT"),
+    ]
 
 
 @pytest.fixture(scope="session")

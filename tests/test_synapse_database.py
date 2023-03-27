@@ -3,6 +3,7 @@ from typing import Generator
 import pytest
 import pandas as pd
 import numpy as np
+import synapseclient as sc  # type: ignore
 from schematic_db.rdb.synapse_database import (
     SynapseDatabase,
     SynapseDatabaseDropTableError,
@@ -22,17 +23,20 @@ def fixture_synapse_no_extra_tables(synapse_database: SynapseDatabase) -> Genera
 
 
 @pytest.fixture(name="synapse_with_empty_tables")
-def fixture_synapse_with_empty_tables(
+def fixture_synapse_with_empty_tables(  # pylint: disable=too-many-arguments
     synapse_database: SynapseDatabase,
     table_one_config: DBObjectConfig,
     table_two_config: DBObjectConfig,
     table_three_config: DBObjectConfig,
+    table_one_columns: list[sc.Column],
+    table_two_columns: list[sc.Column],
+    table_three_columns: list[sc.Column],
 ) -> Generator:
     """Yields a SynapseDatabase object with tables added"""
     obj = synapse_database
-    obj.synapse.add_table("table_one", table_one_config)
-    obj.synapse.add_table("table_two", table_two_config)
-    obj.synapse.add_table("table_three", table_three_config)
+    obj.synapse.add_table("table_one", table_one_columns)
+    obj.synapse.add_table("table_two", table_two_columns)
+    obj.synapse.add_table("table_three", table_three_columns)
     obj.annotate_table("table_one", table_one_config)
     obj.annotate_table("table_two", table_two_config)
     obj.annotate_table("table_three", table_three_config)
@@ -128,54 +132,20 @@ class TestSynapseDatabase:
         annos3 = obj.synapse.get_entity_annotations(synapse_id3)
         assert not list(annos3.keys())
 
-        obj.drop_table("table_one")
-        annos1b = obj.synapse.get_entity_annotations(synapse_id1)
-        assert not list(annos1b.keys())
-
-    def test_update_table(
-        self,
-        synapse_database: SynapseDatabase,
-        table_one_config: DBObjectConfig,
-        table_one: pd.DataFrame,
-    ) -> None:
-        """Testing for SynapseDatabase.update_table()"""
-        obj = synapse_database
-        table_one_keys = table_one[table_one_config.primary_key].to_list()
-        assert obj.synapse.get_table_names() == []
-
-        obj.update_table(table_one, table_one_config)
-        result1 = obj.query_table("table_one")
-        assert result1[table_one_config.primary_key].to_list() == table_one_keys
-
-        obj.drop_table("table_one")
-        assert obj.synapse.get_table_column_names("table_one") == []
-
-        obj.update_table(table_one, table_one_config)
-        result3 = obj.query_table("table_one")
-        assert result3[table_one_config.primary_key].to_list() == table_one_keys
-
-        table_one_x = table_one.copy()
-        table_one_x.loc[2] = ["key3", "c", np.NaN, np.NaN, np.NaN, np.NaN]
-        table_one_x.loc[3] = ["key_x", "d", np.NaN, np.NaN, np.NaN, np.NaN]
-        obj.update_table(table_one_x, table_one_config)
-        result4 = obj.query_table("table_one")
-        assert result4[table_one_config.primary_key].to_list() == table_one_keys + [
-            "key_x"
-        ]
-        assert result4["string_one_col"].to_list() == ["a", "b", "c", "d"]
-
-    def test_annotate_table(
+    def test_annotate_table(  # pylint: disable=too-many-arguments
         self,
         synapse_database: SynapseDatabase,
         table_one_config: DBObjectConfig,
         table_three_config: DBObjectConfig,
+        table_one_columns: list[sc.Column],
+        table_three_columns: list[sc.Column],
     ) -> None:
         """Testing for SynapseDatabase.annotate_table()"""
         obj = synapse_database
         assert obj.get_table_names() == []
 
-        obj.synapse.add_table("table_one", table_one_config)
-        obj.synapse.add_table("table_three", table_three_config)
+        obj.synapse.add_table("table_one", table_one_columns)
+        obj.synapse.add_table("table_three", table_three_columns)
 
         synapse_id1 = obj.synapse.get_synapse_id_from_table_name("table_one")
         annotations = obj.synapse.get_entity_annotations(synapse_id1)
