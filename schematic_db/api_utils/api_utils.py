@@ -44,6 +44,10 @@ def create_schematic_api_response(
         requests.Response: The response from the API
     """
     api_url = getenv("API_URL", "https://schematic.api.sagebionetworks.org/v1/")
+    import logging
+    logging.warning(api_url)
+    api_url = getenv("API_URL")
+    logging.warning(api_url)
     endpoint_url = f"{api_url}/{endpoint_path}"
     response = requests.get(endpoint_url, params=params, timeout=timeout)
     if response.status_code != 200:
