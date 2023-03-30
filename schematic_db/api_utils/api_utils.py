@@ -2,9 +2,10 @@
 
 from dataclasses import dataclass
 from os import getenv
+import logging
 import requests
 import pandas
-import logging
+
 
 
 class SchematicAPIError(Exception):

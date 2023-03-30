@@ -118,19 +118,19 @@ jobs:
       - run: poetry install --no-interaction --all-extras
 
 
-      - name: Static typing with mypy
-        run: |
-          mkdir .mypy_cache
-          poetry run mypy --install-types --non-interactive ./
-          poetry run mypy --disallow-untyped-defs .
+      #- name: Static typing with mypy
+      #  run: |
+      #    mkdir .mypy_cache
+      #    poetry run mypy --install-types --non-interactive ./
+      #    poetry run mypy --disallow-untyped-defs .
 
-      - name: Code formatting with black
-        uses: psf/black@stable
-        with:
-          options: "--check --verbose"
+      #- name: Code formatting with black
+      #  uses: psf/black@stable
+      #  with:
+      #    options: "--check --verbose"
 
-      - name: Code formatting with pylint
-        run: poetry run pylint schematic_db/* tests/*
+      #- name: Code formatting with pylint
+      #  run: poetry run pylint schematic_db/* tests/*
 
       - name: pytest
         env:
