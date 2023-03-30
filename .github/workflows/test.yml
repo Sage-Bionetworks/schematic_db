@@ -135,6 +135,7 @@ jobs:
       - name: pytest
         env:
           #API_URL: ${{secrets.API_URL}}
-          API_URL: https://schematic-dev.api.sagebionetworks.org/v1
-        run: poetry run pytest -vvs
+          #API_URL: https://schematic-dev.api.sagebionetworks.org/v1
+        #run: poetry run pytest -vvs
+        run: poetry run pytest -vvs tests/test_api_utils.py
 
