@@ -135,5 +135,5 @@ jobs:
       - name: pytest
         env:
           API_URL: ${{secrets.API_URL}}
-        run: poetry run pytest -vvs tests/test_api_utils.py::TestAPIUtils::test_get_manifest
+        run: poetry run pytest -vvs
 
