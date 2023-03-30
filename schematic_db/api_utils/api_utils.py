@@ -6,7 +6,6 @@ import requests
 import pandas
 
 
-
 class SchematicAPIError(Exception):
     """When schematic API response status code is anything other than 200"""
 
