@@ -118,24 +118,23 @@ jobs:
       - run: poetry install --no-interaction --all-extras
 
 
-      #- name: Static typing with mypy
-      #  run: |
-      #    mkdir .mypy_cache
-      #    poetry run mypy --install-types --non-interactive ./
-      #    poetry run mypy --disallow-untyped-defs .
+      - name: Static typing with mypy
+        run: |
+          mkdir .mypy_cache
+          poetry run mypy --install-types --non-interactive ./
+          poetry run mypy --disallow-untyped-defs .
 
-      #- name: Code formatting with black
-      #  uses: psf/black@stable
-      #  with:
-      #    options: "--check --verbose"
+      - name: Code formatting with black
+        uses: psf/black@stable
+        with:
+          options: "--check --verbose"
 
-      #- name: Code formatting with pylint
-      #  run: poetry run pylint schematic_db/* tests/*
+      - name: Code formatting with pylint
+        run: poetry run pylint schematic_db/* tests/*
 
       - name: pytest
         env:
           API_URL: ${{secrets.API_URL}}
-          #API_URL: https://schematic-dev.api.sagebionetworks.org/v1
-        #run: poetry run pytest -vvs
+        run: poetry run pytest -vvs
         run: poetry run pytest -vvs tests/test_api_utils.py::TestAPIUtils::test_get_manifest
 
