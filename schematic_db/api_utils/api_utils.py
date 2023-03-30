@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from os import getenv
 import requests
 import pandas
+import logging
 
 
 class SchematicAPIError(Exception):
@@ -43,6 +44,7 @@ def create_schematic_api_response(
     Returns:
         requests.Response: The response from the API
     """
+    logging.warning(getenv("API_URL"))
     assert getenv("API_URL") == "https://schematic-dev.api.sagebionetworks.org/v1"
     api_url = getenv("API_URL", "https://schematic-dev.api.sagebionetworks.org/v1")
     endpoint_url = f"{api_url}/{endpoint_path}"
