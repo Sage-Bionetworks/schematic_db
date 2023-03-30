@@ -43,7 +43,7 @@ def create_schematic_api_response(
     Returns:
         requests.Response: The response from the API
     """
-    #assert getenv("API_URL") == "https://schematic-dev.api.sagebionetworks.org/v1"
+    # assert getenv("API_URL") == "https://schematic-dev.api.sagebionetworks.org/v1"
     api_url = getenv("API_URL", "https://schematic-dev.api.sagebionetworks.org/v1")
     endpoint_url = f"{api_url}/{endpoint_path}"
     response = requests.get(endpoint_url, params=params, timeout=timeout)
