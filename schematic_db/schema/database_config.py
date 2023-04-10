@@ -2,26 +2,30 @@
 A config for database specific items
 """
 from typing import Optional, Any
-from schematic_db.db_config.db_config import DBForeignKey, DBAttributeConfig, DBDatatype
+from schematic_db.db_schema.db_schema import (
+    ForeignKeySchema,
+    ColumnSchema,
+    ColumnDatatype,
+)
 
 
 DATATYPES = {
-    "str": DBDatatype.TEXT,
-    "float": DBDatatype.FLOAT,
-    "int": DBDatatype.INT,
-    "date": DBDatatype.DATE,
+    "str": ColumnDatatype.TEXT,
+    "float": ColumnDatatype.FLOAT,
+    "int": ColumnDatatype.INT,
+    "date": ColumnDatatype.DATE,
 }
 
 
 class DatabaseObjectConfig:  # pylint: disable=too-few-public-methods
-    """A config for database specific items for one object"""
+    """A config for database specific items for one table"""
 
     def __init__(
         self,
         name: str,
         primary_key: Optional[str] = None,
         foreign_keys: Optional[list[dict[str, str]]] = None,
-        attributes: Optional[list[dict[str, Any]]] = None,
+        columns: Optional[list[dict[str, Any]]] = None,
     ) -> None:
         """
         Init
@@ -32,97 +36,93 @@ class DatabaseObjectConfig:  # pylint: disable=too-few-public-methods
             self.foreign_keys = None
         else:
             self.foreign_keys = [
-                DBForeignKey(
-                    name=key["attribute_name"],
-                    foreign_object_name=key["foreign_object_name"],
-                    foreign_attribute_name=key["foreign_attribute_name"],
+                ForeignKeySchema(
+                    name=key["column_name"],
+                    foreign_table_name=key["foreign_table_name"],
+                    foreign_column_name=key["foreign_column_name"],
                 )
                 for key in foreign_keys
             ]
-        if attributes is None:
-            self.attributes = None
+        if columns is None:
+            self.columns = None
         else:
-            self.attributes = [
-                DBAttributeConfig(
-                    name=attribute["attribute_name"],
-                    datatype=DATATYPES[attribute["datatype"]],
-                    required=attribute["required"],
-                    index=attribute["index"],
+            self.columns = [
+                ColumnSchema(
+                    name=column["column_name"],
+                    datatype=DATATYPES[column["datatype"]],
+                    required=column["required"],
+                    index=column["index"],
                 )
-                for attribute in attributes
+                for column in columns
             ]
 
 
 class DatabaseConfig:
     """A config for database specific items"""
 
-    def __init__(self, objects: list[dict[str, Any]]) -> None:
+    def __init__(self, tables: list[dict[str, Any]]) -> None:
         """
         Init
         """
-        self.objects: list[DatabaseObjectConfig] = [
-            DatabaseObjectConfig(**obj) for obj in objects
+        self.tables: list[DatabaseObjectConfig] = [
+            DatabaseObjectConfig(**obj) for obj in tables
         ]
 
-    def get_primary_key(self, object_name: str) -> Optional[str]:
-        """Gets the primary key for an object
+    def get_primary_key(self, table_name: str) -> Optional[str]:
+        """Gets the primary key for an table
 
         Args:
-            object_name (str): The name of the object
+            table_name (str): The name of the table
 
         Returns:
             Optional[str]: The primary key
         """
-        obj = self._get_object_by_name(object_name)
+        obj = self._get_table_by_name(table_name)
         return None if obj is None else obj.primary_key
 
-    def get_foreign_keys(self, object_name: str) -> Optional[list[DBForeignKey]]:
-        """Gets the foreign keys for an object
+    def get_foreign_keys(self, table_name: str) -> Optional[list[ForeignKeySchema]]:
+        """Gets the foreign keys for an table
 
         Args:
-            object_name (str): The name of the object
+            table_name (str): The name of the table
 
         Returns:
-            Optional[list[DBForeignKey]]: The foreign keys
+            Optional[list[ForeignKeySchema]]: The foreign keys
         """
-        obj = self._get_object_by_name(object_name)
+        obj = self._get_table_by_name(table_name)
         return None if obj is None else obj.foreign_keys
 
-    def get_attributes(self, object_name: str) -> Optional[list[DBAttributeConfig]]:
-        """Gets the attributes for an object
+    def get_columns(self, table_name: str) -> Optional[list[ColumnSchema]]:
+        """Gets the columns for an table
 
         Args:
-            object_name (str): The name of the object
+            table_name (str): The name of the table
 
         Returns:
-            Optional[list[DBAttributeConfig]]: The list of attributes
+            Optional[list[ColumnSchema]]: The list of columns
         """
-        obj = self._get_object_by_name(object_name)
-        return None if obj is None else obj.attributes
+        obj = self._get_table_by_name(table_name)
+        return None if obj is None else obj.columns
 
-    def get_attribute(
-        self, object_name: str, attribute_name: str
-    ) -> Optional[DBAttributeConfig]:
-        """Gets the attributes for an object
+    def get_column(self, table_name: str, column_name: str) -> Optional[ColumnSchema]:
+        """Gets the columns for an table
 
         Args:
-            object_name (str): The name of the object
+            table_name (str): The name of the table
 
         Returns:
-            Optional[list[DBAttributeConfig]]: The list of attributes
+            Optional[list[ColumnSchema]]: The list of columns
         """
-        attributes = self.get_attributes(object_name)
-        if attributes is None:
+        columns = self.get_columns(table_name)
+        if columns is None:
             return None
-        attributes = [
-            attribute for attribute in attributes if attribute.name == attribute_name
-        ]
-        if len(attributes) == 0:
+        columns = [column for column in columns if column.name == column_name]
+        if len(columns) == 0:
             return None
-        return attributes[0]
+        return columns[0]
 
-    def _get_object_by_name(self, object_name: str) -> Optional[DatabaseObjectConfig]:
-        objects = [obj for obj in self.objects if obj.name == object_name]
-        if len(objects) == 0:
+    def _get_table_by_name(self, table_name: str) -> Optional[DatabaseObjectConfig]:
+        tables = [obj for obj in self.tables if obj.name == table_name]
+        if len(tables) == 0:
             return None
-        return objects[0]
+        return tables[0]

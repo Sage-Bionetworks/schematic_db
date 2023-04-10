@@ -2,16 +2,17 @@
 from typing import Any
 from dataclasses import dataclass
 import pandas as pd
+import numpy as np
 import sqlalchemy as sa
 import sqlalchemy_utils.functions
 from sqlalchemy.inspection import inspect
-from schematic_db.db_config.db_config import (
-    DBObjectConfig,
-    DBDatatype,
-    DBAttributeConfig,
-    DBForeignKey,
+from schematic_db.db_schema.db_schema import (
+    TableSchema,
+    ColumnDatatype,
+    ColumnSchema,
+    ForeignKeySchema,
 )
-from .rdb import RelationalDatabase
+from .rdb import RelationalDatabase, UpsertDatabaseError
 
 
 class DataframeKeyError(Exception):
@@ -55,54 +56,56 @@ def create_foreign_key_column(
     return col
 
 
-def create_foreign_key_configs(table_schema: sa.sql.schema.Table) -> list[DBForeignKey]:
+def create_foreign_key_configs(
+    table_schema: sa.sql.schema.Table,
+) -> list[ForeignKeySchema]:
     """Creates a list of foreign key configs from a sqlalchemy table schema
 
     Args:
         table_schema (sa.sql.schema.Table): A sqlalchemy table schema
 
     Returns:
-        list[DBForeignKey]: A list of foreign key configs
+        list[ForeignKeySchema]: A list of foreign key configs
     """
     foreign_keys = inspect(table_schema).foreign_keys
     return [
-        DBForeignKey(
+        ForeignKeySchema(
             name=key.parent.name,
-            foreign_object_name=key.column.table.name,
-            foreign_attribute_name=key.column.name,
+            foreign_table_name=key.column.table.name,
+            foreign_column_name=key.column.name,
         )
         for key in foreign_keys
     ]
 
 
-def create_attribute_configs(
+def create_column_schemas(
     table_schema: sa.sql.schema.Table, indices: list[str]
-) -> list[DBAttributeConfig]:
-    """Creates a list of attribute configs from a sqlalchemy table schema
+) -> list[ColumnSchema]:
+    """Creates a list of column schemas from a sqlalchemy table schema
 
     Args:
         table_schema (sa.sql.schema.Table):A sqlalchemy table schema
 
     Returns:
-        list[DBAttributeConfig]: A list of foreign key configs
+        list[ColumnSchema]: A list of column schemas
     """
     datatypes = {
-        sa.String: DBDatatype.TEXT,
-        sa.VARCHAR: DBDatatype.TEXT,
-        sa.Date: DBDatatype.DATE,
-        sa.Integer: DBDatatype.INT,
-        sa.Float: DBDatatype.FLOAT,
-        sa.Boolean: DBDatatype.BOOLEAN,
+        sa.String: ColumnDatatype.TEXT,
+        sa.VARCHAR: ColumnDatatype.TEXT,
+        sa.Date: ColumnDatatype.DATE,
+        sa.Integer: ColumnDatatype.INT,
+        sa.Float: ColumnDatatype.FLOAT,
+        sa.Boolean: ColumnDatatype.BOOLEAN,
     }
     columns = table_schema.c
     return [
-        DBAttributeConfig(
-            name=col.name,
-            datatype=datatypes[type(col.type)],
-            required=not col.nullable,
-            index=col.name in indices,
+        ColumnSchema(
+            name=column.name,
+            datatype=datatypes[type(column.type)],
+            required=not column.nullable,
+            index=column.name in indices,
         )
-        for col in columns
+        for column in columns
     ]
 
 
@@ -168,23 +171,23 @@ class SQLAlchemyDatabase(
         table = pd.DataFrame(result)
         return table
 
-    def get_table_config(self, table_name: str) -> DBObjectConfig:
-        """Creates a table config from a sqlalchemy table schema
+    def get_table_schema(self, table_name: str) -> TableSchema:
+        """Creates a table schema from a sqlalchemy table schema
 
         Args:
             table_name (str): The name of the table
 
         Returns:
-            DBObjectConfig: A config for the table
+            TableSchema: A schema for the table
         """
         table_schema = self.metadata.tables[table_name]
         primary_key = inspect(table_schema).primary_key.columns.values()[0].name
         indices = self._get_column_indices(table_name)
-        return DBObjectConfig(
+        return TableSchema(
             name=table_name,
             primary_key=primary_key,
             foreign_keys=create_foreign_key_configs(table_schema),
-            attributes=create_attribute_configs(table_schema, indices),
+            columns=create_column_schemas(table_schema, indices),
         )
 
     def drop_table(self, table_name: str) -> None:
@@ -204,14 +207,14 @@ class SQLAlchemyDatabase(
         inspector = sa.inspect(self.engine)
         return sorted(inspector.get_table_names())
 
-    def add_table(self, table_name: str, table_config: DBObjectConfig) -> None:
+    def add_table(self, table_name: str, table_schema: TableSchema) -> None:
         """Adds a table to the schema
 
         Args:
             table_name (str): The name of the table
-            table_config (DBObjectConfig): The config for the table to be added
+            table_schema (TableSchema): The schema for the table to be added
         """
-        columns = self._create_columns(table_config)
+        columns = self._create_columns(table_schema)
         sa.Table(table_name, self.metadata, *columns)
         self.metadata.create_all(self.engine)
 
@@ -224,43 +227,40 @@ class SQLAlchemyDatabase(
             result = conn.execute(statement)
         return result
 
-    def _create_columns(self, table_config: DBObjectConfig) -> list[sa.Column]:
+    def _create_columns(self, table_schema: TableSchema) -> list[sa.Column]:
         columns = [
-            self._create_column(att, table_config) for att in table_config.attributes
+            self._create_column(att, table_schema) for att in table_schema.columns
         ]
-        columns.append(sa.PrimaryKeyConstraint(table_config.primary_key))
+        columns.append(sa.PrimaryKeyConstraint(table_schema.primary_key))
         return columns
 
     def _create_column(
-        self, attribute: DBAttributeConfig, table_config: DBObjectConfig
+        self, column_schema: ColumnSchema, table_config: TableSchema
     ) -> sa.Column:
-        """
         sql_datatype = self._get_datatype(
-            attribute, table_config.primary_key, table_config.get_foreign_key_names()
-        )
-        """
-        sql_datatype = self._get_datatype(
-            attribute, table_config.primary_key, table_config.get_foreign_key_names()
+            column_schema,
+            table_config.primary_key,
+            table_config.get_foreign_key_names(),
         )
 
         # Add foreign key constraints if needed
-        if attribute.name in table_config.get_foreign_key_names():
-            key = table_config.get_foreign_key_by_name(attribute.name)
+        if column_schema.name in table_config.get_foreign_key_names():
+            key = table_config.get_foreign_key_by_name(column_schema.name)
             return create_foreign_key_column(
-                attribute.name,
+                column_schema.name,
                 sql_datatype,
-                key.foreign_object_name,
-                key.foreign_attribute_name,
+                key.foreign_table_name,
+                key.foreign_column_name,
             )
 
         return sa.Column(
-            attribute.name,
+            column_schema.name,
             sql_datatype,
-            # column is nullable if attribute is not required
-            nullable=not attribute.required,
-            index=attribute.index,
-            # column is unique if attribute is a primary key
-            unique=attribute.name == table_config.primary_key,
+            # column is nullable if not required
+            nullable=not column_schema.required,
+            index=column_schema.index,
+            # column is unique if it is a primary key
+            unique=column_schema.name == table_config.primary_key,
         )
 
     def _get_column_indices(self, table_name: str) -> list[str]:
@@ -269,19 +269,37 @@ class SQLAlchemyDatabase(
 
     def _get_datatype(
         self,
-        attribute: DBAttributeConfig,
+        column_schema: ColumnSchema,
         primary_key: str,  # pylint: disable=unused-argument
         foreign_keys: list[str],  # pylint: disable=unused-argument
     ) -> Any:
         """Some _get_datatype methods depend on primary and foreign"""
         datatypes = {
-            DBDatatype.TEXT: sa.VARCHAR,
-            DBDatatype.DATE: sa.Date,
-            DBDatatype.INT: sa.Integer,
-            DBDatatype.FLOAT: sa.Float,
-            DBDatatype.BOOLEAN: sa.Boolean,
+            ColumnDatatype.TEXT: sa.VARCHAR,
+            ColumnDatatype.DATE: sa.Date,
+            ColumnDatatype.INT: sa.Integer,
+            ColumnDatatype.FLOAT: sa.Float,
+            ColumnDatatype.BOOLEAN: sa.Boolean,
         }
-        return datatypes[attribute.datatype]
+        return datatypes[column_schema.datatype]
 
     def upsert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
-        """No default implementation"""
+        """Inserts and/or updates the rows of the table
+
+        Args:
+            table_name (str): _The name of the table to be upserted
+            data (pd.DataFrame): The rows to be upserted
+        """
+        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        data = data.replace({np.nan: None})
+        rows = data.to_dict("records")
+        for row in rows:
+            try:
+                self._upsert_table_row(row, table, table_name)
+            except (sa.exc.OperationalError, sa.exc.IntegrityError) as exc:
+                raise UpsertDatabaseError(table_name) from exc
+
+    def _upsert_table_row(
+        self, row: dict[str, Any], table: sa.table, table_name
+    ) -> None:
+        pass

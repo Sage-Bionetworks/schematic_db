@@ -1,41 +1,40 @@
 """Schema class"""
+# pylint: disable=duplicate-code
 
 from typing import Optional
-from dataclasses import dataclass
 import warnings
-
-from schematic_db.db_config.db_config import (
-    DBConfig,
-    DBObjectConfig,
-    DBForeignKey,
-    DBAttributeConfig,
-    DBDatatype,
+from pydantic.dataclasses import dataclass
+from pydantic import validator
+import validators
+from schematic_db.db_schema.db_schema import (
+    DatabaseSchema,
+    TableSchema,
+    ForeignKeySchema,
+    ColumnSchema,
+    ColumnDatatype,
 )
-
 from schematic_db.api_utils.api_utils import (
     find_class_specific_properties,
     get_property_label_from_display_name,
     is_node_required,
     get_node_validation_rules,
 )
-
 from schematic_db.schema_graph.schema_graph import SchemaGraph
-
 from .database_config import DatabaseConfig
 
 
 SCHEMATIC_TYPE_DATATYPES = {
-    "str": DBDatatype.TEXT,
-    "float": DBDatatype.FLOAT,
-    "num": DBDatatype.FLOAT,
-    "int": DBDatatype.INT,
-    "date": DBDatatype.DATE,
+    "str": ColumnDatatype.TEXT,
+    "float": ColumnDatatype.FLOAT,
+    "num": ColumnDatatype.FLOAT,
+    "int": ColumnDatatype.INT,
+    "date": ColumnDatatype.DATE,
 }
 
 
-class NoAttributesWarning(Warning):
+class NoColumnsWarning(Warning):
     """
-    Occurs when a database object has no attributes returned from find_class_specific_properties().
+    Occurs when a database table has no columns returned from find_class_specific_properties().
     """
 
     def __init__(self, message: str) -> None:
@@ -44,47 +43,58 @@ class NoAttributesWarning(Warning):
 
 
 class MoreThanOneTypeRule(Exception):
-    """Raised when an attribute has more than one validation type rule"""
+    """Raised when an column has more than one validation type rule"""
 
     def __init__(
         self,
-        attribute_name: str,
+        column_name: str,
         type_rules: list[str],
     ):
         self.message = "Attribute has more than one validation type rule"
-        self.attribute_name = attribute_name
+        self.column_name = column_name
         self.type_rules = type_rules
         super().__init__(self.message)
 
     def __str__(self) -> str:
         return (
-            f"{self.message}; attribute name:{self.attribute_name}; "
+            f"{self.message}; column name:{self.column_name}; "
             f"type_rules:{self.type_rules}"
         )
 
 
-@dataclass
+@dataclass()
 class SchemaConfig:
     """
     A config for a Schema.
     Properties:
         schema_url (str): A url to the jsonld schema file
-        synapse_project_id (str): The synapse id to the project where the manifests are stored.
-        synapse_asset_view_id (str): The synapse id to the asset view that tracks the manifests.
-        synapse_input_token (str): A synapse token with download permissions for both the
-         synapse_project_id and synapse_asset_view_id
     """
 
     schema_url: str
-    synapse_project_id: str
-    synapse_asset_view_id: str
-    synapse_input_token: str
+
+    @validator("schema_url")
+    @classmethod
+    def validate_url(cls, value: str) -> str:
+        """Validates that the value is a valid URL"""
+        valid_url = validators.url(value)
+        if not valid_url:
+            raise ValueError(f"{value} is a valid url")
+        return value
+
+    @validator("schema_url")
+    @classmethod
+    def validate_is_jsonld(cls, value: str) -> str:
+        """Validates that the value is a jsonld file"""
+        is_jsonld = value.endswith(".jsonld")
+        if not is_jsonld:
+            raise ValueError(f"{value} does end with '.jsonld'")
+        return value
 
 
-class Schema:  # pylint: disable=too-many-instance-attributes
+class Schema:
     """
-    The Schema class interacts with the Schematic API to create a DBConfig
-     object or to get a list of manifests for the schema.
+    The Schema class interacts with the Schematic API to create a DatabaseSchema
+     table.
     """
 
     def __init__(
@@ -98,207 +108,204 @@ class Schema:  # pylint: disable=too-many-instance-attributes
         The main responsibilities are creating the database schema, and retrieving manifests.
 
         Args:
-            config (SchemaConfig): A config describing the basic inputs for the schema object
+            config (SchemaConfig): A config describing the basic inputs for the schema table
             database_config (DatabaseConfig): Experimental and will be deprecated in the near
-             future. A config describing optional database specific attributes.
+             future. A config describing optional database specific columns.
             use_display_names_as_labels(bool): Experimental and will be deprecated in the near
              future. Use when display names and labels are the same in the schema.
         """
         self.database_config = database_config
         self.schema_url = config.schema_url
-        self.synapse_project_id = config.synapse_project_id
-        self.synapse_asset_view_id = config.synapse_asset_view_id
-        self.synapse_input_token = config.synapse_input_token
         self.use_display_names_as_labels = use_display_names_as_labels
         self.schema_graph = SchemaGraph(config.schema_url)
-        self.update_db_config()
+        self.update_database_schema()
 
-    def get_db_config(self) -> DBConfig:
-        "Gets the currents objects DBConfig"
-        return self.db_config
-
-    def update_db_config(self) -> None:
-        """Updates the DBConfig object."""
-        object_names = self.schema_graph.create_sorted_object_name_list()
-        object_configs = [
-            config
-            for config in [self.create_db_object_config(name) for name in object_names]
-            if config is not None
-        ]
-        self.db_config = DBConfig(object_configs)
-
-    def create_db_object_config(self, object_name: str) -> Optional[DBObjectConfig]:
-        """Creates the config for one object in the database.
-
-        Args:
-            object_name (str): The name of the object the config will be created for.
+    def get_database_schema(self) -> DatabaseSchema:
+        """Gets the current database schema
 
         Returns:
-            Optional[DBObjectConfig]: The config for the object if the object has attributes
+            DatabaseSchema: the current database schema
+        """
+        return self.database_schema
+
+    def update_database_schema(self) -> None:
+        """Updates the DatabaseSchema table."""
+        table_names = self.schema_graph.create_sorted_table_name_list()
+        table_schemas = [
+            schema
+            for schema in [self.create_table_schema(name) for name in table_names]
+            if schema is not None
+        ]
+        self.database_schema = DatabaseSchema(table_schemas)
+
+    def create_table_schema(self, table_name: str) -> Optional[TableSchema]:
+        """Creates the the schema for one table in the database.
+
+        Args:
+            table_name (str): The name of the table the schema will be created for.
+
+        Returns:
+            Optional[TableSchema]: The config for the table if the table has columns
               otherwise None.
         """
-        # Some components will not have any attributes for various reasons
-        attributes = self.create_attributes(object_name)
-        if not attributes:
+        # Some components will not have any columns for various reasons
+        columns = self.create_column_schemas(table_name)
+        if not columns:
             return None
 
-        return DBObjectConfig(
-            name=object_name,
-            attributes=attributes,
-            primary_key=self.get_primary_key(object_name),
-            foreign_keys=self.get_foreign_keys(object_name),
+        return TableSchema(
+            name=table_name,
+            columns=columns,
+            primary_key=self.get_primary_key(table_name),
+            foreign_keys=self.get_foreign_keys(table_name),
         )
 
-    def create_attributes(
+    def create_column_schemas(
         self,
-        object_name: str,
-    ) -> Optional[list[DBAttributeConfig]]:
-        """Create the attributes for the object
+        table_name: str,
+    ) -> Optional[list[ColumnSchema]]:
+        """Create the column schemas for the table
 
         Args:
-            object_name (str): The name of the object to create the attributes for
+            table_name (str): The name of the table to create the column schemas for
 
         Returns:
-            Optional[list[DBAttributeConfig]]: A list of attributes in DBAttributeConfig form
+            Optional[list[ColumnSchema]]: A list of columns in ColumnSchema form
         """
-        # the names of the attributes to be created, in label(not display) form
-        attribute_names = find_class_specific_properties(self.schema_url, object_name)
-        attributes = [
-            self.create_attribute(name, object_name) for name in attribute_names
-        ]
-        # Some components will not have any attributes for various reasons
-        if not attributes:
+        # the names of the columns to be created, in label(not display) form
+        column_names = find_class_specific_properties(self.schema_url, table_name)
+        columns = [self.create_column_schema(name, table_name) for name in column_names]
+        # Some Tables will not have any columns for various reasons
+        if not columns:
             warnings.warn(
-                NoAttributesWarning(
-                    f"Object {object_name} has no attributes, and will be skipped."
+                NoColumnsWarning(
+                    f"Table {table_name} has no columns, and will be skipped."
                 )
             )
             return None
-        return attributes
+        return columns
 
-    def create_attribute(
-        self, attribute_name: str, object_name: str
-    ) -> DBAttributeConfig:
-        """Creates an attribute
+    def create_column_schema(self, column_name: str, table_name: str) -> ColumnSchema:
+        """Creates a schema for  column
 
         Args:
-            attribute_name (str): The name of the attribute
-            object_name (str): The name of the object to create the attributes for
+            column_name (str): The name of the column
+            table_name (str): The name of the table
 
         Returns:
-            DBAttributeConfig: The DBAttributeConfig for the attribute
+            ColumnSchema: The schema for the column
         """
-        attribute = self.database_config.get_attribute(object_name, attribute_name)
-        # Use attribute config if provided
-        if attribute is not None:
-            return attribute
-        # Create attribute config if not provided
-        return DBAttributeConfig(
-            name=attribute_name,
-            datatype=self.get_attribute_datatype(attribute_name),
-            required=is_node_required(self.schema_url, attribute_name),
+        column = self.database_config.get_column(table_name, column_name)
+        # Use column config if provided
+        if column is not None:
+            return column
+        # Create column config if not provided
+        return ColumnSchema(
+            name=column_name,
+            datatype=self.get_column_datatype(column_name),
+            required=is_node_required(self.schema_url, column_name),
             index=False,
         )
 
-    def get_attribute_datatype(self, attribute_name: str) -> DBDatatype:
-        """Gets the datatype for the attribute
+    def get_column_datatype(self, column_name: str) -> ColumnDatatype:
+        """Gets the datatype for the column
 
         Args:
-            attribute_name (str): The name of the attribute
+            column_name (str): The name of the column
 
         Raises:
             MoreThanOneTypeRule: Raised when the Schematic API returns more than one rule that
-             indicate the attributes datatype
+             indicate the columns datatype
 
         Returns:
-            DBDatatype: The attributes datatype
+            ColumnDatatype: The columns datatype
         """
         # Use schematic API to get validation rules
-        rules = get_node_validation_rules(self.schema_url, attribute_name)
+        rules = get_node_validation_rules(self.schema_url, column_name)
         # Filter for rules that indicate the datatype
         type_rules = [rule for rule in rules if rule in SCHEMATIC_TYPE_DATATYPES]
         # Raise error if there is more than one type of validation type rule
         if len(type_rules) > 1:
-            raise MoreThanOneTypeRule(attribute_name, type_rules)
+            raise MoreThanOneTypeRule(column_name, type_rules)
         if len(type_rules) == 1:
             return SCHEMATIC_TYPE_DATATYPES[type_rules[0]]
         # Use text if there are no validation type rules
-        return DBDatatype.TEXT
+        return ColumnDatatype.TEXT
 
-    def get_primary_key(self, object_name: str) -> str:
-        """Get the primary key for the attribute
+    def get_primary_key(self, table_name: str) -> str:
+        """Get the primary key for the column
 
         Args:
-            object_name (str): The name of the attribute
+            table_name (str): The name of the column
 
         Returns:
-            str: The primary key of the attribute
+            str: The primary key of the column
         """
         # Attempt to get the primary key from the config
-        primary_key_attempt = self.database_config.get_primary_key(object_name)
+        primary_key_attempt = self.database_config.get_primary_key(table_name)
         # Check if the primary key is in the config, otherwise assume "id"
         if primary_key_attempt is None:
             return "id"
 
         return primary_key_attempt
 
-    def get_foreign_keys(self, object_name: str) -> list[DBForeignKey]:
-        """Gets a list of foreign keys for an object in the database
+    def get_foreign_keys(self, table_name: str) -> list[ForeignKeySchema]:
+        """Gets a list of foreign keys for an table in the database
 
         Args:
-            object_name (str): The name of the object the config will be created for.
+            table_name (str): The name of the table the config will be created for.
 
         Returns:
-            list[DBForeignKey]: A list of foreign keys for the object.
+            list[ForeignKeySchema]: A list of foreign keys for the table.
         """
         # Attempt to get foreign keys from config
-        foreign_keys_attempt = self.database_config.get_foreign_keys(object_name)
+        foreign_keys_attempt = self.database_config.get_foreign_keys(table_name)
         # If there are no foreign keys in config use schema graph to create foreign keys
         if foreign_keys_attempt is None:
-            return self.create_foreign_keys(object_name)
+            return self.create_foreign_keys(table_name)
 
         return foreign_keys_attempt
 
-    def create_foreign_keys(self, object_name: str) -> list[DBForeignKey]:
-        """Create a list of foreign keys an object in the database using the schema graph
+    def create_foreign_keys(self, table_name: str) -> list[ForeignKeySchema]:
+        """Create a list of foreign keys an table in the database using the schema graph
 
         Args:
-            object_name (str): The name of the object
+            table_name (str): The name of the table
 
         Returns:
-            list[DBForeignKey]: A list of foreign
+            list[ForeignKeySchema]: A list of foreign
         """
-        # Uses the schema graph to find objects the current object depends on
-        parent_object_names = self.schema_graph.get_neighbors(object_name)
-        # Each parent of the current object needs a foreign key to that parent
-        return [self.create_foreign_key(name) for name in parent_object_names]
+        # Uses the schema graph to find tables the current table depends on
+        parent_table_names = self.schema_graph.get_neighbors(table_name)
+        # Each parent of the current table needs a foreign key to that parent
+        return [self.create_foreign_key(name) for name in parent_table_names]
 
-    def create_foreign_key(self, foreign_object_name: str) -> DBForeignKey:
-        """Creates a foreign key object
+    def create_foreign_key(self, foreign_table_name: str) -> ForeignKeySchema:
+        """Creates a foreign key table
 
         Args:
-            foreign_object_name (str): The name of the object the foreign key is referring to.
+            foreign_table_name (str): The name of the table the foreign key is referring to.
 
         Returns:
-            DBForeignKey: A foreign key object.
+            ForeignKeySchema: A foreign key table.
         """
-        # Assume the foreign key name is <object_name>_id where the object name is the
-        #  name of the object the attribute the foreign key is in
-        attribute_name = self.get_attribute_name(f"{foreign_object_name}_id")
+        # Assume the foreign key name is <table_name>_id where the table name is the
+        #  name of the table the column the foreign key is in
+        column_name = self.get_column_name(f"{foreign_table_name}_id")
 
-        attempt = self.database_config.get_primary_key(foreign_object_name)
-        foreign_attribute_name = "id" if attempt is None else attempt
+        attempt = self.database_config.get_primary_key(foreign_table_name)
+        foreign_column_name = "id" if attempt is None else attempt
 
-        return DBForeignKey(attribute_name, foreign_object_name, foreign_attribute_name)
+        return ForeignKeySchema(column_name, foreign_table_name, foreign_column_name)
 
-    def get_attribute_name(self, column_name: str) -> str:
-        """Gets the attribute name of a manifest column
+    def get_column_name(self, column_name: str) -> str:
+        """Gets the column name of a manifest column
 
         Args:
             column_name (str): The name of the column
 
         Returns:
-            str: The attribute name of the column
+            str: The column name of the column
         """
         if self.use_display_names_as_labels:
             return column_name

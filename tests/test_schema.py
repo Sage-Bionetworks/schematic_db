@@ -1,13 +1,14 @@
 """Testing for Schema."""
 from typing import Generator
 import pytest
-from schematic_db.db_config.db_config import (
-    DBConfig,
-    DBForeignKey,
-    DBAttributeConfig,
-    DBDatatype,
+from pydantic import ValidationError
+from schematic_db.db_schema.db_schema import (
+    DatabaseSchema,
+    ForeignKeySchema,
+    ColumnSchema,
+    ColumnDatatype,
 )
-from schematic_db.schema.schema import Schema, DatabaseConfig
+from schematic_db.schema.schema import Schema, DatabaseConfig, SchemaConfig
 from schematic_db.schema.database_config import DatabaseObjectConfig
 
 
@@ -20,25 +21,25 @@ def fixture_database_config() -> Generator:
             "primary_key": "att1",
             "foreign_keys": [
                 {
-                    "attribute_name": "att2",
-                    "foreign_object_name": "object2",
-                    "foreign_attribute_name": "att1",
+                    "column_name": "att2",
+                    "foreign_table_name": "object2",
+                    "foreign_column_name": "att1",
                 },
                 {
-                    "attribute_name": "att3",
-                    "foreign_object_name": "object3",
-                    "foreign_attribute_name": "att1",
+                    "column_name": "att3",
+                    "foreign_table_name": "object3",
+                    "foreign_column_name": "att1",
                 },
             ],
-            "attributes": [
+            "columns": [
                 {
-                    "attribute_name": "att2",
+                    "column_name": "att2",
                     "datatype": "str",
                     "required": True,
                     "index": True,
                 },
                 {
-                    "attribute_name": "att3",
+                    "column_name": "att3",
                     "datatype": "int",
                     "required": False,
                     "index": False,
@@ -60,19 +61,37 @@ def fixture_database_object_config() -> Generator:
         "primary_key": "att1",
         "foreign_keys": [
             {
-                "attribute_name": "att2",
-                "foreign_object_name": "object2",
-                "foreign_attribute_name": "att1",
+                "column_name": "att2",
+                "foreign_table_name": "object2",
+                "foreign_column_name": "att1",
             },
             {
-                "attribute_name": "att3",
-                "foreign_object_name": "object3",
-                "foreign_attribute_name": "att1",
+                "column_name": "att3",
+                "foreign_table_name": "object3",
+                "foreign_column_name": "att1",
             },
         ],
     }
     obj = DatabaseObjectConfig(**data)  # type: ignore
     yield obj
+
+
+@pytest.mark.fast
+class TestSchemaConfig:
+    """Testing for SchemaConfig"""
+
+    def test_url_validator(self) -> None:
+        """Testing for validators"""
+        with pytest.raises(ValidationError):
+            SchemaConfig(schema_url="xxx.jsonld")
+
+    def test_jsonld_validator(self) -> None:
+        """Testing for validators"""
+        with pytest.raises(ValidationError):
+            SchemaConfig(
+                schema_url="https://raw.githubusercontent.com/Sage-Bionetworks/"
+                "Schematic-DB-Test-Schemas/main/test_schema.csv"
+            )
 
 
 @pytest.mark.fast
@@ -99,9 +118,9 @@ class TestDatabaseConfig:
     def test_get_attributes(self, database_config: DatabaseConfig) -> None:
         """Testing for get_attributes"""
         obj = database_config
-        assert obj.get_attributes("object1") is not None
-        assert obj.get_attributes("object2") is None
-        assert obj.get_attributes("object3") is None
+        assert obj.get_columns("object1") is not None
+        assert obj.get_columns("object2") is None
+        assert obj.get_columns("object3") is None
 
 
 @pytest.mark.schematic
@@ -111,60 +130,72 @@ class TestSchema:
     def test_init(self, test_schema1: Schema) -> None:
         """Testing for Schema.__init__"""
         obj = test_schema1
-        config = obj.get_db_config()
-        assert isinstance(config, DBConfig)
-        assert config.get_config_names() == [
+        config = obj.get_database_schema()
+        assert isinstance(config, DatabaseSchema)
+        assert config.get_schema_names() == [
             "Patient",
             "Biospecimen",
             "BulkRnaSeq",
         ]
 
-    def test_create_attributes(self, test_schema1: Schema) -> None:
+    def test_create_column_schemas(self, test_schema1: Schema) -> None:
         """Testing for Schema.attributes()"""
         obj = test_schema1
-        assert obj.create_attributes("Patient") == [
-            DBAttributeConfig(
-                name="id", datatype=DBDatatype.TEXT, required=True, index=False
+        assert obj.create_column_schemas("Patient") == [
+            ColumnSchema(
+                name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
-            DBAttributeConfig(
-                name="sex", datatype=DBDatatype.TEXT, required=True, index=False
+            ColumnSchema(
+                name="sex", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
-            DBAttributeConfig(
-                name="yearofBirth", datatype=DBDatatype.INT, required=False, index=False
+            ColumnSchema(
+                name="yearofBirth",
+                datatype=ColumnDatatype.INT,
+                required=False,
+                index=False,
             ),
-            DBAttributeConfig(name="weight", datatype=DBDatatype.FLOAT, required=False),
-            DBAttributeConfig(
-                name="diagnosis", datatype=DBDatatype.TEXT, required=True, index=False
+            ColumnSchema(name="weight", datatype=ColumnDatatype.FLOAT, required=False),
+            ColumnSchema(
+                name="diagnosis",
+                datatype=ColumnDatatype.TEXT,
+                required=True,
+                index=False,
             ),
-            DBAttributeConfig(name="date", datatype=DBDatatype.DATE, required=False),
+            ColumnSchema(name="date", datatype=ColumnDatatype.DATE, required=False),
         ]
-        assert obj.create_attributes("Biospecimen") == [
-            DBAttributeConfig(
-                name="id", datatype=DBDatatype.TEXT, required=True, index=False
+        assert obj.create_column_schemas("Biospecimen") == [
+            ColumnSchema(
+                name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
-            DBAttributeConfig(
-                name="patientId", datatype=DBDatatype.TEXT, required=False, index=False
+            ColumnSchema(
+                name="patientId",
+                datatype=ColumnDatatype.TEXT,
+                required=False,
+                index=False,
             ),
-            DBAttributeConfig(
+            ColumnSchema(
                 name="tissueStatus",
-                datatype=DBDatatype.TEXT,
+                datatype=ColumnDatatype.TEXT,
                 required=True,
                 index=False,
             ),
         ]
-        assert obj.create_attributes("BulkRnaSeq") == [
-            DBAttributeConfig(
-                name="id", datatype=DBDatatype.TEXT, required=True, index=False
+        assert obj.create_column_schemas("BulkRnaSeq") == [
+            ColumnSchema(
+                name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
-            DBAttributeConfig(
+            ColumnSchema(
                 name="biospecimenId",
-                datatype=DBDatatype.TEXT,
+                datatype=ColumnDatatype.TEXT,
                 required=False,
                 index=False,
             ),
-            DBAttributeConfig(name="filename", datatype=DBDatatype.TEXT, required=True),
-            DBAttributeConfig(
-                name="fileFormat", datatype=DBDatatype.TEXT, required=True, index=False
+            ColumnSchema(name="filename", datatype=ColumnDatatype.TEXT, required=True),
+            ColumnSchema(
+                name="fileFormat",
+                datatype=ColumnDatatype.TEXT,
+                required=True,
+                index=False,
             ),
         ]
 
@@ -173,17 +204,17 @@ class TestSchema:
         obj = test_schema1
         assert obj.create_foreign_keys("Patient") == []
         assert obj.create_foreign_keys("Biospecimen") == [
-            DBForeignKey(
+            ForeignKeySchema(
                 name="patientId",
-                foreign_object_name="Patient",
-                foreign_attribute_name="id",
+                foreign_table_name="Patient",
+                foreign_column_name="id",
             )
         ]
         assert obj.create_foreign_keys("BulkRnaSeq") == [
-            DBForeignKey(
+            ForeignKeySchema(
                 name="biospecimenId",
-                foreign_object_name="Biospecimen",
-                foreign_attribute_name="id",
+                foreign_table_name="Biospecimen",
+                foreign_column_name="id",
             )
         ]
 
@@ -195,60 +226,72 @@ class TestSchema2:
     def test_init(self, test_schema2: Schema) -> None:
         """Testing for Schema.__init__"""
         obj = test_schema2
-        config = obj.get_db_config()
-        assert isinstance(config, DBConfig)
-        assert config.get_config_names() == [
+        database_schema = obj.get_database_schema()
+        assert isinstance(database_schema, DatabaseSchema)
+        assert database_schema.get_schema_names() == [
             "Patient",
             "Biospecimen",
             "BulkRnaSeq",
         ]
 
-    def test_create_attributes(self, test_schema2: Schema) -> None:
+    def test_create_column_schemas(self, test_schema2: Schema) -> None:
         """Testing for Schema.attributes()"""
         obj = test_schema2
-        assert obj.create_attributes("Patient") == [
-            DBAttributeConfig(
-                name="id", datatype=DBDatatype.TEXT, required=True, index=False
+        assert obj.create_column_schemas("Patient") == [
+            ColumnSchema(
+                name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
-            DBAttributeConfig(
-                name="sex", datatype=DBDatatype.TEXT, required=True, index=True
+            ColumnSchema(
+                name="sex", datatype=ColumnDatatype.TEXT, required=True, index=True
             ),
-            DBAttributeConfig(
-                name="yearofBirth", datatype=DBDatatype.INT, required=False, index=False
+            ColumnSchema(
+                name="yearofBirth",
+                datatype=ColumnDatatype.INT,
+                required=False,
+                index=False,
             ),
-            DBAttributeConfig(name="weight", datatype=DBDatatype.FLOAT, required=False),
-            DBAttributeConfig(
-                name="diagnosis", datatype=DBDatatype.TEXT, required=True, index=False
+            ColumnSchema(name="weight", datatype=ColumnDatatype.FLOAT, required=False),
+            ColumnSchema(
+                name="diagnosis",
+                datatype=ColumnDatatype.TEXT,
+                required=True,
+                index=False,
             ),
-            DBAttributeConfig(name="date", datatype=DBDatatype.DATE, required=False),
+            ColumnSchema(name="date", datatype=ColumnDatatype.DATE, required=False),
         ]
-        assert obj.create_attributes("Biospecimen") == [
-            DBAttributeConfig(
-                name="id", datatype=DBDatatype.TEXT, required=True, index=False
+        assert obj.create_column_schemas("Biospecimen") == [
+            ColumnSchema(
+                name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
-            DBAttributeConfig(
-                name="patientId", datatype=DBDatatype.TEXT, required=False, index=False
+            ColumnSchema(
+                name="patientId",
+                datatype=ColumnDatatype.TEXT,
+                required=False,
+                index=False,
             ),
-            DBAttributeConfig(
+            ColumnSchema(
                 name="tissueStatus",
-                datatype=DBDatatype.TEXT,
+                datatype=ColumnDatatype.TEXT,
                 required=True,
                 index=False,
             ),
         ]
-        assert obj.create_attributes("BulkRnaSeq") == [
-            DBAttributeConfig(
-                name="id", datatype=DBDatatype.TEXT, required=True, index=False
+        assert obj.create_column_schemas("BulkRnaSeq") == [
+            ColumnSchema(
+                name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
-            DBAttributeConfig(
+            ColumnSchema(
                 name="biospecimenId",
-                datatype=DBDatatype.TEXT,
+                datatype=ColumnDatatype.TEXT,
                 required=False,
                 index=False,
             ),
-            DBAttributeConfig(name="filename", datatype=DBDatatype.TEXT, required=True),
-            DBAttributeConfig(
-                name="fileFormat", datatype=DBDatatype.TEXT, required=True, index=False
+            ColumnSchema(name="filename", datatype=ColumnDatatype.TEXT, required=True),
+            ColumnSchema(
+                name="fileFormat",
+                datatype=ColumnDatatype.TEXT,
+                required=True,
+                index=False,
             ),
         ]
 
@@ -257,16 +300,16 @@ class TestSchema2:
         obj = test_schema2
         assert obj.create_foreign_keys("Patient") == []
         assert obj.create_foreign_keys("Biospecimen") == [
-            DBForeignKey(
+            ForeignKeySchema(
                 name="patientId",
-                foreign_object_name="Patient",
-                foreign_attribute_name="id",
+                foreign_table_name="Patient",
+                foreign_column_name="id",
             )
         ]
         assert obj.create_foreign_keys("BulkRnaSeq") == [
-            DBForeignKey(
+            ForeignKeySchema(
                 name="biospecimenId",
-                foreign_object_name="Biospecimen",
-                foreign_attribute_name="id",
+                foreign_table_name="Biospecimen",
+                foreign_column_name="id",
             )
         ]

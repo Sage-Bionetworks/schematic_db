@@ -130,7 +130,7 @@ class Synapse:  # pylint: disable=too-many-public-methods
 
         Args:
             synapse_id (str): The Synapse id of the table to delete
-            table_config (DBObjectConfig): The config for the table
+            table_config (TableSchema): The config for the table
             include_row_data (bool): Include row_id and row_etag. Defaults to False.
 
         Returns:

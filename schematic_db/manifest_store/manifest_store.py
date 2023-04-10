@@ -1,13 +1,12 @@
 """The ManifestStore class interacts with the Schematic API download manifests."""
+# pylint: disable=duplicate-code
 
-from dataclasses import dataclass
+import re
+from pydantic.dataclasses import dataclass
+from pydantic import validator
+import validators
 import pandas as pd
-from schematic_db.api_utils.api_utils import (
-    get_project_manifests,
-    get_manifest,
-    ManifestSynapseConfig,
-)
-
+from schematic_db.api_utils.api_utils import get_project_manifests, get_manifest
 from schematic_db.schema_graph.schema_graph import SchemaGraph
 
 
@@ -36,26 +35,7 @@ class ManifestMissingPrimaryKeyError(Exception):
         )
 
 
-def get_dataset_ids_for_component(
-    object_name: str, manifests: list[ManifestSynapseConfig]
-) -> list[str]:
-    """Gets the dataset ids from a list of manifests matching the object name
-
-    Args:
-        object_name (str): The name of the object to get the manifests for
-        manifests (list[ManifestSynapseConfig]): A list of manifests in Synapse
-
-    Returns:
-        list[str]: A list of synapse ids for the manifest datasets
-    """
-    return [
-        manifest.dataset_id
-        for manifest in manifests
-        if manifest.component_name == object_name and manifest.manifest_id != ""
-    ]
-
-
-@dataclass
+@dataclass()
 class ManifestStoreConfig:
     """
     A config for a ManifestStore.
@@ -72,8 +52,42 @@ class ManifestStoreConfig:
     synapse_asset_view_id: str
     synapse_input_token: str
 
+    @validator("schema_url")
+    @classmethod
+    def validate_url(cls, value: str) -> str:
+        """Validates that the value is a valid URL"""
+        valid_url = validators.url(value)
+        if not valid_url:
+            raise ValueError(f"{value} is a valid url")
+        return value
 
-class ManifestStore:  # pylint: disable=too-many-instance-attributes
+    @validator("schema_url")
+    @classmethod
+    def validate_is_jsonld(cls, value: str) -> str:
+        """Validates that the value is a jsonld file"""
+        is_jsonld = value.endswith(".jsonld")
+        if not is_jsonld:
+            raise ValueError(f"{value} does end with '.jsonld'")
+        return value
+
+    @validator("synapse_project_id", "synapse_asset_view_id")
+    @classmethod
+    def validate_synapse_id(cls, value: str) -> str:
+        """Check if string is a valid synapse id"""
+        if not re.search("^syn[0-9]+", value):
+            raise ValueError(f"{value} is not a valid Synapse id")
+        return value
+
+    @validator("synapse_input_token")
+    @classmethod
+    def validate_string_is_not_empty(cls, value: str) -> str:
+        """Check if string  is not empty(has at least one char)"""
+        if len(value) == 0:
+            raise ValueError(f"{value} is an empty string")
+        return value
+
+
+class ManifestStore:
     """
     The ManifestStore class interacts with the Schematic API download manifests.
     """
@@ -94,7 +108,7 @@ class ManifestStore:  # pylint: disable=too-many-instance-attributes
         self.synapse_asset_view_id = config.synapse_asset_view_id
         self.synapse_input_token = config.synapse_input_token
         self.schema_graph = SchemaGraph(config.schema_url)
-        self.update_manifest_configs()
+        self.update_manifest_metadata()
 
     def create_sorted_object_name_list(self) -> list[str]:
         """
@@ -105,36 +119,39 @@ class ManifestStore:  # pylint: disable=too-many-instance-attributes
         Returns:
             list[str]: A list of objects names
         """
-        return self.schema_graph.create_sorted_object_name_list()
+        return self.schema_graph.create_sorted_table_name_list()
 
-    def update_manifest_configs(self) -> None:
+    def update_manifest_metadata(self) -> None:
         """Updates the current objects manifest_configs."""
-        self.manifest_configs = get_project_manifests(
+        self.manifest_metadata = get_project_manifests(
             input_token=self.synapse_input_token,
             project_id=self.synapse_project_id,
             asset_view=self.synapse_asset_view_id,
         )
 
-    def get_manifest_configs(self) -> list[ManifestSynapseConfig]:
-        """Gets the currents objects manifest_configs"""
-        return self.manifest_configs
-
-    def get_manifests(self, name: str) -> list[pd.DataFrame]:
-        """Gets the manifests associated with a component
+    def get_dataset_ids(self, name: str) -> list[str]:
+        """Gets the dataset ids for a table(component)
 
         Args:
-            name (str): The name of a component in the schema
+            name (str): The name of the table
 
         Returns:
-            list[pd.DataFrame]: A list of manifests in dataframe form for the component
+            list[str]: The dataset ids for the table
         """
-        dataset_ids = get_dataset_ids_for_component(name, self.manifest_configs)
-        manifests = [
-            get_manifest(
-                self.synapse_input_token,
-                dataset_id,
-                self.synapse_asset_view_id,
-            )
-            for dataset_id in dataset_ids
-        ]
-        return manifests
+        return self.manifest_metadata.get_dataset_ids_for_component(name)
+
+    def get_manifest(self, dataset_id: str) -> pd.DataFrame:
+        """Gets the manifest associated with the dataset id
+
+        Args:
+            dataset_id (str): The synapse id of the dataset
+
+        Returns:
+            pd.DataFrame: The manifest in dataframe form
+        """
+        manifest = get_manifest(
+            self.synapse_input_token,
+            dataset_id,
+            self.synapse_asset_view_id,
+        )
+        return manifest

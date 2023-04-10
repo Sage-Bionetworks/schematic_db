@@ -8,7 +8,7 @@ from schematic_db.rdb.synapse_database import (
     SynapseDatabase,
     SynapseDatabaseDropTableError,
 )
-from schematic_db.db_config.db_config import DBObjectConfig
+from schematic_db.db_schema.db_schema import TableSchema
 
 
 @pytest.fixture(name="synapse_database")
@@ -25,9 +25,9 @@ def fixture_synapse_no_extra_tables(synapse_database: SynapseDatabase) -> Genera
 @pytest.fixture(name="synapse_with_empty_tables")
 def fixture_synapse_with_empty_tables(  # pylint: disable=too-many-arguments
     synapse_database: SynapseDatabase,
-    table_one_config: DBObjectConfig,
-    table_two_config: DBObjectConfig,
-    table_three_config: DBObjectConfig,
+    table_one_schema: TableSchema,
+    table_two_schema: TableSchema,
+    table_three_schema: TableSchema,
     table_one_columns: list[sc.Column],
     table_two_columns: list[sc.Column],
     table_three_columns: list[sc.Column],
@@ -37,9 +37,9 @@ def fixture_synapse_with_empty_tables(  # pylint: disable=too-many-arguments
     obj.synapse.add_table("table_one", table_one_columns)
     obj.synapse.add_table("table_two", table_two_columns)
     obj.synapse.add_table("table_three", table_three_columns)
-    obj.annotate_table("table_one", table_one_config)
-    obj.annotate_table("table_two", table_two_config)
-    obj.annotate_table("table_three", table_three_config)
+    obj.annotate_table("table_one", table_one_schema)
+    obj.annotate_table("table_two", table_two_schema)
+    obj.annotate_table("table_three", table_three_schema)
     yield obj
 
 
@@ -135,8 +135,8 @@ class TestSynapseDatabase:
     def test_annotate_table(  # pylint: disable=too-many-arguments
         self,
         synapse_database: SynapseDatabase,
-        table_one_config: DBObjectConfig,
-        table_three_config: DBObjectConfig,
+        table_one_schema: TableSchema,
+        table_three_schema: TableSchema,
         table_one_columns: list[sc.Column],
         table_three_columns: list[sc.Column],
     ) -> None:
@@ -151,7 +151,7 @@ class TestSynapseDatabase:
         annotations = obj.synapse.get_entity_annotations(synapse_id1)
         assert annotations == {}
 
-        obj.annotate_table("table_one", table_one_config)
+        obj.annotate_table("table_one", table_one_schema)
         annotations2 = obj.synapse.get_entity_annotations(synapse_id1)
         assert list(annotations2.keys()) == [
             "attribute0",
@@ -167,7 +167,7 @@ class TestSynapseDatabase:
         annotations3 = obj.synapse.get_entity_annotations(synapse_id3)
         assert annotations3 == {}
 
-        obj.annotate_table("table_three", table_three_config)
+        obj.annotate_table("table_three", table_three_schema)
         annotations4 = obj.synapse.get_entity_annotations(synapse_id3)
         assert list(annotations4.keys()) == [
             "attribute0",
@@ -181,40 +181,40 @@ class TestSynapseDatabase:
     def get_db_config(self, synapse_with_empty_tables: SynapseDatabase) -> None:
         """Testing for SynapseDatabase.get_db_config()"""
         obj = synapse_with_empty_tables
-        db_config = obj.get_db_config()
-        assert db_config.get_config_names == [
+        database_schema = obj.get_db_config()
+        assert database_schema.get_schema_names == [
             "table_one",
             "table_three",
             "table_two",
             "test_table_one",
         ]
 
-    def test_get_table_config(self, synapse_with_empty_tables: SynapseDatabase) -> None:
-        """Testing for SynapseDatabase.get_table_config()"""
+    def test_get_table_schema(self, synapse_with_empty_tables: SynapseDatabase) -> None:
+        """Testing for SynapseDatabase.get_table_schema()"""
         obj = synapse_with_empty_tables
-        table_config1 = obj.get_table_config("table_one")
-        assert table_config1 is not None
-        assert table_config1.name == "table_one"
-        assert table_config1.primary_key == "pk_one_col"
-        assert table_config1.foreign_keys == []
-        assert table_config1.attributes != []
+        table_schema1 = obj.get_table_schema("table_one")
+        assert table_schema1 is not None
+        assert table_schema1.name == "table_one"
+        assert table_schema1.primary_key == "pk_one_col"
+        assert table_schema1.foreign_keys == []
+        assert table_schema1.columns != []
 
-        table_config3 = obj.get_table_config("table_three")
-        assert table_config3 is not None
-        assert table_config3.name == "table_three"
-        assert table_config3.primary_key == "pk_zero_col"
-        assert table_config3.foreign_keys != []
-        assert table_config3.attributes != []
+        table_schema3 = obj.get_table_schema("table_three")
+        assert table_schema3 is not None
+        assert table_schema3.name == "table_three"
+        assert table_schema3.primary_key == "pk_zero_col"
+        assert table_schema3.foreign_keys != []
+        assert table_schema3.columns != []
 
     def test_delete_table_rows(
         self,
         synapse_with_filled_tables: SynapseDatabase,
-        table_three_config: DBObjectConfig,
+        table_three_schema: TableSchema,
     ) -> None:
         """Testing for SynapseDatabase.delete_table_rows()"""
         obj = synapse_with_filled_tables
         synapse_id = obj.synapse.get_synapse_id_from_table_name("table_three")
-        query = f"SELECT {table_three_config.primary_key} FROM {synapse_id}"
+        query = f"SELECT {table_three_schema.primary_key} FROM {synapse_id}"
         table = obj.execute_sql_query(query)
         assert table["pk_zero_col"].tolist() == ["keyA", "keyB", "keyC", "keyD"]
 

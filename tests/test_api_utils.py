@@ -5,6 +5,7 @@ import pandas as pd
 
 
 from schematic_db.api_utils.api_utils import (
+    filter_params,
     find_class_specific_properties,
     get_property_label_from_display_name,
     get_graph_by_edge_type,
@@ -19,6 +20,13 @@ from schematic_db.api_utils.api_utils import (
 @pytest.mark.schematic
 class TestAPIUtils:
     """Testing for API utils"""
+
+    def test_filter_params(self) -> None:
+        """Testing for filter_params"""
+        assert not filter_params({})
+        assert not filter_params({"input_token": "xxx"})
+        assert filter_params({"attribute": 1}) == {"attribute": 1}
+        assert filter_params({"attribute": 1, "input_token": "xxx"}) == {"attribute": 1}
 
     def test_find_class_specific_properties(self, test_schema_json_url: str) -> None:
         "Testing for find_class_specific_properties"
@@ -55,12 +63,12 @@ class TestAPIUtils:
         test_synapse_asset_view_id: str,
     ) -> None:
         "Testing for get_project_manifests"
-        manifests = get_project_manifests(
+        manifest_metadata = get_project_manifests(
             input_token=secrets_dict["synapse"]["auth_token"],
             project_id=test_synapse_project_id,
             asset_view=test_synapse_asset_view_id,
         )
-        assert len(manifests) == 5
+        assert len(manifest_metadata.metadata_list) == 5
 
     def test_get_manifest(
         self, secrets_dict: dict, test_synapse_asset_view_id: str

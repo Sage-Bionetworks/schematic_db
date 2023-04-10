@@ -7,12 +7,12 @@ import pandas as pd
 import numpy as np
 from yaml import safe_load
 import synapseclient as sc  # type: ignore
-from schematic_db.db_config.db_config import (
-    DBConfig,
-    DBObjectConfig,
-    DBAttributeConfig,
-    DBDatatype,
-    DBForeignKey,
+from schematic_db.db_schema.db_schema import (
+    DatabaseSchema,
+    TableSchema,
+    ColumnSchema,
+    ColumnDatatype,
+    ForeignKeySchema,
 )
 
 from schematic_db.manifest_store.manifest_store import (
@@ -172,44 +172,26 @@ def fixture_test_synapse_asset_view_id() -> Generator:
 
 @pytest.fixture(scope="session", name="test_schema1")
 def fixture_test_schema1(
-    test_synapse_project_id: str,
-    test_synapse_asset_view_id: str,
-    secrets_dict: dict,
     test_schema_json_url: str,
 ) -> Generator:
     """Yields a Schema using the database specific test schema"""
-    config = SchemaConfig(
-        test_schema_json_url,
-        test_synapse_project_id,
-        test_synapse_asset_view_id,
-        secrets_dict["synapse"]["auth_token"],
-    )
+    config = SchemaConfig(test_schema_json_url)
     obj = Schema(config)
     yield obj
 
 
 @pytest.fixture(scope="session", name="test_schema2")
-def fixture_test_schema2(
-    test_synapse_project_id: str,
-    test_synapse_asset_view_id: str,
-    secrets_dict: dict,
-    test_schema_json_url: str,
-) -> Generator:
+def fixture_test_schema2(test_schema_json_url: str) -> Generator:
     """Yields a Schema using the database specific test schema"""
-    config = SchemaConfig(
-        test_schema_json_url,
-        test_synapse_project_id,
-        test_synapse_asset_view_id,
-        secrets_dict["synapse"]["auth_token"],
-    )
+    config = SchemaConfig(test_schema_json_url)
     database_config = DatabaseConfig(
         [
             {
                 "name": "Patient",
                 "primary_key": "id",
-                "attributes": [
+                "columns": [
                     {
-                        "attribute_name": "sex",
+                        "column_name": "sex",
                         "datatype": "str",
                         "required": True,
                         "index": True,
@@ -221,9 +203,9 @@ def fixture_test_schema2(
                 "primary_key": "id",
                 "foreign_keys": [
                     {
-                        "attribute_name": "biospecimenId",
-                        "foreign_object_name": "Biospecimen",
-                        "foreign_attribute_name": "id",
+                        "column_name": "biospecimenId",
+                        "foreign_table_name": "Biospecimen",
+                        "foreign_column_name": "id",
                     }
                 ],
             },
@@ -303,43 +285,43 @@ def table_one() -> Generator:
     yield dataframe
 
 
-@pytest.fixture(scope="session", name="table_one_config")
-def fixture_table_one_config() -> Generator:
+@pytest.fixture(scope="session", name="table_one_schema")
+def fixture_table_one_schema() -> Generator:
     """
-    Yields a DBObjectConfig object with one primary and no foreign keys
+    Yields a TableSchema object with one primary and no foreign keys
     """
-    table_config = DBObjectConfig(
+    schema = TableSchema(
         name="table_one",
-        attributes=[
-            DBAttributeConfig(
+        columns=[
+            ColumnSchema(
                 name="pk_one_col",
-                datatype=DBDatatype.TEXT,
+                datatype=ColumnDatatype.TEXT,
                 required=True,
                 index=True,
             ),
-            DBAttributeConfig(
+            ColumnSchema(
                 name="string_one_col",
-                datatype=DBDatatype.TEXT,
+                datatype=ColumnDatatype.TEXT,
                 required=False,
                 index=True,
             ),
-            DBAttributeConfig(
-                name="int_one_col", datatype=DBDatatype.INT, required=False
+            ColumnSchema(
+                name="int_one_col", datatype=ColumnDatatype.INT, required=False
             ),
-            DBAttributeConfig(
-                name="double_one_col", datatype=DBDatatype.FLOAT, required=False
+            ColumnSchema(
+                name="double_one_col", datatype=ColumnDatatype.FLOAT, required=False
             ),
-            DBAttributeConfig(
-                name="date_one_col", datatype=DBDatatype.DATE, required=False
+            ColumnSchema(
+                name="date_one_col", datatype=ColumnDatatype.DATE, required=False
             ),
-            DBAttributeConfig(
-                name="bool_one_col", datatype=DBDatatype.BOOLEAN, required=False
+            ColumnSchema(
+                name="bool_one_col", datatype=ColumnDatatype.BOOLEAN, required=False
             ),
         ],
         primary_key="pk_one_col",
         foreign_keys=[],
     )
-    yield table_config
+    yield schema
 
 
 @pytest.fixture(name="table_one_columns", scope="session")
@@ -392,46 +374,46 @@ def table_two_b() -> Generator:
     yield dataframe
 
 
-@pytest.fixture(scope="session", name="table_two_config")
-def fixture_table_two_config() -> Generator:
+@pytest.fixture(scope="session", name="table_two_schema")
+def fixture_table_two_schema() -> Generator:
     """
-    Yields a DBObjectConfig object with one primary and no foreign keys
+    Yields a TableSchema object with one primary and no foreign keys
     """
-    table_config = DBObjectConfig(
+    schema = TableSchema(
         name="table_two",
-        attributes=[
-            DBAttributeConfig(
-                name="pk_two_col", datatype=DBDatatype.TEXT, required=True
+        columns=[
+            ColumnSchema(
+                name="pk_two_col", datatype=ColumnDatatype.TEXT, required=True
             ),
-            DBAttributeConfig(
-                name="string_two_col", datatype=DBDatatype.TEXT, required=False
+            ColumnSchema(
+                name="string_two_col", datatype=ColumnDatatype.TEXT, required=False
             ),
         ],
         primary_key="pk_two_col",
         foreign_keys=[],
     )
-    yield table_config
+    yield schema
 
 
-@pytest.fixture(scope="session", name="table_two_config_combined")
-def fixture_table_two_config_combined() -> Generator:
+@pytest.fixture(scope="session", name="table_two_schema_combined")
+def fixture_table_two_schema_combined() -> Generator:
     """
-    Yields a DBObjectConfig object with one primary and no foreign keys
+    Yields a TableSchema object with one primary and no foreign keys
     """
-    table_config = DBObjectConfig(
+    schema = TableSchema(
         name="table_two",
-        attributes=[
-            DBAttributeConfig(
-                name="pk_two_col", datatype=DBDatatype.TEXT, required=True
+        columns=[
+            ColumnSchema(
+                name="pk_two_col", datatype=ColumnDatatype.TEXT, required=True
             ),
-            DBAttributeConfig(
-                name="string_two_col", datatype=DBDatatype.TEXT, required=False
+            ColumnSchema(
+                name="string_two_col", datatype=ColumnDatatype.TEXT, required=False
             ),
         ],
         primary_key="pk_two_col",
         foreign_keys=[],
     )
-    yield table_config
+    yield schema
 
 
 @pytest.fixture(scope="session")
@@ -450,42 +432,42 @@ def table_three() -> Generator:
     yield dataframe
 
 
-@pytest.fixture(scope="session", name="table_three_config")
-def fixture_table_three_config() -> Generator:
+@pytest.fixture(scope="session", name="table_three_schema")
+def fixture_table_three_schema() -> Generator:
     """
-    Yields a DBObjectConfig object with two keys that are both primary and foreign
+    Yields a TableSchema object with two keys that are both primary and foreign
     """
-    table_config = DBObjectConfig(
+    schema = TableSchema(
         name="table_three",
-        attributes=[
-            DBAttributeConfig(
-                name="pk_zero_col", datatype=DBDatatype.TEXT, required=True
+        columns=[
+            ColumnSchema(
+                name="pk_zero_col", datatype=ColumnDatatype.TEXT, required=True
             ),
-            DBAttributeConfig(
-                name="pk_one_col", datatype=DBDatatype.TEXT, required=False
+            ColumnSchema(
+                name="pk_one_col", datatype=ColumnDatatype.TEXT, required=False
             ),
-            DBAttributeConfig(
-                name="pk_two_col", datatype=DBDatatype.TEXT, required=False
+            ColumnSchema(
+                name="pk_two_col", datatype=ColumnDatatype.TEXT, required=False
             ),
-            DBAttributeConfig(
-                name="string_three_col", datatype=DBDatatype.TEXT, required=False
+            ColumnSchema(
+                name="string_three_col", datatype=ColumnDatatype.TEXT, required=False
             ),
         ],
         primary_key="pk_zero_col",
         foreign_keys=[
-            DBForeignKey(
+            ForeignKeySchema(
                 name="pk_one_col",
-                foreign_object_name="table_one",
-                foreign_attribute_name="pk_one_col",
+                foreign_table_name="table_one",
+                foreign_column_name="pk_one_col",
             ),
-            DBForeignKey(
+            ForeignKeySchema(
                 name="pk_two_col",
-                foreign_object_name="table_two",
-                foreign_attribute_name="pk_two_col",
+                foreign_table_name="table_two",
+                foreign_column_name="pk_two_col",
             ),
         ],
     )
-    yield table_config
+    yield schema
 
 
 @pytest.fixture(name="table_three_columns", scope="session")
@@ -515,11 +497,11 @@ def table_123_unormalized() -> Generator:
     yield dataframe
 
 
-@pytest.fixture(scope="session", name="table_configs")
-def fixture_table_configs(
-    table_one_config: DBObjectConfig,
-    table_two_config: DBObjectConfig,
-    table_three_config: DBObjectConfig,
+@pytest.fixture(scope="session", name="table_schemas")
+def fixture_table_schemas(
+    table_one_schema: TableSchema,
+    table_two_schema: TableSchema,
+    table_three_schema: TableSchema,
 ) -> Generator:
-    """Yields a DBObjectConfigList"""
-    yield DBConfig([table_one_config, table_two_config, table_three_config])
+    """Yields a TableSchemaList"""
+    yield DatabaseSchema([table_one_schema, table_two_schema, table_three_schema])

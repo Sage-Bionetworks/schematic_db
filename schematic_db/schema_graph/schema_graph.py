@@ -28,24 +28,24 @@ class SchemaGraph:
         schema_graph.add_edges_from(subgraph)
         return schema_graph
 
-    def create_sorted_object_name_list(self) -> list[str]:
+    def create_sorted_table_name_list(self) -> list[str]:
         """
-        Uses the schema graph to create a object name list such objects always come after ones they
+        Uses the schema graph to create a table name list where tables always come after ones they
          depend on.
-        This order is how objects in a database should be built and/or updated.
+        This order is how tables in a database should be built and/or updated.
 
         Returns:
-            list[str]: A list of objects names
+            list[str]: A list of table names
         """
         return list(reversed(list(networkx.topological_sort(self.schema_graph))))
 
-    def get_neighbors(self, object_name: str) -> list[str]:
+    def get_neighbors(self, table_name: str) -> list[str]:
         """Gets the neighbors of the table in the schema graph
 
         Args:
-            object_name (str): The name of the object to ge the neighbors of
+            table_name (str): The name of the tables to get the neighbors of
 
         Returns:
-            list[str]: A list of other objects
+            list[str]: A list of other tables
         """
-        return list(self.schema_graph.neighbors(object_name))
+        return list(self.schema_graph.neighbors(table_name))
