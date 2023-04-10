@@ -269,25 +269,19 @@ def get_project_manifests(
     return ManifestMetadataList(response.json())
 
 
-def get_manifest(
-    input_token: str, dataset_id: str, asset_view: str
-) -> pandas.DataFrame:
+def download_manifest(input_token: str, manifest_id: str) -> pandas.DataFrame:
     """Downloads a manifest as a pd.dataframe
 
     Args:
         input_token (str): Access token
-        dataset_id (str): The id of the dataset the manifest part of
-        asset_view (str): The id of the view listing all project data assets. For example,
-            for Synapse this would be the Synapse ID of the fileview listing all
-            data assets for a given project.(i.e. master_fileview in config.yml)
+        manifest_id (str): The Synapse id of the manifest
 
     Returns:
         pd.DataFrame: The manifest in dataframe form
     """
     params = {
         "input_token": input_token,
-        "dataset_id": dataset_id,
-        "asset_view": asset_view,
+        "manifest_id": manifest_id,
         "as_json": True,
     }
     response = create_schematic_api_response("manifest/download", params, timeout=120)
