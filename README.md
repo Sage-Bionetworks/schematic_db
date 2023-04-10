@@ -31,10 +31,7 @@ To create the schema:
 ```python
 from schematic_db.schema import Schema, SchemaConfig
 config = SchemaConfig(
-        schema_url = "https://raw.githubusercontent.com/Sage-Bionetworks/Schematic-DB-Test-Schemas/main/test_schema.jsonld",
-        synapse_project_id = "syn1",
-        synapse_asset_view_id = "syn2",
-        synapse_input_token = "xxx"
+        schema_url = "https://raw.githubusercontent.com/Sage-Bionetworks/Schematic-DB-Test-Schemas/main/test_schema.jsonld"
     )
 schema = Schema(config)
 ```
@@ -200,13 +197,13 @@ Schematic db uses pdoc to generate documentation from docstrings. This exists [h
 
 #### Classes
 
-##### DB Config
+##### Database Schema
 
-The [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_config/db_config.py) class is used to store data for the database in form agnostic to the type. It is cerated by a [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) object, and used by the various relational database classes.
+The [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) class is used to store data for the database in form agnostic to the type. It is cerated by a [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) object, and used by the various relational database classes.
 
 ##### Schema
 
-The [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) class is used to interact with the Schematic API to create a generic representation of the database from the schema. This is stored as a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_config/db_config.py) object. The Schema is used by the [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class.
+The [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) class is used to interact with the Schematic API to create a generic representation of the database from the schema. This is stored as a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) object. The Schema is used by the [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class.
 
 ##### Manifest Store
 
