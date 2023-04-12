@@ -2,9 +2,11 @@
 
 import pytest
 import pandas as pd
-
-
+from pydantic import ValidationError
 from schematic_db.api_utils.api_utils import (
+    ManifestMetadata,
+    ManifestMetadataList,
+    create_schematic_api_response,
     filter_params,
     find_class_specific_properties,
     get_property_label_from_display_name,
@@ -14,12 +16,126 @@ from schematic_db.api_utils.api_utils import (
     is_node_required,
     get_node_validation_rules,
     SchematicAPIError,
+    SchematicAPITimeoutError,
 )
 
 
+@pytest.mark.fast
+class TestManifestMetadata:
+    """Testing for ManifestMetadata"""
+
+    def test_validation_error1(self) -> None:
+        """Testing for ManifestMetadata pydantic synapse id error"""
+        with pytest.raises(
+            ValidationError,
+            match="2 validation errors for ManifestMetadata",
+        ):
+            ManifestMetadata(
+                dataset_id="xxx",
+                dataset_name="xxx",
+                manifest_id="xxx",
+                manifest_name="xxx",
+                component_name="xxx",
+            )
+
+    def test_validation_error2(self) -> None:
+        """Testing for ManifestMetadata pydantic string error"""
+        with pytest.raises(
+            ValidationError,
+            match="3 validation errors for ManifestMetadata",
+        ):
+            ManifestMetadata(
+                dataset_id="syn1",
+                dataset_name="",
+                manifest_id="syn1",
+                manifest_name="",
+                component_name="",
+            )
+
+
+@pytest.mark.fast
+class TestManifestMetadataList:
+    """Testing for ManifestMetadataList"""
+
+    def test_init(self) -> None:
+        """Test ManifestMetadataList init"""
+        mml = ManifestMetadataList(
+            [
+                [["", ""], ["", ""], ["", ""]],
+                [["syn1", "xxx"], ["syn2", "xxx"], ["xxx", "xxx"]],
+            ]
+        )
+        assert len(mml.metadata_list) == 1
+
+    def test_get_dataset_ids_for_component(self) -> None:
+        """Test ManifestMetadataList.get_dataset_ids_for_component"""
+        mml = ManifestMetadataList(
+            [
+                [["syn1", "xxx"], ["syn2", "xxx"], ["component1", "component1"]],
+                [["syn3", "xxx"], ["syn4", "xxx"], ["component2", "component2"]],
+            ]
+        )
+        assert mml.get_dataset_ids_for_component("component1") == ["syn1"]
+        assert mml.get_dataset_ids_for_component("component2") == ["syn3"]
+
+    def test_get_manifest_ids_for_component(self) -> None:
+        """Test ManifestMetadataList.get_manifest_ids_for_component"""
+        mml = ManifestMetadataList(
+            [
+                [["syn1", "xxx"], ["syn2", "xxx"], ["component1", "component1"]],
+                [["syn3", "xxx"], ["syn4", "xxx"], ["component2", "component2"]],
+            ]
+        )
+        assert mml.get_manifest_ids_for_component("component1") == ["syn2"]
+        assert mml.get_manifest_ids_for_component("component2") == ["syn4"]
+
+
 @pytest.mark.schematic
-class TestAPIUtils:
-    """Testing for API utils"""
+class TestAPIUtilHelpers:
+    """Testing for API util helpers"""
+
+    def test_create_schematic_api_response(
+        self,
+        test_schema_json_url: str,
+        secrets_dict: dict,
+        test_synapse_asset_view_id: str,
+    ) -> None:
+        """Testing for create_schematic_api_response"""
+        response = create_schematic_api_response(
+            endpoint_path="explorer/get_property_label_from_display_name",
+            params={
+                "schema_url": test_schema_json_url,
+                "display_name": "year_of_birth",
+            },
+        )
+        assert response.status_code == 200
+
+        with pytest.raises(
+            SchematicAPIError,
+            match="Error accessing Schematic endpoint",
+        ):
+            create_schematic_api_response(
+                endpoint_path="explorer/get_property_label_from_display_name",
+                params={
+                    "schema_url": "NOT_A_URL",
+                    "display_name": "NOT_A_COMPONENT",
+                },
+            )
+
+        with pytest.raises(
+            SchematicAPITimeoutError,
+            match="Schematic endpoint timed out",
+        ):
+            create_schematic_api_response(
+                endpoint_path="manifest/download",
+                params={
+                    "input_token": secrets_dict["synapse"]["auth_token"],
+                    "dataset_id": "syn47996410",
+                    "asset_view": test_synapse_asset_view_id,
+                    "as_json": True,
+                },
+                timeout=1,
+            )
 
     def test_filter_params(self) -> None:
         """Testing for filter_params"""
@@ -27,6 +143,11 @@ class TestAPIUtils:
         assert not filter_params({"input_token": "xxx"})
         assert filter_params({"attribute": 1}) == {"attribute": 1}
         assert filter_params({"attribute": 1, "input_token": "xxx"}) == {"attribute": 1}
+
+
+@pytest.mark.schematic
+class TestAPIUtils:
+    """Testing for API utils"""
 
     def test_find_class_specific_properties(self, test_schema_json_url: str) -> None:
         "Testing for find_class_specific_properties"
@@ -80,16 +201,6 @@ class TestAPIUtils:
             test_synapse_asset_view_id,
         )
         assert isinstance(manifest, pd.DataFrame)
-
-        with pytest.raises(
-            SchematicAPIError,
-            match="Error accessing Schematic endpoint",
-        ):
-            get_manifest(
-                secrets_dict["synapse"]["auth_token"],
-                "1",
-                test_synapse_asset_view_id,
-            )
 
     def test_is_node_required(self, test_schema_json_url: str) -> None:
         """Testing for is_node_required"""

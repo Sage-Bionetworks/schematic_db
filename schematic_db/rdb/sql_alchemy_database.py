@@ -300,6 +300,6 @@ class SQLAlchemyDatabase(
                 raise UpsertDatabaseError(table_name) from exc
 
     def _upsert_table_row(
-        self, row: dict[str, Any], table: sa.table, table_name
+        self, row: dict[str, Any], table: sa.table, table_name: str
     ) -> None:
         pass

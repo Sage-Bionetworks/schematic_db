@@ -42,6 +42,30 @@ class SchematicAPIError(Exception):
         )
 
 
+class SchematicAPITimeoutError(Exception):
+    """When schematic API timed out"""
+
+    def __init__(
+        self,
+        endpoint_url: str,
+        time: datetime,
+        params: dict[str, Any],
+    ) -> None:
+        self.message = "Schematic endpoint timed out"
+        self.endpoint_url = endpoint_url
+        self.time = time
+        self.params = params
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.message}; "
+            f"URL: {self.endpoint_url}; "
+            f"Time (PST): {self.time}; "
+            f"Parameters: {self.params}"
+        )
+
+
 def create_schematic_api_response(
     endpoint_path: str,
     params: dict[str, Any],
@@ -56,6 +80,7 @@ def create_schematic_api_response(
 
     Raises:
         SchematicAPIError: When response code is anything other than 200
+        SchematicAPITimeoutError: When API call times out
 
     Returns:
         requests.Response: The response from the API
@@ -63,11 +88,19 @@ def create_schematic_api_response(
     api_url = getenv("API_URL", "https://schematic-dev.api.sagebionetworks.org/v1")
     endpoint_url = f"{api_url}/{endpoint_path}"
     start_time = datetime.now(pytz.timezone("US/Pacific"))
-    response = requests.get(endpoint_url, params=params, timeout=timeout)
+    try:
+        response = requests.get(endpoint_url, params=params, timeout=timeout)
+    except requests.exceptions.Timeout as exc:
+        raise SchematicAPITimeoutError(
+            endpoint_url, start_time, filter_params(params)
+        ) from exc
     if response.status_code != 200:
-        params = filter_params(params)
         raise SchematicAPIError(
-            endpoint_url, response.status_code, response.reason, start_time, params
+            endpoint_url,
+            response.status_code,
+            response.reason,
+            start_time,
+            filter_params(params),
         )
     return response
 
@@ -105,14 +138,14 @@ def find_class_specific_properties(schema_url: str, schema_class: str) -> list[s
 
 
 def get_property_label_from_display_name(
-    schema_url: str, display_name: str, strict_came_case: bool = True
+    schema_url: str, display_name: str, strict_camel_case: bool = True
 ) -> str:
     """Converts a given display name string into a proper property label string
 
     Args:
         schema_url (str): Data Model URL
         display_name (str): The display name to be converted
-        strict_came_case (bool, optional): If true the more strict way of converting
+        strict_camel_case (bool, optional): If true the more strict way of converting
             to camel case is used. Defaults to True.
 
     Returns:
@@ -121,7 +154,7 @@ def get_property_label_from_display_name(
     params = {
         "schema_url": schema_url,
         "display_name": display_name,
-        "strict_came_case": strict_came_case,
+        "strict_camel_case": strict_camel_case,
     }
     response = create_schematic_api_response(
         "explorer/get_property_label_from_display_name", params
@@ -264,7 +297,7 @@ def get_project_manifests(
         "asset_view": asset_view,
     }
     response = create_schematic_api_response(
-        "storage/project/manifests", params, timeout=60
+        "storage/project/manifests", params, timeout=360
     )
     return ManifestMetadataList(response.json())
 
@@ -290,7 +323,7 @@ def get_manifest(
         "asset_view": asset_view,
         "as_json": True,
     }
-    response = create_schematic_api_response("manifest/download", params, timeout=120)
+    response = create_schematic_api_response("manifest/download", params, timeout=600)
     manifest = pandas.DataFrame(response.json())
     return manifest
 
