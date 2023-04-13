@@ -121,8 +121,7 @@ jobs:
       - name: Static typing with mypy
         run: |
           mkdir .mypy_cache
-          poetry run mypy --install-types --non-interactive ./
-          poetry run mypy --disallow-untyped-defs .
+          poetry run mypy --install-types --non-interactive --disallow-untyped-defs .
 
       - name: Code formatting with black
         uses: psf/black@stable

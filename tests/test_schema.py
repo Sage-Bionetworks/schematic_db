@@ -8,7 +8,12 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
     ColumnDatatype,
 )
-from schematic_db.schema.schema import Schema, DatabaseConfig, SchemaConfig
+from schematic_db.schema.schema import (
+    Schema,
+    DatabaseConfig,
+    SchemaConfig,
+    ColumnSchematicError,
+)
 from schematic_db.schema.database_config import DatabaseObjectConfig
 
 
@@ -217,6 +222,26 @@ class TestSchema:
                 foreign_column_name="id",
             )
         ]
+
+    def test_is_column_required(self, test_schema1: Schema) -> None:
+        """Testing for Schema.is_column_required"""
+        obj = test_schema1
+        assert obj.is_column_required("id", "Patients")
+        assert not obj.is_column_required("weight", "Patients")
+        with pytest.raises(
+            ColumnSchematicError,
+            match=(
+                "There was an issue getting data from the Schematic API for the "
+                "column: column name: NOT_A_COLUMN; table_name: Patients"
+            ),
+        ):
+            obj.is_column_required("NOT_A_COLUMN", "Patients")
+
+    def test_get_column_datatype(self, test_schema1: Schema) -> None:
+        """Testing for Schema.get_column_datatype"""
+        obj = test_schema1
+        assert obj.get_column_datatype("id", "Patients") == ColumnDatatype.TEXT
+        assert obj.get_column_datatype("weight", "Patients") == ColumnDatatype.FLOAT
 
 
 @pytest.mark.schematic

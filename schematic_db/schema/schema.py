@@ -18,18 +18,11 @@ from schematic_db.api_utils.api_utils import (
     get_property_label_from_display_name,
     is_node_required,
     get_node_validation_rules,
+    SchematicAPIError,
+    SchematicAPITimeoutError,
 )
 from schematic_db.schema_graph.schema_graph import SchemaGraph
 from .database_config import DatabaseConfig
-
-
-SCHEMATIC_TYPE_DATATYPES = {
-    "str": ColumnDatatype.TEXT,
-    "float": ColumnDatatype.FLOAT,
-    "num": ColumnDatatype.FLOAT,
-    "int": ColumnDatatype.INT,
-    "date": ColumnDatatype.DATE,
-}
 
 
 class NoColumnsWarning(Warning):
@@ -60,6 +53,25 @@ class MoreThanOneTypeRule(Exception):
             f"{self.message}; column name:{self.column_name}; "
             f"type_rules:{self.type_rules}"
         )
+
+
+class ColumnSchematicError(Exception):
+    """Raised when there is an issue getting data from the Schematic API for a column"""
+
+    def __init__(
+        self,
+        column_name: str,
+        table_name: str,
+    ):
+        self.message = (
+            "There was an issue getting data from the Schematic API for the column"
+        )
+        self.column_name = column_name
+        self.table_name = table_name
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"{self.message}: column name: {self.column_name}; table_name: {self.table_name}"
 
 
 @dataclass()
@@ -129,7 +141,7 @@ class Schema:
         return self.database_schema
 
     def update_database_schema(self) -> None:
-        """Updates the DatabaseSchema table."""
+        """Updates the database schema."""
         table_names = self.schema_graph.create_sorted_table_name_list()
         table_schemas = [
             schema
@@ -139,7 +151,8 @@ class Schema:
         self.database_schema = DatabaseSchema(table_schemas)
 
     def create_table_schema(self, table_name: str) -> Optional[TableSchema]:
-        """Creates the the schema for one table in the database.
+        """Creates the the schema for one table in the database, if any column
+         schemas can be created.
 
         Args:
             table_name (str): The name of the table the schema will be created for.
@@ -164,7 +177,7 @@ class Schema:
         self,
         table_name: str,
     ) -> Optional[list[ColumnSchema]]:
-        """Create the column schemas for the table
+        """Create the column schemas for the table, if any can be created.
 
         Args:
             table_name (str): The name of the table to create the column schemas for
@@ -202,34 +215,71 @@ class Schema:
         # Create column config if not provided
         return ColumnSchema(
             name=column_name,
-            datatype=self.get_column_datatype(column_name),
+            datatype=self.get_column_datatype(column_name, table_name),
             required=is_node_required(self.schema_url, column_name),
             index=False,
         )
 
-    def get_column_datatype(self, column_name: str) -> ColumnDatatype:
+    def is_column_required(self, column_name: str, table_name: str) -> bool:
+        """Determines if the column is required in the schema
+
+        Args:
+            column_name (str): The name of the column
+            table_name (str): The name of the table
+
+        Raises:
+            ColumnSchematicError: Raised when there is an issue with getting a result from the
+             schematic API
+
+        Returns:
+            bool: Is the column required?
+        """
+        try:
+            is_column_required = is_node_required(self.schema_url, column_name)
+        except (SchematicAPIError, SchematicAPITimeoutError) as exc:
+            raise ColumnSchematicError(column_name, table_name) from exc
+        return is_column_required
+
+    def get_column_datatype(self, column_name: str, table_name: str) -> ColumnDatatype:
         """Gets the datatype for the column
 
         Args:
             column_name (str): The name of the column
+            table_name (str): The name of the table
 
         Raises:
+            ColumnSchematicError: Raised when there is an issue with getting a result from the
+             schematic API
             MoreThanOneTypeRule: Raised when the Schematic API returns more than one rule that
              indicate the columns datatype
 
         Returns:
             ColumnDatatype: The columns datatype
         """
-        # Use schematic API to get validation rules
-        rules = get_node_validation_rules(self.schema_url, column_name)
-        # Filter for rules that indicate the datatype
-        type_rules = [rule for rule in rules if rule in SCHEMATIC_TYPE_DATATYPES]
-        # Raise error if there is more than one type of validation type rule
-        if len(type_rules) > 1:
-            raise MoreThanOneTypeRule(column_name, type_rules)
-        if len(type_rules) == 1:
-            return SCHEMATIC_TYPE_DATATYPES[type_rules[0]]
-        # Use text if there are no validation type rules
+        datatypes = {
+            "str": ColumnDatatype.TEXT,
+            "float": ColumnDatatype.FLOAT,
+            "num": ColumnDatatype.FLOAT,
+            "int": ColumnDatatype.INT,
+            "date": ColumnDatatype.DATE,
+        }
+        # Try to get validation rules from Schematic API
+        try:
+            all_validation_rules = get_node_validation_rules(
+                self.schema_url, column_name
+            )
+        except (SchematicAPIError, SchematicAPITimeoutError) as exc:
+            raise ColumnSchematicError(column_name, table_name) from exc
+        # Try to get type from validation rules
+        type_validation_rules = [
+            rule for rule in all_validation_rules if rule in datatypes
+        ]
+        if len(type_validation_rules) > 1:
+            raise MoreThanOneTypeRule(column_name, type_validation_rules)
+        if len(type_validation_rules) == 1:
+            return datatypes[type_validation_rules[0]]
+
+        # Default to text if there are no validation type rules
         return ColumnDatatype.TEXT
 
     def get_primary_key(self, table_name: str) -> str:
