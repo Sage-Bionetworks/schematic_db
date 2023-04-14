@@ -16,6 +16,8 @@ from schematic_db.schema.schema import (
 )
 from schematic_db.schema.database_config import DatabaseObjectConfig
 
+# pylint: disable=protected-access
+
 
 @pytest.fixture(name="database_config")
 def fixture_database_config() -> Generator:
@@ -146,7 +148,7 @@ class TestSchema:
     def test_create_column_schemas(self, test_schema1: Schema) -> None:
         """Testing for Schema.attributes()"""
         obj = test_schema1
-        assert obj.create_column_schemas("Patient") == [
+        assert obj._create_column_schemas("Patient") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
@@ -168,7 +170,7 @@ class TestSchema:
             ),
             ColumnSchema(name="date", datatype=ColumnDatatype.DATE, required=False),
         ]
-        assert obj.create_column_schemas("Biospecimen") == [
+        assert obj._create_column_schemas("Biospecimen") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
@@ -185,7 +187,7 @@ class TestSchema:
                 index=False,
             ),
         ]
-        assert obj.create_column_schemas("BulkRnaSeq") == [
+        assert obj._create_column_schemas("BulkRnaSeq") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
@@ -207,15 +209,15 @@ class TestSchema:
     def test_create_foreign_keys(self, test_schema1: Schema) -> None:
         """Testing for Schema.create_foreign_keys()"""
         obj = test_schema1
-        assert obj.create_foreign_keys("Patient") == []
-        assert obj.create_foreign_keys("Biospecimen") == [
+        assert obj._create_foreign_keys("Patient") == []
+        assert obj._create_foreign_keys("Biospecimen") == [
             ForeignKeySchema(
                 name="patientId",
                 foreign_table_name="Patient",
                 foreign_column_name="id",
             )
         ]
-        assert obj.create_foreign_keys("BulkRnaSeq") == [
+        assert obj._create_foreign_keys("BulkRnaSeq") == [
             ForeignKeySchema(
                 name="biospecimenId",
                 foreign_table_name="Biospecimen",
@@ -226,8 +228,8 @@ class TestSchema:
     def test_is_column_required(self, test_schema1: Schema) -> None:
         """Testing for Schema.is_column_required"""
         obj = test_schema1
-        assert obj.is_column_required("id", "Patients")
-        assert not obj.is_column_required("weight", "Patients")
+        assert obj._is_column_required("id", "Patients")
+        assert not obj._is_column_required("weight", "Patients")
         with pytest.raises(
             ColumnSchematicError,
             match=(
@@ -235,13 +237,13 @@ class TestSchema:
                 "column: column name: NOT_A_COLUMN; table_name: Patients"
             ),
         ):
-            obj.is_column_required("NOT_A_COLUMN", "Patients")
+            obj._is_column_required("NOT_A_COLUMN", "Patients")
 
     def test_get_column_datatype(self, test_schema1: Schema) -> None:
         """Testing for Schema.get_column_datatype"""
         obj = test_schema1
-        assert obj.get_column_datatype("id", "Patients") == ColumnDatatype.TEXT
-        assert obj.get_column_datatype("weight", "Patients") == ColumnDatatype.FLOAT
+        assert obj._get_column_datatype("id", "Patients") == ColumnDatatype.TEXT
+        assert obj._get_column_datatype("weight", "Patients") == ColumnDatatype.FLOAT
 
 
 @pytest.mark.schematic
@@ -262,7 +264,7 @@ class TestSchema2:
     def test_create_column_schemas(self, test_schema2: Schema) -> None:
         """Testing for Schema.attributes()"""
         obj = test_schema2
-        assert obj.create_column_schemas("Patient") == [
+        assert obj._create_column_schemas("Patient") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
@@ -284,7 +286,7 @@ class TestSchema2:
             ),
             ColumnSchema(name="date", datatype=ColumnDatatype.DATE, required=False),
         ]
-        assert obj.create_column_schemas("Biospecimen") == [
+        assert obj._create_column_schemas("Biospecimen") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
@@ -301,7 +303,7 @@ class TestSchema2:
                 index=False,
             ),
         ]
-        assert obj.create_column_schemas("BulkRnaSeq") == [
+        assert obj._create_column_schemas("BulkRnaSeq") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
@@ -323,15 +325,15 @@ class TestSchema2:
     def test_create_foreign_keys(self, test_schema2: Schema) -> None:
         """Testing for Schema.create_foreign_keys()"""
         obj = test_schema2
-        assert obj.create_foreign_keys("Patient") == []
-        assert obj.create_foreign_keys("Biospecimen") == [
+        assert obj._create_foreign_keys("Patient") == []
+        assert obj._create_foreign_keys("Biospecimen") == [
             ForeignKeySchema(
                 name="patientId",
                 foreign_table_name="Patient",
                 foreign_column_name="id",
             )
         ]
-        assert obj.create_foreign_keys("BulkRnaSeq") == [
+        assert obj._create_foreign_keys("BulkRnaSeq") == [
             ForeignKeySchema(
                 name="biospecimenId",
                 foreign_table_name="Biospecimen",

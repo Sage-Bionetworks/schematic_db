@@ -130,7 +130,7 @@ class Schema:
         self.schema_url = config.schema_url
         self.use_display_names_as_labels = use_display_names_as_labels
         self.schema_graph = SchemaGraph(config.schema_url)
-        self.update_database_schema()
+        self.database_schema: Optional[DatabaseSchema] = None
 
     def get_database_schema(self) -> DatabaseSchema:
         """Gets the current database schema
@@ -138,6 +138,10 @@ class Schema:
         Returns:
             DatabaseSchema: the current database schema
         """
+        # When first initialized, database schema is None
+        if self.database_schema is None:
+            self.update_database_schema()
+        assert self.database_schema is not None
         return self.database_schema
 
     def update_database_schema(self) -> None:
@@ -145,12 +149,12 @@ class Schema:
         table_names = self.schema_graph.create_sorted_table_name_list()
         table_schemas = [
             schema
-            for schema in [self.create_table_schema(name) for name in table_names]
+            for schema in [self._create_table_schema(name) for name in table_names]
             if schema is not None
         ]
         self.database_schema = DatabaseSchema(table_schemas)
 
-    def create_table_schema(self, table_name: str) -> Optional[TableSchema]:
+    def _create_table_schema(self, table_name: str) -> Optional[TableSchema]:
         """Creates the the schema for one table in the database, if any column
          schemas can be created.
 
@@ -162,18 +166,18 @@ class Schema:
               otherwise None.
         """
         # Some components will not have any columns for various reasons
-        columns = self.create_column_schemas(table_name)
+        columns = self._create_column_schemas(table_name)
         if not columns:
             return None
 
         return TableSchema(
             name=table_name,
             columns=columns,
-            primary_key=self.get_primary_key(table_name),
-            foreign_keys=self.get_foreign_keys(table_name),
+            primary_key=self._get_primary_key(table_name),
+            foreign_keys=self._get_foreign_keys(table_name),
         )
 
-    def create_column_schemas(
+    def _create_column_schemas(
         self,
         table_name: str,
     ) -> Optional[list[ColumnSchema]]:
@@ -187,7 +191,9 @@ class Schema:
         """
         # the names of the columns to be created, in label(not display) form
         column_names = find_class_specific_properties(self.schema_url, table_name)
-        columns = [self.create_column_schema(name, table_name) for name in column_names]
+        columns = [
+            self._create_column_schema(name, table_name) for name in column_names
+        ]
         # Some Tables will not have any columns for various reasons
         if not columns:
             warnings.warn(
@@ -198,7 +204,7 @@ class Schema:
             return None
         return columns
 
-    def create_column_schema(self, column_name: str, table_name: str) -> ColumnSchema:
+    def _create_column_schema(self, column_name: str, table_name: str) -> ColumnSchema:
         """Creates a schema for  column
 
         Args:
@@ -215,12 +221,12 @@ class Schema:
         # Create column config if not provided
         return ColumnSchema(
             name=column_name,
-            datatype=self.get_column_datatype(column_name, table_name),
-            required=is_node_required(self.schema_url, column_name),
+            datatype=self._get_column_datatype(column_name, table_name),
+            required=self._is_column_required(column_name, table_name),
             index=False,
         )
 
-    def is_column_required(self, column_name: str, table_name: str) -> bool:
+    def _is_column_required(self, column_name: str, table_name: str) -> bool:
         """Determines if the column is required in the schema
 
         Args:
@@ -240,7 +246,7 @@ class Schema:
             raise ColumnSchematicError(column_name, table_name) from exc
         return is_column_required
 
-    def get_column_datatype(self, column_name: str, table_name: str) -> ColumnDatatype:
+    def _get_column_datatype(self, column_name: str, table_name: str) -> ColumnDatatype:
         """Gets the datatype for the column
 
         Args:
@@ -282,7 +288,7 @@ class Schema:
         # Default to text if there are no validation type rules
         return ColumnDatatype.TEXT
 
-    def get_primary_key(self, table_name: str) -> str:
+    def _get_primary_key(self, table_name: str) -> str:
         """Get the primary key for the column
 
         Args:
@@ -299,7 +305,7 @@ class Schema:
 
         return primary_key_attempt
 
-    def get_foreign_keys(self, table_name: str) -> list[ForeignKeySchema]:
+    def _get_foreign_keys(self, table_name: str) -> list[ForeignKeySchema]:
         """Gets a list of foreign keys for an table in the database
 
         Args:
@@ -312,11 +318,11 @@ class Schema:
         foreign_keys_attempt = self.database_config.get_foreign_keys(table_name)
         # If there are no foreign keys in config use schema graph to create foreign keys
         if foreign_keys_attempt is None:
-            return self.create_foreign_keys(table_name)
+            return self._create_foreign_keys(table_name)
 
         return foreign_keys_attempt
 
-    def create_foreign_keys(self, table_name: str) -> list[ForeignKeySchema]:
+    def _create_foreign_keys(self, table_name: str) -> list[ForeignKeySchema]:
         """Create a list of foreign keys an table in the database using the schema graph
 
         Args:
@@ -328,9 +334,9 @@ class Schema:
         # Uses the schema graph to find tables the current table depends on
         parent_table_names = self.schema_graph.get_neighbors(table_name)
         # Each parent of the current table needs a foreign key to that parent
-        return [self.create_foreign_key(name) for name in parent_table_names]
+        return [self._create_foreign_key(name) for name in parent_table_names]
 
-    def create_foreign_key(self, foreign_table_name: str) -> ForeignKeySchema:
+    def _create_foreign_key(self, foreign_table_name: str) -> ForeignKeySchema:
         """Creates a foreign key table
 
         Args:
@@ -341,14 +347,14 @@ class Schema:
         """
         # Assume the foreign key name is <table_name>_id where the table name is the
         #  name of the table the column the foreign key is in
-        column_name = self.get_column_name(f"{foreign_table_name}_id")
+        column_name = self._get_column_name(f"{foreign_table_name}_id")
 
         attempt = self.database_config.get_primary_key(foreign_table_name)
         foreign_column_name = "id" if attempt is None else attempt
 
         return ForeignKeySchema(column_name, foreign_table_name, foreign_column_name)
 
-    def get_column_name(self, column_name: str) -> str:
+    def _get_column_name(self, column_name: str) -> str:
         """Gets the column name of a manifest column
 
         Args:
