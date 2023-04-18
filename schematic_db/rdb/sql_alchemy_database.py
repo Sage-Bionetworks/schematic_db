@@ -6,6 +6,7 @@ import numpy as np
 import sqlalchemy as sa
 import sqlalchemy_utils.functions
 from sqlalchemy.inspection import inspect
+from sqlalchemy import exc
 from schematic_db.db_schema.db_schema import (
     TableSchema,
     ColumnDatatype,
@@ -84,7 +85,8 @@ def create_column_schemas(
     """Creates a list of column schemas from a sqlalchemy table schema
 
     Args:
-        table_schema (sa.sql.schema.Table):A sqlalchemy table schema
+        table_schema (sa.sql.schema.Table): A sqlalchemy table schema
+        indices (list[str]): A list of columns in the schema to be indexed
 
     Returns:
         list[ColumnSchema]: A list of column schemas
@@ -223,11 +225,27 @@ class SQLAlchemyDatabase(
         return self.execute_sql_query(query)
 
     def _execute_sql_statement(self, statement: str) -> Any:
+        """Executes a sql statement
+
+        Args:
+            statement (str): A sql statement in string form
+
+        Returns:
+            Any: The result, idf any, from the sql statement
+        """
         with self.engine.connect().execution_options(autocommit=True) as conn:
             result = conn.execute(statement)
         return result
 
     def _create_columns(self, table_schema: TableSchema) -> list[sa.Column]:
+        """Creates a list SQLAlchemy columns for a table
+
+        Args:
+            table_schema (TableSchema): The schema of the table to create columns for
+
+        Returns:
+            list[sa.Column]: A list SQLAlchemy columns
+        """
         columns = [
             self._create_column(att, table_schema) for att in table_schema.columns
         ]
@@ -235,17 +253,26 @@ class SQLAlchemyDatabase(
         return columns
 
     def _create_column(
-        self, column_schema: ColumnSchema, table_config: TableSchema
+        self, column_schema: ColumnSchema, table_schema: TableSchema
     ) -> sa.Column:
+        """Creates a SQLAlchemy column
+
+        Args:
+            column_schema (ColumnSchema): The schema for the column
+            table_schema (TableSchema): The schema for the table
+
+        Returns:
+            sa.Column: a SQLAlchemy column
+        """
         sql_datatype = self._get_datatype(
             column_schema,
-            table_config.primary_key,
-            table_config.get_foreign_key_names(),
+            table_schema.primary_key,
+            table_schema.get_foreign_key_names(),
         )
 
         # Add foreign key constraints if needed
-        if column_schema.name in table_config.get_foreign_key_names():
-            key = table_config.get_foreign_key_by_name(column_schema.name)
+        if column_schema.name in table_schema.get_foreign_key_names():
+            key = table_schema.get_foreign_key_by_name(column_schema.name)
             return create_foreign_key_column(
                 column_schema.name,
                 sql_datatype,
@@ -260,10 +287,18 @@ class SQLAlchemyDatabase(
             nullable=not column_schema.required,
             index=column_schema.index,
             # column is unique if it is a primary key
-            unique=column_schema.name == table_config.primary_key,
+            unique=column_schema.name == table_schema.primary_key,
         )
 
     def _get_column_indices(self, table_name: str) -> list[str]:
+        """Gets the tables current column indices
+
+        Args:
+            table_name (str): The name of the table
+
+        Returns:
+            list[str]: A list of column names that are currently indexed
+        """
         indices = inspect(self.engine).get_indexes(table_name)
         return [idx["column_names"][0] for idx in indices]
 
@@ -273,7 +308,18 @@ class SQLAlchemyDatabase(
         primary_key: str,  # pylint: disable=unused-argument
         foreign_keys: list[str],  # pylint: disable=unused-argument
     ) -> Any:
-        """Some _get_datatype methods depend on primary and foreign"""
+        """
+        Gets the datatype of the column based on its schema
+        Other _get_datatype methods depend on primary and foreign keys
+
+        Args:
+            column_schema (ColumnSchema): The schema of the column
+            primary_key (str): The primary key fo the column (unused)
+            foreign_keys (list[str]): A list of foreign keys for the the column (unused)
+
+        Returns:
+            Any: The SQLAlchemy datatype
+        """
         datatypes = {
             ColumnDatatype.TEXT: sa.VARCHAR,
             ColumnDatatype.DATE: sa.Date,
@@ -287,8 +333,11 @@ class SQLAlchemyDatabase(
         """Inserts and/or updates the rows of the table
 
         Args:
-            table_name (str): _The name of the table to be upserted
+            table_name (str): The name of the table to be upserted
             data (pd.DataFrame): The rows to be upserted
+
+        Raises:
+            UpsertDatabaseError: Raised when a SQLAlchemy error caught
         """
         table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
         data = data.replace({np.nan: None})
@@ -296,10 +345,16 @@ class SQLAlchemyDatabase(
         for row in rows:
             try:
                 self._upsert_table_row(row, table, table_name)
-            except (sa.exc.OperationalError, sa.exc.IntegrityError) as exc:
-                raise UpsertDatabaseError(table_name) from exc
+            except exc.SQLAlchemyError as exception:
+                raise UpsertDatabaseError(table_name) from exception
 
     def _upsert_table_row(
         self, row: dict[str, Any], table: sa.table, table_name: str
     ) -> None:
-        pass
+        """This method is meant be instantiated by child classes.
+
+        Args:
+            row (dict[str, Any]): A row of a dataframe to be upserted
+            table (sa.table):  A synapse table entity to be upserted into
+            table_name (str): The name of the table to be upserted into
+        """

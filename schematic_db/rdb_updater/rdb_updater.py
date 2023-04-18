@@ -8,6 +8,10 @@ class NoManifestWarning(Warning):
     """Raised when trying to update a database table there are no manifests"""
 
     def __init__(self, message: str) -> None:
+        """
+        Args:
+            message (str): A messages describing the warning
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -16,6 +20,11 @@ class UpsertError(Exception):
     """Raised when there is an error doing an upsert"""
 
     def __init__(self, table_name: str, dataset_id: str) -> None:
+        """
+        Args:
+            table_name (str): The name of the table the upsert occurred in
+            dataset_id (str): The dataset id of the manifest that was being upserted
+        """
         self.message = "Error upserting table"
         self.table_name = table_name
         self.dataset_id = dataset_id
@@ -33,6 +42,11 @@ class RDBUpdater:
     """An for updating a database."""
 
     def __init__(self, rdb: RelationalDatabase, manifest_store: ManifestStore) -> None:
+        """
+        Args:
+            rdb (RelationalDatabase): A relational database object to be updated
+            manifest_store (ManifestStore): A manifest store object to get manifests from
+        """
         self.rdb = rdb
         self.manifest_store = manifest_store
 
@@ -40,7 +54,7 @@ class RDBUpdater:
         """
         Updates all tables in the database.
         """
-        table_names = self.manifest_store.create_sorted_object_name_list()
+        table_names = self.manifest_store.create_sorted_table_name_list()
         for name in table_names:
             self.update_database_table(name)
 
@@ -64,12 +78,14 @@ class RDBUpdater:
             self.upsert_table_with_dataset_id(table_name, dataset_id)
 
     def upsert_table_with_dataset_id(self, table_name: str, dataset_id: str) -> None:
-        """
-        Updates a table in the database with a manifest
+        """Updates a table in the database with a manifest
 
         Args:
             table_name (str): The name of the table
             dataset_id (str): The id of the dataset
+
+        Raises:
+            UpsertError: Raised when there is an UpsertDatabaseError caught
         """
         table_schema = self.rdb.get_table_schema(table_name)
         manifest_table = self.manifest_store.get_manifest(dataset_id)

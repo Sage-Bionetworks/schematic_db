@@ -14,7 +14,7 @@ from schematic_db.schema.schema import (
     SchemaConfig,
     ColumnSchematicError,
 )
-from schematic_db.schema.database_config import DatabaseObjectConfig
+from schematic_db.schema.database_config import DatabaseTableConfig
 
 # pylint: disable=protected-access
 
@@ -55,6 +55,19 @@ def fixture_database_config() -> Generator:
         },
         {"name": "object2", "primary_key": "att1"},
         {"name": "object3", "primary_key": "att1"},
+        {
+            "name": "datasets",
+            "primary_key": "id",
+            "foreign_keys": None,
+            "columns": [
+                {
+                    "column_name": "dataset_type",
+                    "datatype": "str",
+                    "required": True,
+                    "index": True,
+                },
+            ],
+        },
     ]
     obj = DatabaseConfig(data)  # type: ignore
     yield obj
@@ -79,7 +92,7 @@ def fixture_database_object_config() -> Generator:
             },
         ],
     }
-    obj = DatabaseObjectConfig(**data)  # type: ignore
+    obj = DatabaseTableConfig(**data)  # type: ignore
     yield obj
 
 
@@ -105,7 +118,7 @@ class TestSchemaConfig:
 class TestDatabaseConfig:
     """Testing for DatabaseConfig"""
 
-    def test_init1(self, database_object_config: DatabaseObjectConfig) -> None:
+    def test_init1(self, database_object_config: DatabaseTableConfig) -> None:
         """Testing for init"""
         obj1 = database_object_config
         assert obj1

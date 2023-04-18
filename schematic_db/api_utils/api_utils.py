@@ -23,6 +23,14 @@ class SchematicAPIError(Exception):
         time: datetime,
         params: dict[str, Any],
     ) -> None:
+        """
+        Args:
+            endpoint_url (str): The url of the endpoint
+            status_code (int): The status code given in the response
+            reason (str): The reason given in the response
+            time (datetime): The time the API was called
+            params (dict[str, Any]): The parameters sent with the API call
+        """
         self.message = "Error accessing Schematic endpoint"
         self.endpoint_url = endpoint_url
         self.status_code = status_code
@@ -32,6 +40,10 @@ class SchematicAPIError(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
+        """
+        Returns:
+            str: The description of the error
+        """
         return (
             f"{self.message}; "
             f"URL: {self.endpoint_url}; "
@@ -51,6 +63,12 @@ class SchematicAPITimeoutError(Exception):
         time: datetime,
         params: dict[str, Any],
     ) -> None:
+        """
+        Args:
+            endpoint_url (str): The url of the endpoint
+            time (datetime): The time the API was called
+            params (dict[str, Any]): The parameters sent with the API call
+        """
         self.message = "Schematic endpoint timed out"
         self.endpoint_url = endpoint_url
         self.time = time
@@ -58,6 +76,10 @@ class SchematicAPITimeoutError(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
+        """
+        Returns:
+            str: The description of the error
+        """
         return (
             f"{self.message}; "
             f"URL: {self.endpoint_url}; "
@@ -229,6 +251,11 @@ class ManifestMetadataList:
     """A list of Manifest Metadata"""
 
     def __init__(self, response_list: list[list[list[str]]]) -> None:
+        """
+        Args:
+            response_list (list[list[list[str]]]): The input from the
+             get/projects/manifests endpoint
+        """
         metadata_list = []
         for item in response_list:
             try:

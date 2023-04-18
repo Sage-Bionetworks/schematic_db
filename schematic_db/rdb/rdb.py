@@ -8,6 +8,10 @@ class UpsertDatabaseError(Exception):
     """Raised when a database class catches an error doing an upsert"""
 
     def __init__(self, table_name: str) -> None:
+        """
+        Args:
+            table_name (str): The name of the table being upserted into
+        """
         self.message = "Error upserting table"
         self.table_name = table_name
         super().__init__(self.message)

@@ -92,7 +92,7 @@ def create_attribute_annotation_string(column_schema: ColumnSchema) -> str:
     """Creates a string that will serve as a foreign key Synapse annotation
 
     Args:
-        key (ColumnSchema): The attribute to be turned into a string
+        column_schema (ColumnSchema): The attribute to be turned into a string
 
     Returns:
         str: The attribute in string form.
@@ -126,10 +126,10 @@ def create_column_schemas(column_annotations: list[str]) -> list[ColumnSchema]:
     """Creates a list of ColumnSchemas from a list of Synapse table entity strings
 
     Args:
-        strings (list[str]): A list of strings each representing an column
+        column_annotations (list[str]): A list of strings each representing an column
 
     Returns:
-        list[ColumnSchema]: A list of ColumnSchemas
+        list[ColumnSchema]:  A list of ColumnSchemas
     """
     column_lists = [att.split(";") for att in column_annotations]
     return [
@@ -311,7 +311,7 @@ class SynapseDatabase(RelationalDatabase):
 
         Args:
             table_name (str): The name of the table to be annotated
-            table_config (TableSchema): The config for the table
+            table_schema (TableSchema): The config for the table
         """
         synapse_id = self.synapse.get_synapse_id_from_table_name(table_name)
         annotations: dict[str, Union[str, list[str]]] = {
@@ -343,6 +343,9 @@ class SynapseDatabase(RelationalDatabase):
 
         Args:
             table_name (str): The name of the table
+
+        Raises:
+            SynapseDatabaseMissingTableAnnotationsError: Raised when the table ahs no annotations
 
         Returns:
             TableSchema: A generic representation of the table
@@ -447,6 +450,10 @@ class SynapseDatabase(RelationalDatabase):
         Args:
             table_name (str): The name of the table to be upserted into.
             data (pd.DataFrame): The table the rows will come from
+
+        Raises:
+            SynapseDatabaseMissingTableAnnotationsError: Raised when the table has no
+             primary key annotation.
         """
         table_id = self.synapse.get_synapse_id_from_table_name(table_name)
         annotations = self.synapse.get_entity_annotations(table_id)

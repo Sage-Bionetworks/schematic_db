@@ -131,6 +131,9 @@ jobs:
       - name: Code formatting with pylint
         run: poetry run pylint schematic_db/* tests/*
 
+      - name: Docstring checks with interrogate
+        run: poetry run interrogate -v schematic_db/ tests/
+
       - name: pytest
         run: poetry run pytest -vvs
 

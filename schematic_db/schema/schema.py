@@ -31,6 +31,10 @@ class NoColumnsWarning(Warning):
     """
 
     def __init__(self, message: str) -> None:
+        """
+        Args:
+            message (str): A message describing the error
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -43,6 +47,11 @@ class MoreThanOneTypeRule(Exception):
         column_name: str,
         type_rules: list[str],
     ):
+        """
+        Args:
+            column_name (str): The name of the column
+            type_rules (list[str]): A list of the type rules
+        """
         self.message = "Attribute has more than one validation type rule"
         self.column_name = column_name
         self.type_rules = type_rules
@@ -63,6 +72,11 @@ class ColumnSchematicError(Exception):
         column_name: str,
         table_name: str,
     ):
+        """
+        Args:
+            column_name (str): The name of the column
+            table_name (str): The name of the table
+        """
         self.message = (
             "There was an issue getting data from the Schematic API for the column"
         )
