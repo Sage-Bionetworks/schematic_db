@@ -165,10 +165,21 @@ class SQLAlchemyDatabase(
         self.engine = engine
 
     def drop_all_tables(self) -> None:
-        for tbl in reversed(self.metadata.sorted_tables):
-            self.drop_table(tbl)
+        """Drops all tables in the schema"""
+        metadata = sa.schema.MetaData(self.engine)
+        metadata.reflect()
+        metadata.drop_all()
+        self.metadata.clear()
 
     def execute_sql_query(self, query: str) -> pd.DataFrame:
+        """Executes a sql query returning a table
+
+        Args:
+            query (str): A query written in SQL that returns a table
+
+        Returns:
+            pd.DataFrame: The query result in pandas.Dataframe form
+        """
         result = self._execute_sql_statement(query).fetchall()
         table = pd.DataFrame(result)
         return table
@@ -193,11 +204,23 @@ class SQLAlchemyDatabase(
         )
 
     def drop_table(self, table_name: str) -> None:
+        """Drops a table from the schema
+
+        Args:
+            table_name (str): The name of the table to be dropped
+        """
         table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
         table.drop(self.engine)
         self.metadata.clear()
 
     def delete_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+        """Deletes rows from a table
+
+        Args:
+            table_name (str): The name fo the table to delete rows from
+            data (pd.DataFrame): A pandas dataframe, rows will eb deleted from the table
+             in the database where the primary keys match this dataframe.
+        """
         table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
         i = sa.inspect(table)
         pkey_column = list(column for column in i.columns if column.primary_key)[0]
@@ -206,6 +229,11 @@ class SQLAlchemyDatabase(
         self._execute_sql_statement(statement)
 
     def get_table_names(self) -> list[str]:
+        """Gets the names of all tables in the database
+
+        Returns:
+            list[str]: A list of table names
+        """
         inspector = sa.inspect(self.engine)
         return sorted(inspector.get_table_names())
 
@@ -221,6 +249,14 @@ class SQLAlchemyDatabase(
         self.metadata.create_all(self.engine)
 
     def query_table(self, table_name: str) -> pd.DataFrame:
+        """Queries a whole table
+
+        Args:
+            table_name (str): The name of the table to query
+
+        Returns:
+            pd.DataFrame: The table in pandas.Dataframe form
+        """
         query = f"SELECT * FROM `{table_name}`"
         return self.execute_sql_query(query)
 
