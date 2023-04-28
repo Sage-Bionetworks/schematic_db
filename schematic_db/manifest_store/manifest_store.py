@@ -152,7 +152,7 @@ class ManifestStore:
         """Gets the manifest
 
         Args:
-            dataset_id (str): The synapse id of the dataset
+            manifest_id (str): The synapse id of the dataset
 
         Returns:
             pd.DataFrame: The manifest in dataframe form
