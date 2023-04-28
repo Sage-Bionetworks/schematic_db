@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "schematic_db"
-version = "0.0.14"
+version = "0.0.19"
 description = ""
 authors = ["andrewelamb <andrewelamb@gmail.com>"]
 
@@ -18,6 +18,7 @@ mysqlclient = {version = "^2.1.1", optional = true}
 synapseclient = {version = "^2.7.0", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
 validators = "^0.20.0"
+interrogate = "^1.5.0"
 
 [tool.poetry.extras]
 mysql = ["mysqlclient"]
@@ -28,12 +29,18 @@ synapse = ["synapseclient"]
 pytest = "^7.2.1"
 pytest-mock = "^3.10.0"
 pdoc = "^12.1.0"
-mypy = "1.0.1"
-mypy-extensions = "1.0.0"
-pylint = "2.16.1"
-black = "23.1.0"
+mypy = "^1.0.1"
+mypy-extensions = "^1.0.0"
+pylint = "^2.16.1"
+black = "^23.3.0"
 coverage = "^7.2.0"
+interrogate = "^1.5.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.interrogate]
+ignore-init-module = true
+ignore-magic = true
+fail-under = 90

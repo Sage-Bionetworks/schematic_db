@@ -7,8 +7,12 @@ from schematic_db.query_store.synapse_query_store import QueryStore
 class DuplicateColumnError(Exception):
     """Occurs when a query results in a table with duplicate columns"""
 
-    def __init__(self, message: str, table_name: str) -> None:
-        self.message = message
+    def __init__(self, table_name: str) -> None:
+        """
+        Args:
+            table_name (str): The name fo the table
+        """
+        self.message = "Query result has duplicate columns"
         self.table_name = table_name
         super().__init__(self.message)
 
@@ -24,6 +28,11 @@ class RDBQueryer:
         rdb: RelationalDatabase,
         query_store: QueryStore,
     ):
+        """
+        Args:
+            rdb (RelationalDatabase): A relational database object to query
+            query_store (QueryStore): A query store object that will store the results of the query
+        """
         self.rdb = rdb
         self.query_store = query_store
 
@@ -52,5 +61,5 @@ class RDBQueryer:
         query_result = self.rdb.execute_sql_query(query)
         column_names = list(query_result.columns)
         if len(column_names) != len(set(column_names)):
-            raise DuplicateColumnError("Query result has duplicate columns", table_name)
+            raise DuplicateColumnError(table_name)
         self.query_store.store_query_result(table_name, query_result)

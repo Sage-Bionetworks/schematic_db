@@ -121,8 +121,7 @@ jobs:
       - name: Static typing with mypy
         run: |
           mkdir .mypy_cache
-          poetry run mypy --install-types --non-interactive ./
-          poetry run mypy --disallow-untyped-defs .
+          poetry run mypy --install-types --non-interactive --disallow-untyped-defs .
 
       - name: Code formatting with black
         uses: psf/black@stable
@@ -131,6 +130,9 @@ jobs:
 
       - name: Code formatting with pylint
         run: poetry run pylint schematic_db/* tests/*
+
+      - name: Docstring checks with interrogate
+        run: poetry run interrogate -v schematic_db/ tests/
 
       - name: pytest
         run: poetry run pytest -vvs

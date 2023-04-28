@@ -7,13 +7,16 @@ class RDBBuilder:  # pylint: disable=too-few-public-methods
     """Builds a database schema"""
 
     def __init__(self, rdb: RelationalDatabase, schema: Schema) -> None:
+        """
+        Args:
+            rdb (RelationalDatabase): A relational database object
+            schema (Schema): A Schema object
+        """
         self.rdb = rdb
         self.schema = schema
 
     def build_database(self) -> None:
-        """
-        Builds the database based on the schema.
-        """
+        """Builds the database based on the schema."""
         self.rdb.drop_all_tables()
         database_schema = self.schema.get_database_schema()
         for table_schema in database_schema.table_schemas:

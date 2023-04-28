@@ -92,14 +92,20 @@ class ForeignKeySchema:
 
 
 class TableColumnError(Exception):
-    """TableColumnError"""
+    """A generic error involving table columns"""
 
     def __init__(self, message: str, table_name: str) -> None:
+        """
+        Args:
+            message (str): A message describing the error
+            table_name (str): The name of the table involved in the error
+        """
         self.message = message
         self.table_name = table_name
         super().__init__(self.message)
 
     def __str__(self) -> str:
+        """String representation"""
         return f"{self.message}: {self.table_name}"
 
 
@@ -109,12 +115,20 @@ class TableKeyError(Exception):
     def __init__(
         self, message: str, table_name: str, key: Optional[str] = None
     ) -> None:
+        """
+        Args:
+            message (str): A message describing the error
+            table_name (str): The name of the table involved in the error
+            key (Optional[str], optional): The name of the key involved in the error.
+             Defaults to None.
+        """
         self.message = message
         self.table_name = table_name
         self.key = key
         super().__init__(self.message)
 
     def __str__(self) -> str:
+        """String representation"""
         return f"{self.message}: {self.table_name}; {self.key}"
 
 
@@ -146,6 +160,7 @@ class TableSchema:
         return value
 
     def __post_init__(self) -> None:
+        """Happens after initialization"""
         self.columns.sort(key=lambda x: x.name)
         self.foreign_keys.sort(key=lambda x: x.name)
         self._check_columns()
@@ -211,22 +226,43 @@ class TableSchema:
         return [column for column in self.columns if column.name == name][0]
 
     def _check_columns(self) -> None:
+        """Checks that there are columns and they don't match
+
+        Raises:
+            TableColumnError: Raised when there are no columns
+            TableColumnError: Raised when columns match
+        """
         if len(self.columns) == 0:
             raise TableColumnError("There are no columns", self.name)
         if len(self.get_column_names()) != len(set(self.get_column_names())):
             raise TableColumnError("There are duplicate columns", self.name)
 
     def _check_primary_key(self) -> None:
+        """Checks the primary is in the columns
+
+        Raises:
+            TableKeyError: Raised when the primary key is missing from the columns
+        """
         if self.primary_key not in self.get_column_names():
             raise TableKeyError(
                 "Primary key is missing from columns", self.name, self.primary_key
             )
 
     def _check_foreign_keys(self) -> None:
+        """Checks each foreign key"""
         for key in self.foreign_keys:
             self._check_foreign_key(key)
 
     def _check_foreign_key(self, key: ForeignKeySchema) -> None:
+        """Checks the foreign key exists in the columns and isn't referencing it's own table
+
+        Args:
+            key (ForeignKeySchema): A schema for a foreign key
+
+        Raises:
+            TableKeyError: Raised when the foreign key is missing from the columns
+            TableKeyError: Raised when the foreign key references its own table
+        """
         if key.name not in self.get_column_names():
             raise TableKeyError(
                 "Foreign key is missing from columns", self.name, key.name
@@ -243,6 +279,12 @@ class SchemaMissingTableError(Exception):
     def __init__(
         self, foreign_key: str, table_name: str, foreign_table_name: str
     ) -> None:
+        """
+        Args:
+            foreign_key (str): The name of the foreign key
+            table_name (str): The name of the table that the key is in
+            foreign_table_name (str): The name of the table the key refers to that is missing
+        """
         self.message = "Foreign key references table which does not exist in schema."
         self.foreign_key = foreign_key
         self.table_name = table_name
@@ -250,6 +292,7 @@ class SchemaMissingTableError(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
+        """String representation"""
         msg = (
             f"Foreign key '{self.foreign_key}' in table '{self.table_name}' references table "
             f"'{self.foreign_table_name}' which does not exist in schema."
@@ -267,6 +310,13 @@ class SchemaMissingColumnError(Exception):
         foreign_table_name: str,
         foreign_table_column: str,
     ) -> None:
+        """
+        Args:
+            foreign_key (str): The name of the foreign key
+            table_name (str): The name of the table that the key is in
+            foreign_table_name (str): The name of the table the key refers
+            foreign_table_column (str): The column in the foreign table that is missing
+        """
         self.message = "Foreign key references column which does not exist."
         self.foreign_key = foreign_key
         self.table_name = table_name
@@ -275,6 +325,7 @@ class SchemaMissingColumnError(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
+        """String representation"""
         msg = (
             f"Foreign key '{self.foreign_key}' in table '{self.table_name}' references "
             f"column '{self.foreign_table_column}' which does not exist in table "
@@ -351,6 +402,11 @@ class DatabaseSchema:
         return [schema for schema in self.table_schemas if schema.name == name][0]
 
     def _check_foreign_keys(self, schema: TableSchema) -> None:
+        """Checks all foreign keys
+
+        Args:
+            schema (TableSchema): The schema of the table being checked
+        """
         for key in schema.foreign_keys:
             self._check_foreign_key_table(schema, key)
             self._check_foreign_key_column(schema, key)
@@ -358,6 +414,15 @@ class DatabaseSchema:
     def _check_foreign_key_table(
         self, schema: TableSchema, key: ForeignKeySchema
     ) -> None:
+        """Checks that the table the foreign key refers to exists
+
+        Args:
+            schema (TableSchema): The schema for the table being checked
+            key (ForeignKeySchema): The foreign key being checked
+
+        Raises:
+            SchemaMissingTableError: Raised when the table a foreign key references is missing
+        """
         if key.foreign_table_name not in self.get_schema_names():
             raise SchemaMissingTableError(
                 foreign_key=key.name,
@@ -368,6 +433,15 @@ class DatabaseSchema:
     def _check_foreign_key_column(
         self, schema: TableSchema, key: ForeignKeySchema
     ) -> None:
+        """Checks that the column the foreign key refers to exists
+
+        Args:
+            schema (TableSchema): The schema for the table being checked
+            key (ForeignKeySchema): The foreign key being checked
+
+        Raises:
+            SchemaMissingColumnError: Raised when the column a foreign key references is missing
+        """
         foreign_schema = self.get_schema_by_name(key.foreign_table_name)
         if key.foreign_column_name not in foreign_schema.get_column_names():
             raise SchemaMissingColumnError(

@@ -15,21 +15,29 @@ class ManifestMissingPrimaryKeyError(Exception):
 
     def __init__(
         self,
-        object_name: str,
+        table_name: str,
         dataset_id: str,
         primary_key: str,
         manifest_columns: list[str],
     ):
+        """
+        Args:
+            table_name (str): The name of the table
+            dataset_id (str): The dataset id for the component
+            primary_key (str): The name of the primary key
+            manifest_columns (list[str]): The columns in the manifest
+        """
         self.message = "Manifest is missing its primary key"
-        self.object_name = object_name
+        self.table_name = table_name
         self.dataset_id = dataset_id
         self.primary_key = primary_key
         self.manifest_columns = manifest_columns
         super().__init__(self.message)
 
     def __str__(self) -> str:
+        """String representation"""
         return (
-            f"{self.message}; object name:{self.object_name}; "
+            f"{self.message}; table name:{self.table_name}; "
             f"dataset_id:{self.dataset_id}; primary keys:{self.primary_key}; "
             f"manifest columns:{self.manifest_columns}"
         )
@@ -110,14 +118,14 @@ class ManifestStore:
         self.schema_graph = SchemaGraph(config.schema_url)
         self.update_manifest_metadata()
 
-    def create_sorted_object_name_list(self) -> list[str]:
+    def create_sorted_table_name_list(self) -> list[str]:
         """
-        Uses the schema graph to create a object name list such objects always come after ones they
+        Uses the schema graph to create a table name list such tables always come after ones they
          depend on.
-        This order is how objects in a database should be built and/or updated.
+        This order is how tables in a database should be built and/or updated.
 
         Returns:
-            list[str]: A list of objects names
+            list[str]: A list of tables names
         """
         return self.schema_graph.create_sorted_table_name_list()
 
