@@ -14,15 +14,15 @@ class TestSchema:
         for item in obj.manifest_metadata.metadata_list:
             assert isinstance(item, ManifestMetadata)
 
-    def test_get_dataset_ids(self, manifest_store: ManifestStore) -> None:
-        """Testing for Schema.get_get_dataset_ids()"""
+    def test_get_manifest_ids(self, manifest_store: ManifestStore) -> None:
+        """Testing for Schema.get_get_manifest_ids"""
         obj = manifest_store
-        assert obj.get_dataset_ids("Patient") == ["syn47994831", "syn47996086"]
+        assert obj.get_manifest_ids("Patient") == ["syn47996020", "syn47996172"]
 
-    def test_get_manifest(self, manifest_store: ManifestStore) -> None:
-        """Testing for Schema.get_manifest()"""
+    def test_download_manifest(self, manifest_store: ManifestStore) -> None:
+        """Testing for Schema.download_manifest"""
         obj = manifest_store
-        manifest = obj.get_manifest("syn47994831")
+        manifest = obj.download_manifest("syn47996020")
         assert sorted(list(manifest.columns)) == sorted(
             [
                 "patientId",

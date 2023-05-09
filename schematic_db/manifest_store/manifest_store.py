@@ -6,7 +6,7 @@ from pydantic.dataclasses import dataclass
 from pydantic import validator
 import validators
 import pandas as pd
-from schematic_db.api_utils.api_utils import get_project_manifests, get_manifest
+from schematic_db.api_utils.api_utils import get_project_manifests, download_manifest
 from schematic_db.schema_graph.schema_graph import SchemaGraph
 
 
@@ -132,34 +132,30 @@ class ManifestStore:
     def update_manifest_metadata(self) -> None:
         """Updates the current objects manifest_configs."""
         self.manifest_metadata = get_project_manifests(
-            input_token=self.synapse_input_token,
+            access_token=self.synapse_input_token,
             project_id=self.synapse_project_id,
             asset_view=self.synapse_asset_view_id,
         )
 
-    def get_dataset_ids(self, name: str) -> list[str]:
-        """Gets the dataset ids for a table(component)
+    def get_manifest_ids(self, name: str) -> list[str]:
+        """Gets the manifest ids for a table(component)
 
         Args:
             name (str): The name of the table
 
         Returns:
-            list[str]: The dataset ids for the table
+            list[str]: The manifest ids for the table
         """
-        return self.manifest_metadata.get_dataset_ids_for_component(name)
+        return self.manifest_metadata.get_manifest_ids_for_component(name)
 
-    def get_manifest(self, dataset_id: str) -> pd.DataFrame:
-        """Gets the manifest associated with the dataset id
+    def download_manifest(self, manifest_id: str) -> pd.DataFrame:
+        """Downloads the manifest
 
         Args:
-            dataset_id (str): The synapse id of the dataset
+            manifest_id (str): The synapse id of the manifest
 
         Returns:
             pd.DataFrame: The manifest in dataframe form
         """
-        manifest = get_manifest(
-            self.synapse_input_token,
-            dataset_id,
-            self.synapse_asset_view_id,
-        )
+        manifest = download_manifest(self.synapse_input_token, manifest_id)
         return manifest

@@ -12,7 +12,7 @@ from schematic_db.api_utils.api_utils import (
     get_property_label_from_display_name,
     get_graph_by_edge_type,
     get_project_manifests,
-    get_manifest,
+    download_manifest,
     is_node_required,
     get_node_validation_rules,
     SchematicAPIError,
@@ -132,7 +132,6 @@ class TestAPIUtilHelpers:
         self,
         test_schema_json_url: str,
         secrets_dict: dict,
-        test_synapse_asset_view_id: str,
     ) -> None:
         """Testing for create_schematic_api_response"""
         response = create_schematic_api_response(
@@ -163,9 +162,8 @@ class TestAPIUtilHelpers:
             create_schematic_api_response(
                 endpoint_path="manifest/download",
                 params={
-                    "input_token": secrets_dict["synapse"]["auth_token"],
-                    "dataset_id": "syn47996410",
-                    "asset_view": test_synapse_asset_view_id,
+                    "access_token": secrets_dict["synapse"]["auth_token"],
+                    "manifest_id": "syn47996491",
                     "as_json": True,
                 },
                 timeout=1,
@@ -174,9 +172,11 @@ class TestAPIUtilHelpers:
     def test_filter_params(self) -> None:
         """Testing for filter_params"""
         assert not filter_params({})
-        assert not filter_params({"input_token": "xxx"})
+        assert not filter_params({"access_token": "xxx"})
         assert filter_params({"attribute": 1}) == {"attribute": 1}
-        assert filter_params({"attribute": 1, "input_token": "xxx"}) == {"attribute": 1}
+        assert filter_params({"attribute": 1, "access_token": "xxx"}) == {
+            "attribute": 1
+        }
 
 
 @pytest.mark.schematic
@@ -219,20 +219,17 @@ class TestAPIUtils:
     ) -> None:
         "Testing for get_project_manifests"
         manifest_metadata = get_project_manifests(
-            input_token=secrets_dict["synapse"]["auth_token"],
+            access_token=secrets_dict["synapse"]["auth_token"],
             project_id=test_synapse_project_id,
             asset_view=test_synapse_asset_view_id,
         )
         assert len(manifest_metadata.metadata_list) == 5
 
-    def test_get_manifest(
-        self, secrets_dict: dict, test_synapse_asset_view_id: str
-    ) -> None:
-        "Testing for get_manifest"
-        manifest = get_manifest(
+    def test_download_manifest(self, secrets_dict: dict) -> None:
+        "Testing for download_manifest"
+        manifest = download_manifest(
             secrets_dict["synapse"]["auth_token"],
-            "syn47996410",
-            test_synapse_asset_view_id,
+            "syn47996491",
         )
         assert isinstance(manifest, pd.DataFrame)
 

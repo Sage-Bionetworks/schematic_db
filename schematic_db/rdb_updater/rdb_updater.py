@@ -113,36 +113,38 @@ class RDBUpdater:
         Args:
             table_name (str): The name of the table to be updated
         """
-        dataset_ids = self.manifest_store.get_dataset_ids(table_name)
+        manifest_ids = self.manifest_store.get_manifest_ids(table_name)
 
         # If there are no manifests a warning is raised and breaks out of function.
-        if len(dataset_ids) == 0:
+        if len(manifest_ids) == 0:
             warnings.warn(
                 NoManifestWarning(table_name, self.manifest_store.manifest_metadata)
             )
             return
 
-        for dataset_id in dataset_ids:
-            self.upsert_table_with_dataset_id(table_name, dataset_id)
+        for manifest_id in manifest_ids:
+            self.upsert_table_with_manifest_id(table_name, manifest_id)
 
-    def upsert_table_with_dataset_id(self, table_name: str, dataset_id: str) -> None:
+    def upsert_table_with_manifest_id(self, table_name: str, manifest_id: str) -> None:
         """Updates a table in the database with a manifest
 
         Args:
             table_name (str): The name of the table
-            dataset_id (str): The id of the dataset
+            manifest_id (str): The id of the manifest
 
         Raises:
             ManifestPrimaryKeyError: Raised when the manifest table is missing its primary key
             UpsertError: Raised when there is an UpsertDatabaseError caught
         """
         table_schema = self.rdb.get_table_schema(table_name)
-        manifest_table: pd.DataFrame = self.manifest_store.get_manifest(dataset_id)
+        manifest_table: pd.DataFrame = self.manifest_store.download_manifest(
+            manifest_id
+        )
 
         if table_schema.primary_key not in list(manifest_table.columns):
             raise ManifestPrimaryKeyError(
                 table_name,
-                dataset_id,
+                manifest_id,
                 table_schema.primary_key,
                 list(manifest_table.columns),
             )
@@ -152,7 +154,7 @@ class RDBUpdater:
         try:
             self.rdb.upsert_table_rows(table_name, normalized_table)
         except UpsertDatabaseError as exc:
-            raise UpsertError(table_name, dataset_id) from exc
+            raise UpsertError(table_name, manifest_id) from exc
 
     def _normalize_table(
         self, table: pd.DataFrame, table_schema: TableSchema
