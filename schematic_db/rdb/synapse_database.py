@@ -2,7 +2,10 @@
 from typing import Union
 from functools import partial
 import pandas as pd
+from copy import deepcopy
 import synapseclient as sc  # type: ignore
+from synapseclient.core.exceptions import SynapseHTTPError
+from synapseclient import Table
 from schematic_db.db_schema.db_schema import (
     DatabaseSchema,
     TableSchema,
@@ -476,7 +479,37 @@ class SynapseDatabase(RelationalDatabase):
         """
         table = self._create_primary_key_table(table_id, primary_key)
         merged_table = pd.merge(data, table, how="left", on=primary_key)
-        self.synapse.upsert_table_rows(table_id, merged_table)
+        try:
+            self.synapse.upsert_table_rows(table_id, merged_table)
+        except(SynapseHTTPError) as ex:
+            if 'header' in str(ex):
+                self._update_table_uuid_column(table_id)
+            else:
+                raise ex
+
+    def _update_table_uuid_column(self, table_id):
+        schema = self.synapse.syn.get(table_id)
+        cols = self.synapse.syn.getTableColumns(schema)
+        for col in cols:
+            if col.name == 'Uuid':
+                new_col = deepcopy(col)
+                new_col['name'] = 'Id'
+                schema.addColumn(new_col)
+                schema = self.synapse.syn.store(schema)
+                self._populate_new_id_column(table_id, schema)
+                schema = self.synapse.syn.get(table_id)
+                schema.removeColumn(col)
+                schema = self.synapse.syn.store(schema)
+                break
+
+        return
+
+    def _populate_new_id_column(self, table_id, schema):
+        results = self.synapse.syn.tableQuery(f"select Uuid,Id from {table_id}")
+        results_df = results.asDataFrame()
+        results_df['Id']=results_df['Uuid']
+        table = self.synapse.syn.store(Table(schema, results_df, etag=results.etag))
+        return
 
     def _merge_dataframe_with_primary_key_table(
         self, table_id: str, data: pd.DataFrame, primary_key: str
