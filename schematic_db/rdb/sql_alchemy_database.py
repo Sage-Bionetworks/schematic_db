@@ -2,18 +2,16 @@
 from typing import Any
 from dataclasses import dataclass
 import pandas as pd
-import numpy as np
 import sqlalchemy as sa
 import sqlalchemy_utils.functions
 from sqlalchemy.inspection import inspect
-from sqlalchemy import exc
 from schematic_db.db_schema.db_schema import (
     TableSchema,
     ColumnDatatype,
     ColumnSchema,
     ForeignKeySchema,
 )
-from .rdb import RelationalDatabase, UpsertDatabaseError
+from .rdb import RelationalDatabase
 
 
 class DataframeKeyError(Exception):
@@ -364,33 +362,3 @@ class SQLAlchemyDatabase(
             ColumnDatatype.BOOLEAN: sa.Boolean,
         }
         return datatypes[column_schema.datatype]
-
-    def upsert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
-        """Inserts and/or updates the rows of the table
-
-        Args:
-            table_name (str): The name of the table to be upserted
-            data (pd.DataFrame): The rows to be upserted
-
-        Raises:
-            UpsertDatabaseError: Raised when a SQLAlchemy error caught
-        """
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
-        data = data.replace({np.nan: None})
-        rows = data.to_dict("records")
-        for row in rows:
-            try:
-                self._upsert_table_row(row, table, table_name)
-            except exc.SQLAlchemyError as exception:
-                raise UpsertDatabaseError(table_name) from exception
-
-    def _upsert_table_row(
-        self, row: dict[str, Any], table: sa.table, table_name: str
-    ) -> None:
-        """This method is meant be instantiated by child classes.
-
-        Args:
-            row (dict[str, Any]): A row of a dataframe to be upserted
-            table (sa.table):  A synapse table entity to be upserted into
-            table_name (str): The name of the table to be upserted into
-        """

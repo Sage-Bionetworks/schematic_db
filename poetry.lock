@@ -837,7 +837,7 @@ synapse = ["synapseclient"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "620e3f325966560b644efe2158ef39681df008a935d0f857f70ebbbb3dda5efc"
+content-hash = "19851a5cb8780697fc527f9ebb1715e5b332f4be282fc0242e7e504486f93324"
 
 [metadata.files]
 astroid = [

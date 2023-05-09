@@ -135,5 +135,7 @@ jobs:
         run: poetry run interrogate -v schematic_db/ tests/
 
       - name: pytest
+        env:
+          API_URL: ${{secrets.API_URL}}
         run: poetry run pytest -vvs
 

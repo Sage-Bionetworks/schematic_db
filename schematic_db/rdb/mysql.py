@@ -1,12 +1,16 @@
 """MySQLDatabase"""
 from typing import Any
+import pandas as pd
+import numpy as np
 import sqlalchemy as sa
 from sqlalchemy.dialects.mysql import insert
+from sqlalchemy import exc
 from schematic_db.db_schema.db_schema import (
     ColumnDatatype,
     ColumnSchema,
 )
 from .sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
+from .rdb import UpsertDatabaseError
 
 
 class MySQLDatabase(SQLAlchemyDatabase):
@@ -28,6 +32,25 @@ class MySQLDatabase(SQLAlchemyDatabase):
             verbose (bool): Sends much more to logging.info
         """
         super().__init__(config, verbose, "mysql")
+
+    def upsert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+        """Inserts and/or updates the rows of the table
+
+        Args:
+            table_name (str): The name of the table to be upserted
+            data (pd.DataFrame): The rows to be upserted
+
+        Raises:
+            UpsertDatabaseError: Raised when a SQLAlchemy error caught
+        """
+        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        data = data.replace({np.nan: None})
+        rows = data.to_dict("records")
+        for row in rows:
+            try:
+                self._upsert_table_row(row, table, table_name)
+            except exc.SQLAlchemyError as exception:
+                raise UpsertDatabaseError(table_name) from exception
 
     def _upsert_table_row(
         self,

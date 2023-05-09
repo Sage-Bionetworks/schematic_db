@@ -52,6 +52,30 @@ class TestManifestMetadata:
                 component_name="",
             )
 
+    def test_to_dict(self) -> None:
+        """Testing for ManifestMetadata.to_dict"""
+        dct = {
+            "dataset_id": "syn1",
+            "dataset_name": "dataset",
+            "manifest_id": "syn2",
+            "manifest_name": "manifest",
+            "component_name": "component",
+        }
+        manifest = ManifestMetadata(**dct)
+        assert manifest.to_dict() == dct
+
+    def test_repr(self) -> None:
+        """Testing for ManifestMetadata.__repr__"""
+        dct = {
+            "dataset_id": "syn1",
+            "dataset_name": "dataset",
+            "manifest_id": "syn2",
+            "manifest_name": "manifest",
+            "component_name": "component",
+        }
+        manifest = ManifestMetadata(**dct)
+        print(manifest)
+
 
 @pytest.mark.fast
 class TestManifestMetadataList:
@@ -66,6 +90,16 @@ class TestManifestMetadataList:
             ]
         )
         assert len(mml.metadata_list) == 1
+
+    def test_repr(self) -> None:
+        """Testing for ManifestMetadataList.__repr__"""
+        mml = ManifestMetadataList(
+            [
+                [["syn1", "xxx"], ["syn2", "xxx"], ["component1", "component1"]],
+                [["syn3", "xxx"], ["syn4", "xxx"], ["component2", "component2"]],
+            ]
+        )
+        print(mml)
 
     def test_get_dataset_ids_for_component(self) -> None:
         """Test ManifestMetadataList.get_dataset_ids_for_component"""

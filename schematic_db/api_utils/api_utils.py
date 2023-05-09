@@ -4,6 +4,7 @@
 from typing import Any
 from os import getenv
 from datetime import datetime
+import json
 import re
 import pytz
 from pydantic.dataclasses import dataclass
@@ -107,7 +108,7 @@ def create_schematic_api_response(
     Returns:
         requests.Response: The response from the API
     """
-    api_url = getenv("API_URL", "https://schematic-dev.api.sagebionetworks.org/v1")
+    api_url = getenv("API_URL", "https://schematic.api.sagebionetworks.org/v1/")
     endpoint_url = f"{api_url}/{endpoint_path}"
     start_time = datetime.now(pytz.timezone("US/Pacific"))
     try:
@@ -246,6 +247,26 @@ class ManifestMetadata:
             raise ValueError(f"{value} is an empty string")
         return value
 
+    def to_dict(self) -> dict[str, str]:
+        """Returns object attributes as dict
+
+        Returns:
+            dict[str, str]: dict of object attributes
+        """
+        attribute_dict = vars(self)
+        attribute_names = [
+            "dataset_id",
+            "dataset_name",
+            "manifest_id",
+            "manifest_name",
+            "component_name",
+        ]
+        return {key: attribute_dict[key] for key in attribute_names}
+
+    def __repr__(self) -> str:
+        """Prints object as dict"""
+        return json.dumps(self.to_dict(), indent=4)
+
 
 class ManifestMetadataList:
     """A list of Manifest Metadata"""
@@ -256,7 +277,7 @@ class ManifestMetadataList:
             response_list (list[list[list[str]]]): The input from the
              get/projects/manifests endpoint
         """
-        metadata_list = []
+        metadata_list: list[ManifestMetadata] = []
         for item in response_list:
             try:
                 metadata = ManifestMetadata(
@@ -271,6 +292,12 @@ class ManifestMetadataList:
             else:
                 metadata_list.append(metadata)
         self.metadata_list = metadata_list
+
+    def __repr__(self) -> str:
+        """Prints each metadata object as dict"""
+        return json.dumps(
+            [metadata.to_dict() for metadata in self.metadata_list], indent=4
+        )
 
     def get_dataset_ids_for_component(self, component_name: str) -> list[str]:
         """Gets the dataset ids from the manifest metadata matching the component name
