@@ -480,30 +480,28 @@ class SynapseDatabase(RelationalDatabase):
         merged_table = pd.merge(data, table, how="left", on=primary_key)
         try:
             self.synapse.upsert_table_rows(table_id, merged_table)
-        except(sc.core.exceptions.SynapseHTTPError) as ex:
-            if 'header' in str(ex):
+        except (sc.core.exceptions.SynapseHTTPError) as ex:
+            if "header" in str(ex):
                 self._update_table_uuid_column(table_id)
             else:
                 raise ex
 
-    def _update_table_uuid_column(
-            self, table_id: str
-            ) -> None:
+    def _update_table_uuid_column(self, table_id: str) -> None:
         """Removes the `Uuid` column when present, and relpaces with an `Id` column
         Used to enable backwards compatability for manifests using the old `Uuid` convention
 
         Args:
             table_id (str): The Synapse id of the table to be upserted into, that needs columns updated
-        
+
         Returns:
             None
         """
         schema = self.synapse.syn.get(table_id)
         cols = self.synapse.syn.getTableColumns(schema)
         for col in cols:
-            if col.name == 'Uuid':
+            if col.name == "Uuid":
                 new_col = deepcopy(col)
-                new_col['name'] = 'Id'
+                new_col["name"] = "Id"
                 schema.addColumn(new_col)
                 schema = self.synapse.syn.store(schema)
                 self._populate_new_id_column(table_id, schema)
@@ -514,21 +512,19 @@ class SynapseDatabase(RelationalDatabase):
 
         return
 
-    def _populate_new_id_column(
-            self, table_id: str, schema: sc.table.Schema
-            ) -> None:
+    def _populate_new_id_column(self, table_id: str, schema: sc.table.Schema) -> None:
         """Copies the uuid values that were present in the column named `Uuid` to the new column named `Id`
 
         Args:
             table_id (str): The Synapse id of the table to be upserted into, that needs columns updated
             schema (synapseclient.table.Schema): Schema of the table columns
-        
+
         Returns:
             None
         """
         results = self.synapse.syn.tableQuery(f"select Uuid,Id from {table_id}")
         results_df = results.asDataFrame()
-        results_df['Id']=results_df['Uuid']
+        results_df["Id"] = results_df["Uuid"]
         table = self.synapse.syn.store(sc.Table(schema, results_df, etag=results.etag))
         return
 
