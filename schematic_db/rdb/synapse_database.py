@@ -486,7 +486,18 @@ class SynapseDatabase(RelationalDatabase):
             else:
                 raise ex
 
-    def _update_table_uuid_column(self, table_id):
+    def _update_table_uuid_column(
+            self, table_id: str
+            ) -> None:
+        """Removes the `Uuid` column when present, and relpaces with an `Id` column
+        Used to enable backwards compatability for manifests using the old `Uuid` convention
+
+        Args:
+            table_id (str): The Synapse id of the table to be upserted into, that needs columns updated
+        
+        Returns:
+            None
+        """
         schema = self.synapse.syn.get(table_id)
         cols = self.synapse.syn.getTableColumns(schema)
         for col in cols:
@@ -503,7 +514,18 @@ class SynapseDatabase(RelationalDatabase):
 
         return
 
-    def _populate_new_id_column(self, table_id, schema):
+    def _populate_new_id_column(
+            self, table_id: str, schema: sc.table.Schema
+            ) -> None:
+        """Copies the uuid values that were present in the column named `Uuid` to the new column named `Id`
+
+        Args:
+            table_id (str): The Synapse id of the table to be upserted into, that needs columns updated
+            schema (synapseclient.table.Schema): Schema of the table columns
+        
+        Returns:
+            None
+        """
         results = self.synapse.syn.tableQuery(f"select Uuid,Id from {table_id}")
         results_df = results.asDataFrame()
         results_df['Id']=results_df['Uuid']
