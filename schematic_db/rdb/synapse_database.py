@@ -5,7 +5,7 @@ import pandas as pd
 from copy import deepcopy
 import synapseclient as sc  # type: ignore
 from synapseclient.core.exceptions import SynapseHTTPError
-from synapseclient import Table
+
 from schematic_db.db_schema.db_schema import (
     DatabaseSchema,
     TableSchema,
@@ -508,7 +508,7 @@ class SynapseDatabase(RelationalDatabase):
         results = self.synapse.syn.tableQuery(f"select Uuid,Id from {table_id}")
         results_df = results.asDataFrame()
         results_df['Id']=results_df['Uuid']
-        table = self.synapse.syn.store(Table(schema, results_df, etag=results.etag))
+        table = self.synapse.syn.store(sc.Table(schema, results_df, etag=results.etag))
         return
 
     def _merge_dataframe_with_primary_key_table(
