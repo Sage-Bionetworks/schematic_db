@@ -4,7 +4,6 @@ from functools import partial
 import pandas as pd
 from copy import deepcopy
 import synapseclient as sc  # type: ignore
-from synapseclient.core.exceptions import SynapseHTTPError
 
 from schematic_db.db_schema.db_schema import (
     DatabaseSchema,
@@ -481,7 +480,7 @@ class SynapseDatabase(RelationalDatabase):
         merged_table = pd.merge(data, table, how="left", on=primary_key)
         try:
             self.synapse.upsert_table_rows(table_id, merged_table)
-        except(SynapseHTTPError) as ex:
+        except(sc.core.exceptions.SynapseHTTPError) as ex:
             if 'header' in str(ex):
                 self._update_table_uuid_column(table_id)
             else:
