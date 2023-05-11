@@ -351,7 +351,7 @@ def get_project_manifests(
         "asset_view": asset_view,
     }
     response = create_schematic_api_response(
-        "storage/project/manifests", params, timeout=360
+        "storage/project/manifests", params, timeout=600
     )
     return ManifestMetadataList(response.json())
 
