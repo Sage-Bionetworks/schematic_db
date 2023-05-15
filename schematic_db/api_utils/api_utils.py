@@ -351,7 +351,7 @@ def get_project_manifests(
         "asset_view": asset_view,
     }
     response = create_schematic_api_response(
-        "storage/project/manifests", params, timeout=600
+        "storage/project/manifests", params, timeout=1000
     )
     return ManifestMetadataList(response.json())
 
@@ -371,7 +371,7 @@ def download_manifest(access_token: str, manifest_id: str) -> pandas.DataFrame:
         "manifest_id": manifest_id,
         "as_json": True,
     }
-    response = create_schematic_api_response("manifest/download", params, timeout=600)
+    response = create_schematic_api_response("manifest/download", params, timeout=1000)
     manifest = pandas.DataFrame(response.json())
     return manifest
 
