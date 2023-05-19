@@ -1,10 +1,15 @@
 """RDBUpdater"""
+# pylint: disable=logging-fstring-interpolation
 import warnings
+import logging
 import pandas as pd
 from schematic_db.rdb.rdb import RelationalDatabase, UpsertDatabaseError
 from schematic_db.manifest_store.manifest_store import ManifestStore
 from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.api_utils.api_utils import ManifestMetadataList
+
+
+logging.getLogger(__name__)
 
 
 class NoManifestWarning(Warning):
@@ -101,9 +106,11 @@ class RDBUpdater:
         """
         Updates all tables in the database.
         """
+        logging.info("Updating database")
         table_names = self.manifest_store.create_sorted_table_name_list()
         for name in table_names:
             self.update_database_table(name)
+        logging.info("Database updated")
 
     def update_database_table(self, table_name: str) -> None:
         """
@@ -137,9 +144,8 @@ class RDBUpdater:
             UpsertError: Raised when there is an UpsertDatabaseError caught
         """
         table_schema = self.rdb.get_table_schema(table_name)
-        manifest_table: pd.DataFrame = self.manifest_store.download_manifest(
-            manifest_id
-        )
+
+        manifest_table = self._download_manifest(table_name, manifest_id)
 
         if table_schema.primary_key not in list(manifest_table.columns):
             raise ManifestPrimaryKeyError(
@@ -151,10 +157,26 @@ class RDBUpdater:
 
         normalized_table = self._normalize_table(manifest_table, table_schema)
 
-        try:
-            self.rdb.upsert_table_rows(table_name, normalized_table)
-        except UpsertDatabaseError as exc:
-            raise UpsertError(table_name, manifest_id) from exc
+        self._upsert_table(normalized_table, table_name, manifest_id)
+
+    def _download_manifest(self, table_name: str, manifest_id: str) -> pd.DataFrame:
+        """Downloads a manifest, and performs logging
+
+        Args:
+            table_name (str): The name of the table the manifest will be upserted into
+            manifest_id (str): The id of the manifest
+
+        Returns:
+            (pd.DataFrame): The manifest in pandas.Dataframe form
+        """
+        logging.info(
+            f"Downloading manifest; table name: {table_name}; manifest id: {manifest_id}"
+        )
+        manifest_table: pd.DataFrame = self.manifest_store.download_manifest(
+            manifest_id
+        )
+        logging.info("Finished downloading manifest")
+        return manifest_table
 
     def _normalize_table(
         self, table: pd.DataFrame, table_schema: TableSchema
@@ -177,3 +199,25 @@ class RDBUpdater:
         table = table.drop_duplicates(subset=table_schema.primary_key)
         table.reset_index(inplace=True, drop=True)
         return table
+
+    def _upsert_table(
+        self, table: pd.DataFrame, table_name: str, manifest_id: str
+    ) -> None:
+        """Upserts the table into the database table and performs logging
+
+        Args:
+            table (pd.DataFrame): The table to be upserted
+            table_name (str): The name of the table to be upserted into
+            manifest_id (str): The id of the manifest
+
+        Raises:
+            UpsertError: Raised when there is an UpsertDatabaseError caught
+        """
+        logging.info(
+            f"Upserting manifest; table name: {table_name}; manifest id: {manifest_id}"
+        )
+        try:
+            self.rdb.upsert_table_rows(table_name, table)
+        except UpsertDatabaseError as exc:
+            raise UpsertError(table_name, manifest_id) from exc
+        logging.info("Finished upserting manifest")
