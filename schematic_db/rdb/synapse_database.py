@@ -177,7 +177,7 @@ class SynapseDatabase(RelationalDatabase):
         return table
 
     def drop_all_tables(self) -> None:
-        database_schema = self.get_db_config()
+        database_schema = self.get_database_schema()
         deps = {
             table: database_schema.get_dependencies(table)
             for table in database_schema.get_schema_names()
@@ -192,34 +192,34 @@ class SynapseDatabase(RelationalDatabase):
         Args:
             table_name (str): The name of the table
         """
-        db_config = self.get_db_config()
-        self._drop_table_and_dependencies(table_name, db_config)
+        db_schema = self.get_database_schema()
+        self._drop_table_and_dependencies(table_name, db_schema)
 
     def _drop_table_and_dependencies(
-        self, table_name: str, db_config: DatabaseSchema
+        self, table_name: str, db_schema: DatabaseSchema
     ) -> None:
         """Drops the table and any tables that depend on it.
 
         Args:
             table_name (str): The name of the table
-            db_config (DatabaseSchema): The configuration for the database
+            db_schema (DatabaseSchema): The configuration for the database
         """
-        self._drop_all_table_dependencies(table_name, db_config)
+        self._drop_all_table_dependencies(table_name, db_schema)
         table_id = self.synapse.get_synapse_id_from_table_name(table_name)
         self._drop_table(table_id)
 
     def _drop_all_table_dependencies(
-        self, table_name: str, db_config: DatabaseSchema
+        self, table_name: str, db_schema: DatabaseSchema
     ) -> None:
         """Drops all tables that depend on the input table
 
         Args:
             table_name (str): The name of the table whose dependent table will be dropped
-            db_config (DatabaseSchema): The configuration fo the database
+            db_schema (DatabaseSchema): The configuration of the database
         """
-        reverse_dependencies = db_config.get_reverse_dependencies(table_name)
+        reverse_dependencies = db_schema.get_reverse_dependencies(table_name)
         for rd_table_name in reverse_dependencies:
-            self._drop_table_and_dependencies(rd_table_name, db_config)
+            self._drop_table_and_dependencies(rd_table_name, db_schema)
 
     def delete_all_tables(self) -> None:
         """Deletes all tables in the project"""
@@ -237,8 +237,8 @@ class SynapseDatabase(RelationalDatabase):
         self.synapse.delete_table(table_id)
 
     def drop_table(self, table_name: str) -> None:
-        db_config = self.get_db_config()
-        reverse_dependencies = db_config.get_reverse_dependencies(table_name)
+        database_schema = self.get_database_schema()
+        reverse_dependencies = database_schema.get_reverse_dependencies(table_name)
         if len(reverse_dependencies) != 0:
             raise SynapseDatabaseDropTableError(
                 "Can not drop database table, other tables exists that depend on it.",
@@ -327,11 +327,11 @@ class SynapseDatabase(RelationalDatabase):
             annotations["foreign_keys"] = foreign_key_strings
         self.synapse.set_entity_annotations(synapse_id, annotations)
 
-    def get_db_config(self) -> DatabaseSchema:
+    def get_database_schema(self) -> DatabaseSchema:
         """Gets the schema of the synapse database.
 
         Returns:
-            DatabaseSchema: The db config
+            DatabaseSchema: The db schema
         """
         table_names = self.synapse.get_table_names()
         result_list = [self.get_table_schema(name) for name in table_names]
@@ -368,7 +368,7 @@ class SynapseDatabase(RelationalDatabase):
         )
 
     def delete_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
-        database_schema = self.get_db_config()
+        database_schema = self.get_database_schema()
         primary_key = database_schema.get_schema_by_name(table_name).primary_key
         table_id = self.synapse.get_synapse_id_from_table_name(table_name)
         merged_data = self._merge_dataframe_with_primary_key_table(
@@ -443,6 +443,16 @@ class SynapseDatabase(RelationalDatabase):
 
             data = data[[primary_key, "ROW_ID", "ROW_VERSION"]]
             self._delete_table_rows(rd_table_name, table_id, data, database_schema)
+
+    def insert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+        """Inserts rows into the given table
+
+        Args:
+            table_name (str): The name of the table the rows be upserted into
+            data (pd.DataFrame): A pandas.DataFrame. It must contain the primary keys of the table
+        """
+        table_id = self.synapse.get_synapse_id_from_table_name(table_name)
+        self.synapse.insert_table_rows(table_id, data)
 
     def upsert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
         """Upserts rows into the given table

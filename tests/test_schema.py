@@ -143,7 +143,6 @@ class TestDatabaseConfig:
         assert obj.get_columns("object3") is None
 
 
-@pytest.mark.schematic
 class TestSchema:
     """Testing for Schema"""
 
@@ -259,7 +258,6 @@ class TestSchema:
         assert obj._get_column_datatype("weight", "Patients") == ColumnDatatype.FLOAT
 
 
-@pytest.mark.schematic
 class TestSchema2:
     """Testing for Schema"""
 

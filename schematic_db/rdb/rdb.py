@@ -20,6 +20,22 @@ class UpsertDatabaseError(Exception):
         return f"{self.message}; " f"Table Name: {self.table_name}"
 
 
+class InsertDatabaseError(Exception):
+    """Raised when a database class catches an error doing an insert"""
+
+    def __init__(self, table_name: str) -> None:
+        """
+        Args:
+            table_name (str): The name of the table being inserted into
+        """
+        self.message = "Error inserting table"
+        self.table_name = table_name
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"{self.message}; " f"Table Name: {self.table_name}"
+
+
 class RelationalDatabase(ABC):
     """An interface for relational database types"""
 
@@ -87,11 +103,20 @@ class RelationalDatabase(ABC):
         """Drops all tables from the database"""
 
     @abstractmethod
+    def insert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+        """Inserts rows into the given table
+
+        Args:
+            table_name (str): The name of the table the rows be upserted into
+            data (pd.DataFrame): A pandas.DataFrame. It must contain the primary keys of the table
+        """
+
+    @abstractmethod
     def upsert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
         """Upserts rows into the given table
 
         Args:
-            table_name (str): The name of the table the rows will be deleted from
+            table_name (str): The name of the table the rows be upserted into
             data (pd.DataFrame): A pandas.DataFrame. It must contain the primary keys of the table
         """
 

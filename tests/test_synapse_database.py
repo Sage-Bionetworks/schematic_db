@@ -1,5 +1,9 @@
 """Fixtures for all tests"""
+
+# pylint: disable=protected-access
+
 from typing import Generator
+from unittest.mock import patch, call, Mock
 import pytest
 import pandas as pd
 import numpy as np
@@ -8,7 +12,20 @@ from schematic_db.rdb.synapse_database import (
     SynapseDatabase,
     SynapseDatabaseDropTableError,
 )
+from schematic_db.synapse.synapse import Synapse, SynapseConfig
 from schematic_db.db_schema.db_schema import TableSchema
+from schematic_db.db_schema.db_schema import DatabaseSchema
+
+
+@pytest.fixture(name="mock_synapse_database")
+def fixture_mock_synapse_database() -> Generator:
+    """Yields a SynapseDatabase object with a mocked Synapse object"""
+    with patch.object(sc, "Synapse", return_value=Mock()):
+        with patch.object(sc.Synapse, "login", return_value=None):
+            obj = SynapseDatabase(
+                SynapseConfig(username="x", auth_token="y", project_id="syn1")
+            )
+            yield obj
 
 
 @pytest.fixture(name="synapse_database")
@@ -61,7 +78,96 @@ def fixture_synapse_with_filled_tables(
     yield obj
 
 
-@pytest.mark.synapse
+class TestMockSynapseDatabase:
+    """Testing for SynapseDatabase where the Synapse object is mocked"""
+
+    def test_query_table(self, mock_synapse_database: SynapseDatabase) -> None:
+        """Testing for SynapseDatabase.query_table"""
+        obj = mock_synapse_database
+
+        with patch.object(
+            Synapse, "get_synapse_id_from_table_name", return_value="syn1"
+        ) as mock_method1:
+            with patch.object(
+                Synapse, "query_table", return_value=pd.DataFrame()
+            ) as mock_method2:
+                obj.query_table("table_one")
+                mock_method1.assert_called_once_with("table_one")
+                mock_method2.assert_called_once_with("syn1")
+
+    def test_drop_all_tables(
+        self, mock_synapse_database: SynapseDatabase, database_schema: DatabaseSchema
+    ) -> None:
+        """Testing for SynapseDatabase.drop_all_tables"""
+        obj = mock_synapse_database
+        with patch.object(
+            SynapseDatabase, "get_database_schema", return_value=database_schema
+        ):
+            with patch.object(
+                SynapseDatabase, "_drop_table_and_dependencies"
+            ) as mock_method:
+                obj.drop_all_tables()
+                assert mock_method.call_args_list == [
+                    call("table_one", database_schema),
+                    call("table_two", database_schema),
+                ]
+
+    def test_drop_table_and_dependencies(
+        self, mock_synapse_database: SynapseDatabase
+    ) -> None:
+        """Testing for SynapseDatabase.drop_table_and_dependencies"""
+
+        with patch.object(
+            SynapseDatabase, "get_database_schema", return_value="table_schema"
+        ):
+            with patch.object(
+                SynapseDatabase, "_drop_table_and_dependencies"
+            ) as mock_method:
+                mock_synapse_database.drop_table_and_dependencies("table_one")
+                mock_method.assert_called_once_with("table_one", "table_schema")
+
+    def test__drop_table_and_dependencies(
+        self, mock_synapse_database: SynapseDatabase, database_schema: DatabaseSchema
+    ) -> None:
+        """Testing for SynapseDatabase._drop_table_and_dependencies"""
+
+        with patch.object(
+            SynapseDatabase, "_drop_all_table_dependencies"
+        ) as mock_method1:
+            with patch.object(
+                Synapse, "get_synapse_id_from_table_name", return_value="syn1"
+            ) as mock_method2:
+                with patch.object(SynapseDatabase, "_drop_table") as mock_method3:
+                    mock_synapse_database._drop_table_and_dependencies(
+                        "table_one", database_schema
+                    )
+                    mock_method1.assert_called_once_with("table_one", database_schema)
+                    mock_method2.assert_called_once_with("table_one")
+                    mock_method3.assert_called_once_with("syn1")
+
+    def test__drop_all_table_dependencies(
+        self, mock_synapse_database: SynapseDatabase, database_schema: DatabaseSchema
+    ) -> None:
+        """Testing for SynapseDatabase._drop_all_table_dependencies"""
+
+        with patch.object(
+            DatabaseSchema,
+            "get_reverse_dependencies",
+            return_value=["table_one", "table_two"],
+        ) as mock_method1:
+            with patch.object(
+                SynapseDatabase, "_drop_table_and_dependencies"
+            ) as mock_method2:
+                mock_synapse_database._drop_all_table_dependencies(
+                    "table_one", database_schema
+                )
+                mock_method1.assert_called_once_with("table_one")
+                assert mock_method2.call_args_list == [
+                    call("table_one", database_schema),
+                    call("table_two", database_schema),
+                ]
+
+
 class TestSynapseDatabase:
     """Testing for SynapseDatabase"""
 
@@ -178,10 +284,10 @@ class TestSynapseDatabase:
             "foreign_keys",
         ]
 
-    def get_db_config(self, synapse_with_empty_tables: SynapseDatabase) -> None:
-        """Testing for SynapseDatabase.get_db_config()"""
+    def get_database_schema(self, synapse_with_empty_tables: SynapseDatabase) -> None:
+        """Testing for SynapseDatabase.get_database_schema"""
         obj = synapse_with_empty_tables
-        database_schema = obj.get_db_config()
+        database_schema = obj.get_database_schema()
         assert database_schema.get_schema_names == [
             "table_one",
             "table_three",
@@ -245,6 +351,21 @@ class TestSynapseDatabase:
         table3b = obj.query_table("table_three")
         assert table1b["pk_one_col"].tolist() == ["key2"]
         assert table3b["pk_zero_col"].tolist() == ["keyC", "keyD"]
+
+    def test_insert_table_rows(
+        self,
+        synapse_with_empty_tables: SynapseDatabase,
+        table_one: pd.DataFrame,
+    ) -> None:
+        """Testing for SynapseDatabase.upsert_table_rows()"""
+        obj = synapse_with_empty_tables
+
+        query_result1 = obj.query_table("table_one")
+        assert query_result1["pk_one_col"].tolist() == []
+
+        obj.insert_table_rows("table_one", table_one)
+        query_result2 = obj.query_table("table_one")
+        assert query_result2["pk_one_col"].tolist() == ["key1", "key2", "key3"]
 
     def test_upsert_table_rows(
         self,

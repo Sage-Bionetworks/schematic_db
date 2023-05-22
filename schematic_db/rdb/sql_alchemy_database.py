@@ -2,8 +2,10 @@
 from typing import Any
 from dataclasses import dataclass
 import pandas as pd
+import numpy as np
 import sqlalchemy as sa
-import sqlalchemy_utils.functions
+import sqlalchemy_utils
+from sqlalchemy import exc
 from sqlalchemy.inspection import inspect
 from schematic_db.db_schema.db_schema import (
     TableSchema,
@@ -11,7 +13,7 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
     ForeignKeySchema,
 )
-from .rdb import RelationalDatabase
+from .rdb import RelationalDatabase, InsertDatabaseError
 
 
 class DataframeKeyError(Exception):
@@ -200,6 +202,26 @@ class SQLAlchemyDatabase(
             foreign_keys=create_foreign_key_configs(table_schema),
             columns=create_column_schemas(table_schema, indices),
         )
+
+    def insert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+        """Inserts the rows of the table into a target table in the database
+
+        Args:
+            table_name (str): The name of the table to be inserted into
+            data (pd.DataFrame): The rows to be inserted
+
+        Raises:
+            InsertDatabaseError: Raised when a SQLAlchemy error caught
+        """
+        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        data = data.replace({np.nan: None})
+        rows = data.to_dict("records")
+        statement = sa.insert(table).values(rows)
+        try:
+            with self.engine.connect().execution_options(autocommit=True) as conn:
+                conn.execute(statement)
+        except exc.SQLAlchemyError as exception:
+            raise InsertDatabaseError(table_name) from exception
 
     def drop_table(self, table_name: str) -> None:
         """Drops a table from the schema

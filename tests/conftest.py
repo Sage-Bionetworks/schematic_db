@@ -497,8 +497,8 @@ def table_123_unormalized() -> Generator:
     yield dataframe
 
 
-@pytest.fixture(scope="session", name="table_schemas")
-def fixture_table_schemas(
+@pytest.fixture(scope="session", name="database_schema")
+def fixture_database_schema(
     table_one_schema: TableSchema,
     table_two_schema: TableSchema,
     table_three_schema: TableSchema,

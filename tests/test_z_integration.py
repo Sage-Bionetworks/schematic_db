@@ -43,7 +43,7 @@ def fixture_rdb_builder_synapse(
     synapse_database.delete_all_tables()
 
 
-@pytest.fixture(scope="module", name="rdb_updater_mysql")
+@pytest.fixture(scope="class", name="rdb_updater_mysql")
 def fixture_rdb_updater_mysql(
     mysql_database: MySQLDatabase, manifest_store: ManifestStore
 ) -> Generator:
@@ -53,7 +53,7 @@ def fixture_rdb_updater_mysql(
     obj.rdb.drop_all_tables()
 
 
-@pytest.fixture(scope="module", name="rdb_updater_postgres")
+@pytest.fixture(scope="class", name="rdb_updater_postgres")
 def fixture_rdb_updater_postgres(
     postgres_database: PostgresDatabase, manifest_store: ManifestStore
 ) -> Generator:
@@ -63,7 +63,7 @@ def fixture_rdb_updater_postgres(
     obj.rdb.drop_all_tables()
 
 
-@pytest.fixture(scope="module", name="rdb_updater_synapse")
+@pytest.fixture(scope="class", name="rdb_updater_synapse")
 def fixture_rdb_updater_synapse(
     synapse_database: SynapseDatabase, manifest_store: ManifestStore
 ) -> Generator:
@@ -110,9 +110,8 @@ def fixture_rdb_queryer_postgres(
         query_store.delete_table(table_name)
 
 
-@pytest.mark.schematic
-class TestIntegration:
-    """Integration tests"""
+class TestIntegration1:
+    """Integration tests with upserts"""
 
     def test_mysql(  # pylint: disable=too-many-arguments
         self,
@@ -186,6 +185,44 @@ class TestIntegration:
 
         rdb_updater = rdb_updater_synapse
         rdb_updater.update_database()
+        for name in test_schema_table_names:
+            table = rdb_updater.rdb.query_table(name)
+            assert len(table.index) > 0
+
+
+class TestIntegration2:
+    """Integration tests with inserts"""
+
+    def test_mysql(  # pylint: disable=too-many-arguments
+        self,
+        rdb_builder_mysql: RDBBuilder,
+        rdb_updater_mysql: RDBUpdater,
+        test_schema_table_names: list[str],
+    ) -> None:
+        """Creates the test database in MySQL"""
+        rdb_builder = rdb_builder_mysql
+        rdb_builder.build_database()
+        assert rdb_builder.rdb.get_table_names() == test_schema_table_names
+
+        rdb_updater = rdb_updater_mysql
+        rdb_updater.update_database(method="insert")
+        for name in test_schema_table_names:
+            table = rdb_updater.rdb.query_table(name)
+            assert len(table.index) > 0
+
+    def test_postgres(  # pylint: disable=too-many-arguments
+        self,
+        rdb_builder_postgres: RDBBuilder,
+        rdb_updater_postgres: RDBUpdater,
+        test_schema_table_names: list[str],
+    ) -> None:
+        """Creates the test database in Postgres"""
+        rdb_builder = rdb_builder_postgres
+        rdb_builder.build_database()
+        assert rdb_builder.rdb.get_table_names() == test_schema_table_names
+
+        rdb_updater = rdb_updater_postgres
+        rdb_updater.update_database(method="insert")
         for name in test_schema_table_names:
             table = rdb_updater.rdb.query_table(name)
             assert len(table.index) > 0

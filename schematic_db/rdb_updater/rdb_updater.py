@@ -3,7 +3,11 @@
 import warnings
 import logging
 import pandas as pd
-from schematic_db.rdb.rdb import RelationalDatabase, UpsertDatabaseError
+from schematic_db.rdb.rdb import (
+    RelationalDatabase,
+    UpsertDatabaseError,
+    InsertDatabaseError,
+)
 from schematic_db.manifest_store.manifest_store import ManifestStore
 from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.api_utils.api_utils import ManifestMetadataList
@@ -38,16 +42,16 @@ class NoManifestWarning(Warning):
         )
 
 
-class UpsertError(Exception):
-    """Raised when there is an error doing an upsert"""
+class UpdateError(Exception):
+    """Raised when there is an error doing a table update"""
 
     def __init__(self, table_name: str, dataset_id: str) -> None:
         """
         Args:
             table_name (str): The name of the table the upsert occurred in
-            dataset_id (str): The dataset id of the manifest that was being upserted
+            dataset_id (str): The dataset id of the manifest that was being used to update
         """
-        self.message = "Error upserting table"
+        self.message = "Error updating table"
         self.table_name = table_name
         self.dataset_id = dataset_id
         super().__init__(self.message)
@@ -102,23 +106,28 @@ class RDBUpdater:
         self.rdb = rdb
         self.manifest_store = manifest_store
 
-    def update_database(self) -> None:
-        """
-        Updates all tables in the database.
+    def update_database(self, method: str = "upsert") -> None:
+        """Updates all tables in database
+
+        Args:
+            method (str): The method used to update each table, either "upsert" or "insert"
+             Defaults to "upsert".
         """
         logging.info("Updating database")
         table_names = self.manifest_store.create_sorted_table_name_list()
         for name in table_names:
-            self.update_database_table(name)
+            self.update_table(name, method)
         logging.info("Database updated")
 
-    def update_database_table(self, table_name: str) -> None:
+    def update_table(self, table_name: str, method: str = "upsert") -> None:
         """
         Updates a table in the database based on one or more manifests.
         If any of the manifests don't exist a warning will be raised.
 
         Args:
             table_name (str): The name of the table to be updated
+            method (str): The method used to update each table, either "upsert" or "insert"
+             Defaults to "upsert".
         """
         manifest_ids = self.manifest_store.get_manifest_ids(table_name)
 
@@ -130,14 +139,18 @@ class RDBUpdater:
             return
 
         for manifest_id in manifest_ids:
-            self.upsert_table_with_manifest_id(table_name, manifest_id)
+            self._update_table_with_manifest_id(table_name, manifest_id, method)
 
-    def upsert_table_with_manifest_id(self, table_name: str, manifest_id: str) -> None:
+    def _update_table_with_manifest_id(
+        self, table_name: str, manifest_id: str, method: str = "upsert"
+    ) -> None:
         """Updates a table in the database with a manifest
 
         Args:
             table_name (str): The name of the table
             manifest_id (str): The id of the manifest
+            method (str): The method used to update each table, either "upsert" or "insert"
+             Defaults to "upsert".
 
         Raises:
             ManifestPrimaryKeyError: Raised when the manifest table is missing its primary key
@@ -157,7 +170,9 @@ class RDBUpdater:
 
         normalized_table = self._normalize_table(manifest_table, table_schema)
 
-        self._upsert_table(normalized_table, table_name, manifest_id)
+        self._update_table_with_manifest(
+            normalized_table, table_name, manifest_id, method
+        )
 
     def _download_manifest(self, table_name: str, manifest_id: str) -> pd.DataFrame:
         """Downloads a manifest, and performs logging
@@ -179,7 +194,9 @@ class RDBUpdater:
         return manifest_table
 
     def _normalize_table(
-        self, table: pd.DataFrame, table_schema: TableSchema
+        self,
+        table: pd.DataFrame,
+        table_schema: TableSchema,
     ) -> pd.DataFrame:
         """
         Gets the table ready for upsert by selecting only needed columns and removing
@@ -200,24 +217,34 @@ class RDBUpdater:
         table.reset_index(inplace=True, drop=True)
         return table
 
-    def _upsert_table(
-        self, table: pd.DataFrame, table_name: str, manifest_id: str
+    def _update_table_with_manifest(
+        self, table: pd.DataFrame, table_name: str, manifest_id: str, method: str
     ) -> None:
-        """Upserts the table into the database table and performs logging
+        """Updates the database table with the input table and performs logging
 
         Args:
             table (pd.DataFrame): The table to be upserted
             table_name (str): The name of the table to be upserted into
             manifest_id (str): The id of the manifest
+            method (str): The method used to update each table, either "upsert" or "insert"
+             Defaults to "upsert".
 
         Raises:
-            UpsertError: Raised when there is an UpsertDatabaseError caught
+            UpdateError: Raised when there is an UpsertDatabaseError or InsertDatabaseError caught
+            ValueError: Raised when method is not one of ['insert', 'upsert']
         """
         logging.info(
-            f"Upserting manifest; table name: {table_name}; manifest id: {manifest_id}"
+            f"Updating manifest; table name: {table_name}; manifest id: {manifest_id}"
         )
         try:
-            self.rdb.upsert_table_rows(table_name, table)
-        except UpsertDatabaseError as exc:
-            raise UpsertError(table_name, manifest_id) from exc
-        logging.info("Finished upserting manifest")
+            if method == "upsert":
+                self.rdb.upsert_table_rows(table_name, table)
+            elif method == "insert":
+                self.rdb.insert_table_rows(table_name, table)
+            else:
+                raise ValueError(
+                    f"Parameter method must be one of ['insert', 'upsert'] not {method}"
+                )
+        except (UpsertDatabaseError, InsertDatabaseError) as exc:
+            raise UpdateError(table_name, manifest_id) from exc
+        logging.info("Finished updating manifest")

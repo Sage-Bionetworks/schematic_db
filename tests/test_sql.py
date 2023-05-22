@@ -22,7 +22,7 @@ from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.sql_alchemy_database import SQLAlchemyDatabase
-from schematic_db.rdb.rdb import UpsertDatabaseError
+from schematic_db.rdb.rdb import UpsertDatabaseError, InsertDatabaseError
 
 
 @pytest.fixture(name="sql_databases", scope="module")
@@ -150,6 +150,48 @@ class TestSQLUpdateTables:
 @pytest.mark.fast
 class TestSQLUpdateRows:
     """Testing for SQL methods that update rows"""
+
+    def test_insert_table_rows(
+        self,
+        sql_databases: list[SQLAlchemyDatabase],
+        table_one: pd.DataFrame,
+        table_one_schema: TableSchema,
+    ) -> None:
+        """
+        Testing for RelationalDatabase.insert_table_rows()
+        """
+        for obj in sql_databases:
+            assert obj.get_table_names() == []
+            obj.add_table("table_one", table_one_schema)
+            assert obj.get_table_names() == ["table_one"]
+
+            obj.insert_table_rows("table_one", table_one)
+            query_result1 = obj.query_table("table_one")
+
+            assert query_result1["pk_one_col"].values.tolist() == [
+                "key1",
+                "key2",
+                "key3",
+            ]
+
+            table_one_copy = table_one.copy()
+            table_one_copy["pk_one_col"] = ["key4", "key5", "key6"]
+            obj.insert_table_rows("table_one", table_one_copy)
+            query_result2 = obj.query_table("table_one")
+            assert query_result2["pk_one_col"].values.tolist() == [
+                "key1",
+                "key2",
+                "key3",
+                "key4",
+                "key5",
+                "key6",
+            ]
+
+            with pytest.raises(InsertDatabaseError):
+                obj.insert_table_rows("table_one", table_one)
+
+            obj.drop_table("table_one")
+            assert obj.get_table_names() == []
 
     def test_upsert_table_rows1(
         self,

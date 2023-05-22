@@ -124,7 +124,6 @@ class TestManifestMetadataList:
         assert mml.get_manifest_ids_for_component("component2") == ["syn4"]
 
 
-@pytest.mark.schematic
 class TestAPIUtilHelpers:
     """Testing for API util helpers"""
 
@@ -179,7 +178,6 @@ class TestAPIUtilHelpers:
         }
 
 
-@pytest.mark.schematic
 class TestAPIUtils:
     """Testing for API utils"""
 

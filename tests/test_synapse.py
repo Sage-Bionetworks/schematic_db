@@ -129,7 +129,6 @@ class TestMockSynapse:
         assert isinstance(obj.query_table("syn1"), pd.DataFrame)
 
 
-@pytest.mark.synapse
 class TestSynapseGetters:
     """Testing for Synapse class getters"""
 
@@ -179,7 +178,6 @@ class TestSynapseGetters:
         assert annotations == {"test_annotation": ["test_value"]}
 
 
-@pytest.mark.synapse
 class TestSynapseModifyTables:
     """
     Testing for methods that add or drop tables
@@ -220,7 +218,6 @@ class TestSynapseModifyTables:
         assert table_id1 == table_id2
 
 
-@pytest.mark.synapse
 class TestSynapseModifyRows:
     """
     Testing for synapse methods that modify row data
@@ -278,7 +275,6 @@ class TestSynapseModifyRows:
         assert result2.empty
 
 
-@pytest.mark.synapse
 class TestSynapseModifyColumns:
     """Testing for synapse methods that modify table columns"""
 
@@ -317,7 +313,6 @@ class TestSynapseModifyColumns:
         )
 
 
-@pytest.mark.synapse
 class TestSynapseAnnotations:
     """Testing for annotation methods"""
 
