@@ -2,6 +2,7 @@
 A config for database specific items
 """
 from typing import Optional, Any
+from deprecation import deprecated
 from schematic_db.db_schema.db_schema import (
     ForeignKeySchema,
     ColumnSchema,
@@ -17,6 +18,10 @@ DATATYPES = {
 }
 
 
+@deprecated(
+    deprecated_in="0.0.27",
+    details="Functionality will be accomplished with future Schematic API calls.",
+)
 class DatabaseTableConfig:  # pylint: disable=too-few-public-methods
     """A config for database specific items for one table"""
 

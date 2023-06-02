@@ -1,8 +1,8 @@
 """MySQLDatabase"""
 from typing import Any
-import pandas as pd
-import numpy as np
-import sqlalchemy as sa
+import pandas
+import numpy
+import sqlalchemy
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy import exc
 from schematic_db.db_schema.db_schema import (
@@ -33,18 +33,18 @@ class MySQLDatabase(SQLAlchemyDatabase):
         """
         super().__init__(config, verbose, "mysql")
 
-    def upsert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+    def upsert_table_rows(self, table_name: str, data: pandas.DataFrame) -> None:
         """Inserts and/or updates the rows of the table
 
         Args:
             table_name (str): The name of the table to be upserted
-            data (pd.DataFrame): The rows to be upserted
+            data (pandas.DataFrame): The rows to be upserted
 
         Raises:
             UpsertDatabaseError: Raised when a SQLAlchemy error caught
         """
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
-        data = data.replace({np.nan: None})
+        table = self._get_table_object(table_name)
+        data = data.replace({numpy.nan: None})
         rows = data.to_dict("records")
         for row in rows:
             try:
@@ -55,18 +55,18 @@ class MySQLDatabase(SQLAlchemyDatabase):
     def _upsert_table_row(
         self,
         row: dict[str, Any],
-        table: sa.table,
+        table: sqlalchemy.Table,
         table_name: str,  # pylint: disable=unused-argument
     ) -> None:
         """Upserts a row into a MySQL table
 
         Args:
             row (dict[str, Any]): A row of a dataframe to be upserted
-            table (sa.table):  A synapse table entity to be upserted into
+            table (sqlalchemy.Table):  A sqlalchemy Table to be upserted into
             table_name (str): The name of the table to be upserted into (unused)
         """
         statement = insert(table).values(row).on_duplicate_key_update(**row)
-        with self.engine.connect().execution_options(autocommit=True) as conn:
+        with self.engine.begin() as conn:
             conn.execute(statement)
 
     def _get_datatype(
@@ -84,20 +84,20 @@ class MySQLDatabase(SQLAlchemyDatabase):
             Any: The SQLAlchemy datatype
         """
         datatypes = {
-            ColumnDatatype.TEXT: sa.VARCHAR(5000),
-            ColumnDatatype.DATE: sa.Date,
-            ColumnDatatype.INT: sa.Integer,
-            ColumnDatatype.FLOAT: sa.Float,
-            ColumnDatatype.BOOLEAN: sa.Boolean,
+            ColumnDatatype.TEXT: sqlalchemy.VARCHAR(5000),
+            ColumnDatatype.DATE: sqlalchemy.Date,
+            ColumnDatatype.INT: sqlalchemy.Integer,
+            ColumnDatatype.FLOAT: sqlalchemy.Float,
+            ColumnDatatype.BOOLEAN: sqlalchemy.Boolean,
         }
         # Keys need to be max 100 chars
         if column_schema.datatype == ColumnDatatype.TEXT and (
             column_schema.name == primary_key or column_schema.name in foreign_keys
         ):
-            return sa.VARCHAR(100)
+            return sqlalchemy.VARCHAR(100)
         # Strings that need to be indexed need to be max 1000 chars
         if column_schema.index and column_schema.datatype == ColumnDatatype.TEXT:
-            return sa.VARCHAR(1000)
+            return sqlalchemy.VARCHAR(1000)
 
         # Otherwise use datatypes dict
         return datatypes[column_schema.datatype]

@@ -1,9 +1,9 @@
 """SQLAlchemy"""
 from typing import Any
 from dataclasses import dataclass
-import pandas as pd
-import numpy as np
-import sqlalchemy as sa
+import pandas
+import numpy
+import sqlalchemy
 import sqlalchemy_utils
 from sqlalchemy import exc
 from sqlalchemy.inspection import inspect
@@ -33,7 +33,7 @@ def create_foreign_key_column(
     datatype: str,
     foreign_table_name: str,
     foreign_table_column: str,
-) -> sa.Column:
+) -> sqlalchemy.Column:
     """Creates a sqlalchemy.column that is a foreign key
 
     Args:
@@ -43,12 +43,12 @@ def create_foreign_key_column(
         foreign_table_column (str): The name of the column the foreign key is referencing
 
     Returns:
-        sa.Column: A sqlalchemy.column
+        sqlalchemy.Column: A sqlalchemy.column
     """
-    col = sa.Column(
+    col = sqlalchemy.Column(
         name,
         datatype,
-        sa.ForeignKey(
+        sqlalchemy.ForeignKey(
             f"{foreign_table_name}.{foreign_table_column}",
             ondelete="CASCADE",
         ),
@@ -58,12 +58,12 @@ def create_foreign_key_column(
 
 
 def create_foreign_key_configs(
-    table_schema: sa.sql.schema.Table,
+    table_schema: sqlalchemy.sql.schema.Table,
 ) -> list[ForeignKeySchema]:
     """Creates a list of foreign key configs from a sqlalchemy table schema
 
     Args:
-        table_schema (sa.sql.schema.Table): A sqlalchemy table schema
+        table_schema (sqlalchemy.sql.schema.Table): A sqlalchemy table schema
 
     Returns:
         list[ForeignKeySchema]: A list of foreign key configs
@@ -80,24 +80,32 @@ def create_foreign_key_configs(
 
 
 def create_column_schemas(
-    table_schema: sa.sql.schema.Table, indices: list[str]
+    table_schema: sqlalchemy.sql.schema.Table, indices: list[str]
 ) -> list[ColumnSchema]:
     """Creates a list of column schemas from a sqlalchemy table schema
 
     Args:
-        table_schema (sa.sql.schema.Table): A sqlalchemy table schema
+        table_schema (sqlalchemy.sql.schema.Table): A sqlalchemy table schema
         indices (list[str]): A list of columns in the schema to be indexed
 
     Returns:
         list[ColumnSchema]: A list of column schemas
     """
     datatypes = {
-        sa.String: ColumnDatatype.TEXT,
-        sa.VARCHAR: ColumnDatatype.TEXT,
-        sa.Date: ColumnDatatype.DATE,
-        sa.Integer: ColumnDatatype.INT,
-        sa.Float: ColumnDatatype.FLOAT,
-        sa.Boolean: ColumnDatatype.BOOLEAN,
+        sqlalchemy.String: ColumnDatatype.TEXT,
+        sqlalchemy.VARCHAR: ColumnDatatype.TEXT,
+        sqlalchemy.dialects.mysql.types.VARCHAR: ColumnDatatype.TEXT,
+        sqlalchemy.Date: ColumnDatatype.DATE,
+        sqlalchemy.DATE: ColumnDatatype.DATE,
+        sqlalchemy.Integer: ColumnDatatype.INT,
+        sqlalchemy.INTEGER: ColumnDatatype.INT,
+        sqlalchemy.dialects.mysql.types.INTEGER: ColumnDatatype.INT,
+        sqlalchemy.Float: ColumnDatatype.FLOAT,
+        sqlalchemy.FLOAT: ColumnDatatype.FLOAT,
+        sqlalchemy.dialects.mysql.types.FLOAT: ColumnDatatype.FLOAT,
+        sqlalchemy.dialects.postgresql.base.DOUBLE_PRECISION: ColumnDatatype.FLOAT,
+        sqlalchemy.Boolean: ColumnDatatype.BOOLEAN,
+        sqlalchemy.BOOLEAN: ColumnDatatype.BOOLEAN,
     }
     columns = table_schema.c
     return [
@@ -147,9 +155,7 @@ class SQLAlchemyDatabase(
         self.name = config.name
         self.verbose = verbose
         self.db_type_string = db_type_string
-
         self.create_database()
-        self.metadata = sa.MetaData()
 
     def drop_database(self) -> None:
         """Drops the database from the server"""
@@ -161,27 +167,25 @@ class SQLAlchemyDatabase(
         db_exists = sqlalchemy_utils.functions.database_exists(url)
         if not db_exists:
             sqlalchemy_utils.functions.create_database(url)
-        engine = sa.create_engine(url, encoding="utf-8", echo=self.verbose)
+        engine = sqlalchemy.create_engine(url, encoding="utf-8", echo=self.verbose)
         self.engine = engine
 
     def drop_all_tables(self) -> None:
         """Drops all tables in the schema"""
-        metadata = sa.schema.MetaData(self.engine)
-        metadata.reflect()
-        metadata.drop_all()
-        self.metadata.clear()
+        metadata = self._get_current_metadata()
+        metadata.drop_all(self.engine)
 
-    def execute_sql_query(self, query: str) -> pd.DataFrame:
+    def execute_sql_query(self, query: str) -> pandas.DataFrame:
         """Executes a sql query returning a table
 
         Args:
             query (str): A query written in SQL that returns a table
 
         Returns:
-            pd.DataFrame: The query result in pandas.Dataframe form
+            pandas.DataFrame: The query result in pandas.Dataframe form
         """
-        result = self._execute_sql_statement(query).fetchall()
-        table = pd.DataFrame(result)
+        result = self._execute_sql_statement(sqlalchemy.text(query)).fetchall()
+        table = pandas.DataFrame(result)
         return table
 
     def get_table_schema(self, table_name: str) -> TableSchema:
@@ -193,7 +197,8 @@ class SQLAlchemyDatabase(
         Returns:
             TableSchema: A schema for the table
         """
-        table_schema = self.metadata.tables[table_name]
+        metadata = self._get_current_metadata()
+        table_schema = metadata.tables[table_name]
         primary_key = inspect(table_schema).primary_key.columns.values()[0].name
         indices = self._get_column_indices(table_name)
         return TableSchema(
@@ -203,22 +208,22 @@ class SQLAlchemyDatabase(
             columns=create_column_schemas(table_schema, indices),
         )
 
-    def insert_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+    def insert_table_rows(self, table_name: str, data: pandas.DataFrame) -> None:
         """Inserts the rows of the table into a target table in the database
 
         Args:
             table_name (str): The name of the table to be inserted into
-            data (pd.DataFrame): The rows to be inserted
+            data (pandas.DataFrame): The rows to be inserted
 
         Raises:
             InsertDatabaseError: Raised when a SQLAlchemy error caught
         """
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
-        data = data.replace({np.nan: None})
+        table = self._get_table_object(table_name)
+        data = data.replace({numpy.nan: None})
         rows = data.to_dict("records")
-        statement = sa.insert(table).values(rows)
+        statement = sqlalchemy.insert(table).values(rows)
         try:
-            with self.engine.connect().execution_options(autocommit=True) as conn:
+            with self.engine.begin() as conn:
                 conn.execute(statement)
         except exc.SQLAlchemyError as exception:
             raise InsertDatabaseError(table_name) from exception
@@ -229,23 +234,23 @@ class SQLAlchemyDatabase(
         Args:
             table_name (str): The name of the table to be dropped
         """
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
+        table = self._get_table_object(table_name)
         table.drop(self.engine)
-        self.metadata.clear()
 
-    def delete_table_rows(self, table_name: str, data: pd.DataFrame) -> None:
+    def delete_table_rows(self, table_name: str, data: pandas.DataFrame) -> None:
         """Deletes rows from a table
 
         Args:
             table_name (str): The name fo the table to delete rows from
-            data (pd.DataFrame): A pandas dataframe, rows will eb deleted from the table
+            data (pandas.DataFrame): A pandas dataframe, rows will eb deleted from the table
              in the database where the primary keys match this dataframe.
         """
-        table = sa.Table(table_name, self.metadata, autoload_with=self.engine)
-        i = sa.inspect(table)
+
+        table = self._get_table_object(table_name)
+        i = sqlalchemy.inspect(table)
         pkey_column = list(column for column in i.columns if column.primary_key)[0]
         values = data[pkey_column.name].values.tolist()
-        statement = sa.delete(table).where(pkey_column.in_(values))
+        statement = sqlalchemy.delete(table).where(pkey_column.in_(values))
         self._execute_sql_statement(statement)
 
     def get_table_names(self) -> list[str]:
@@ -254,7 +259,7 @@ class SQLAlchemyDatabase(
         Returns:
             list[str]: A list of table names
         """
-        inspector = sa.inspect(self.engine)
+        inspector = sqlalchemy.inspect(self.engine)
         return sorted(inspector.get_table_names())
 
     def add_table(self, table_name: str, table_schema: TableSchema) -> None:
@@ -264,53 +269,53 @@ class SQLAlchemyDatabase(
             table_name (str): The name of the table
             table_schema (TableSchema): The schema for the table to be added
         """
+        metadata = self._get_current_metadata()
         columns = self._create_columns(table_schema)
-        sa.Table(table_name, self.metadata, *columns)
-        self.metadata.create_all(self.engine)
+        sqlalchemy.Table(table_name, metadata, *columns)
+        metadata.create_all(self.engine)
 
-    def query_table(self, table_name: str) -> pd.DataFrame:
+    def query_table(self, table_name: str) -> pandas.DataFrame:
         """Queries a whole table
 
         Args:
             table_name (str): The name of the table to query
 
         Returns:
-            pd.DataFrame: The table in pandas.Dataframe form
+            pandas.DataFrame: The table in pandas.Dataframe form
         """
         query = f"SELECT * FROM `{table_name}`"
         return self.execute_sql_query(query)
 
-    def _execute_sql_statement(self, statement: str) -> Any:
+    def _execute_sql_statement(self, statement: sqlalchemy.text) -> Any:
         """Executes a sql statement
 
         Args:
-            statement (str): A sql statement in string form
+            statement (sqlalchemy.text): A sql statement in sqlalchemy.text form
 
         Returns:
-            Any: The result, idf any, from the sql statement
+            Any: The result, if any, from the sql statement
         """
-        with self.engine.connect().execution_options(autocommit=True) as conn:
-            result = conn.execute(statement)
-        return result
+        with self.engine.begin() as conn:
+            return conn.execute(statement)
 
-    def _create_columns(self, table_schema: TableSchema) -> list[sa.Column]:
+    def _create_columns(self, table_schema: TableSchema) -> list[sqlalchemy.Column]:
         """Creates a list SQLAlchemy columns for a table
 
         Args:
             table_schema (TableSchema): The schema of the table to create columns for
 
         Returns:
-            list[sa.Column]: A list SQLAlchemy columns
+            list[sqlalchemy.Column]: A list SQLAlchemy columns
         """
         columns = [
             self._create_column(att, table_schema) for att in table_schema.columns
         ]
-        columns.append(sa.PrimaryKeyConstraint(table_schema.primary_key))
+        columns.append(sqlalchemy.PrimaryKeyConstraint(table_schema.primary_key))
         return columns
 
     def _create_column(
         self, column_schema: ColumnSchema, table_schema: TableSchema
-    ) -> sa.Column:
+    ) -> sqlalchemy.Column:
         """Creates a SQLAlchemy column
 
         Args:
@@ -318,7 +323,7 @@ class SQLAlchemyDatabase(
             table_schema (TableSchema): The schema for the table
 
         Returns:
-            sa.Column: a SQLAlchemy column
+            sqlalchemy.Column: a SQLAlchemy column
         """
         sql_datatype = self._get_datatype(
             column_schema,
@@ -336,7 +341,7 @@ class SQLAlchemyDatabase(
                 key.foreign_column_name,
             )
 
-        return sa.Column(
+        return sqlalchemy.Column(
             column_schema.name,
             sql_datatype,
             # column is nullable if not required
@@ -377,10 +382,32 @@ class SQLAlchemyDatabase(
             Any: The SQLAlchemy datatype
         """
         datatypes = {
-            ColumnDatatype.TEXT: sa.VARCHAR,
-            ColumnDatatype.DATE: sa.Date,
-            ColumnDatatype.INT: sa.Integer,
-            ColumnDatatype.FLOAT: sa.Float,
-            ColumnDatatype.BOOLEAN: sa.Boolean,
+            ColumnDatatype.TEXT: sqlalchemy.VARCHAR,
+            ColumnDatatype.DATE: sqlalchemy.Date,
+            ColumnDatatype.INT: sqlalchemy.Integer,
+            ColumnDatatype.FLOAT: sqlalchemy.Float,
+            ColumnDatatype.BOOLEAN: sqlalchemy.Boolean,
         }
         return datatypes[column_schema.datatype]
+
+    def _get_table_object(self, table_name: str) -> sqlalchemy.Table:
+        """Gets a sqlalchemy Table by its name
+
+        Args:
+            table_name (str): The name of the table to get
+
+        Returns:
+            sqlalchemy.Table: The sqlalchemy Table
+        """
+        metadata = self._get_current_metadata()
+        return sqlalchemy.Table(table_name, metadata, autoload_with=self.engine)
+
+    def _get_current_metadata(self) -> sqlalchemy.schema.MetaData:
+        """Gets the current database metadata
+
+        Returns:
+            sqlalchemy.schema.MetaData: The current database metadata
+        """
+        metadata = sqlalchemy.schema.MetaData()
+        metadata.reflect(self.engine)
+        return metadata

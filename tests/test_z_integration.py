@@ -135,6 +135,8 @@ class TestIntegration1:
             table = rdb_updater.rdb.query_table(name)
             assert len(table.index) > 0
 
+        rdb_updater.update_table("Patient")
+
         rdb_queryer = rdb_queryer_mysql
         assert rdb_queryer.query_store.get_table_names() == []
         path = os.path.join(data_directory, "test_queries_mysql.csv")
@@ -163,6 +165,8 @@ class TestIntegration1:
             table = rdb_updater.rdb.query_table(name)
             assert len(table.index) > 0
 
+        rdb_updater.update_table("Patient")
+
         rdb_queryer = rdb_queryer_postgres
         assert rdb_queryer.query_store.get_table_names() == []
         path = os.path.join(data_directory, "test_queries_postgres.csv")
@@ -188,6 +192,8 @@ class TestIntegration1:
         for name in test_schema_table_names:
             table = rdb_updater.rdb.query_table(name)
             assert len(table.index) > 0
+
+        rdb_updater.update_table("Patient")
 
 
 class TestIntegration2:

@@ -1,6 +1,7 @@
 """Testing for Schema."""
 from typing import Generator
 import pytest
+from deprecation import fail_if_not_removed
 from pydantic import ValidationError
 from schematic_db.db_schema.db_schema import (
     DatabaseSchema,
@@ -118,6 +119,7 @@ class TestSchemaConfig:
 class TestDatabaseConfig:
     """Testing for DatabaseConfig"""
 
+    @fail_if_not_removed
     def test_init1(self, database_object_config: DatabaseTableConfig) -> None:
         """Testing for init"""
         obj1 = database_object_config
@@ -128,6 +130,7 @@ class TestDatabaseConfig:
         obj = database_config
         assert obj.get_primary_key("object1") == "att1"
 
+    @fail_if_not_removed
     def test_get_foreign_keys(self, database_config: DatabaseConfig) -> None:
         """Testing for get_foreign_keys"""
         obj = database_config
@@ -135,6 +138,7 @@ class TestDatabaseConfig:
         assert obj.get_foreign_keys("object2") is None
         assert obj.get_foreign_keys("object3") is None
 
+    @fail_if_not_removed
     def test_get_attributes(self, database_config: DatabaseConfig) -> None:
         """Testing for get_attributes"""
         obj = database_config
