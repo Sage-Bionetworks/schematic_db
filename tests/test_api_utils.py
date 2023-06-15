@@ -1,11 +1,8 @@
 """Testing for Schematic API utils"""
 
 import pytest
-import pandas as pd
-from pydantic import ValidationError
+import pandas
 from schematic_db.api_utils.api_utils import (
-    ManifestMetadata,
-    ManifestMetadataList,
     create_schematic_api_response,
     filter_params,
     find_class_specific_properties,
@@ -18,110 +15,6 @@ from schematic_db.api_utils.api_utils import (
     SchematicAPIError,
     SchematicAPITimeoutError,
 )
-
-
-@pytest.mark.fast
-class TestManifestMetadata:
-    """Testing for ManifestMetadata"""
-
-    def test_validation_error1(self) -> None:
-        """Testing for ManifestMetadata pydantic synapse id error"""
-        with pytest.raises(
-            ValidationError,
-            match="2 validation errors for ManifestMetadata",
-        ):
-            ManifestMetadata(
-                dataset_id="xxx",
-                dataset_name="xxx",
-                manifest_id="xxx",
-                manifest_name="xxx",
-                component_name="xxx",
-            )
-
-    def test_validation_error2(self) -> None:
-        """Testing for ManifestMetadata pydantic string error"""
-        with pytest.raises(
-            ValidationError,
-            match="3 validation errors for ManifestMetadata",
-        ):
-            ManifestMetadata(
-                dataset_id="syn1",
-                dataset_name="",
-                manifest_id="syn1",
-                manifest_name="",
-                component_name="",
-            )
-
-    def test_to_dict(self) -> None:
-        """Testing for ManifestMetadata.to_dict"""
-        dct = {
-            "dataset_id": "syn1",
-            "dataset_name": "dataset",
-            "manifest_id": "syn2",
-            "manifest_name": "manifest",
-            "component_name": "component",
-        }
-        manifest = ManifestMetadata(**dct)
-        assert manifest.to_dict() == dct
-
-    def test_repr(self) -> None:
-        """Testing for ManifestMetadata.__repr__"""
-        dct = {
-            "dataset_id": "syn1",
-            "dataset_name": "dataset",
-            "manifest_id": "syn2",
-            "manifest_name": "manifest",
-            "component_name": "component",
-        }
-        manifest = ManifestMetadata(**dct)
-        print(manifest)
-
-
-@pytest.mark.fast
-class TestManifestMetadataList:
-    """Testing for ManifestMetadataList"""
-
-    def test_init(self) -> None:
-        """Test ManifestMetadataList init"""
-        mml = ManifestMetadataList(
-            [
-                [["", ""], ["", ""], ["", ""]],
-                [["syn1", "xxx"], ["syn2", "xxx"], ["xxx", "xxx"]],
-            ]
-        )
-        assert len(mml.metadata_list) == 1
-
-    def test_repr(self) -> None:
-        """Testing for ManifestMetadataList.__repr__"""
-        mml = ManifestMetadataList(
-            [
-                [["syn1", "xxx"], ["syn2", "xxx"], ["component1", "component1"]],
-                [["syn3", "xxx"], ["syn4", "xxx"], ["component2", "component2"]],
-            ]
-        )
-        print(mml)
-
-    def test_get_dataset_ids_for_component(self) -> None:
-        """Test ManifestMetadataList.get_dataset_ids_for_component"""
-        mml = ManifestMetadataList(
-            [
-                [["syn1", "xxx"], ["syn2", "xxx"], ["component1", "component1"]],
-                [["syn3", "xxx"], ["syn4", "xxx"], ["component2", "component2"]],
-            ]
-        )
-        assert mml.get_dataset_ids_for_component("component1") == ["syn1"]
-        assert mml.get_dataset_ids_for_component("component2") == ["syn3"]
-
-    def test_get_manifest_ids_for_component(self) -> None:
-        """Test ManifestMetadataList.get_manifest_ids_for_component"""
-        mml = ManifestMetadataList(
-            [
-                [["syn1", "xxx"], ["syn2", "xxx"], ["component1", "component1"]],
-                [["syn3", "xxx"], ["syn4", "xxx"], ["component2", "component2"]],
-            ]
-        )
-        assert mml.get_manifest_ids_for_component("component1") == ["syn2"]
-        assert mml.get_manifest_ids_for_component("component2") == ["syn4"]
 
 
 class TestAPIUtilHelpers:
@@ -229,7 +122,7 @@ class TestAPIUtils:
             secrets_dict["synapse"]["auth_token"],
             "syn47996491",
         )
-        assert isinstance(manifest, pd.DataFrame)
+        assert isinstance(manifest, pandas.DataFrame)
 
     def test_is_node_required(self, test_schema_json_url: str) -> None:
         """Testing for is_node_required"""

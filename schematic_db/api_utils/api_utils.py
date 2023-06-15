@@ -4,13 +4,10 @@
 from typing import Any
 from os import getenv
 from datetime import datetime
-import json
-import re
 import pytz
-from pydantic.dataclasses import dataclass
-from pydantic import validator
 import requests
 import pandas
+from schematic_db.manifest_store.manifest_metadata_list import ManifestMetadataList
 
 
 class SchematicAPIError(Exception):
@@ -201,135 +198,6 @@ def get_graph_by_edge_type(schema_url: str, relationship: str) -> list[tuple[str
     return response.json()
 
 
-@dataclass()
-class ManifestMetadata:
-    """Metadata for a manifest in Synapse."""
-
-    dataset_id: str
-    dataset_name: str
-    manifest_id: str
-    manifest_name: str
-    component_name: str
-
-    @validator("dataset_id", "manifest_id")
-    @classmethod
-    def validate_synapse_id(cls, value: str) -> str:
-        """Check if string is a valid synapse id
-
-        Args:
-            value (str): A string
-
-        Raises:
-            ValueError: If the value isn't a valid Synapse id
-
-        Returns:
-            (str): The input value
-        """
-        if not re.search("^syn[0-9]+", value):
-            raise ValueError(f"{value} is not a valid Synapse id")
-        return value
-
-    @validator("dataset_name", "manifest_name", "component_name")
-    @classmethod
-    def validate_string_is_not_empty(cls, value: str) -> str:
-        """Check if string  is not empty(has at least one char)
-
-        Args:
-            value (str): A string
-
-        Raises:
-            ValueError: If the value is zero characters long
-
-        Returns:
-            (str): The input value
-        """
-        if len(value) == 0:
-            raise ValueError(f"{value} is an empty string")
-        return value
-
-    def to_dict(self) -> dict[str, str]:
-        """Returns object attributes as dict
-
-        Returns:
-            dict[str, str]: dict of object attributes
-        """
-        attribute_dict = vars(self)
-        attribute_names = [
-            "dataset_id",
-            "dataset_name",
-            "manifest_id",
-            "manifest_name",
-            "component_name",
-        ]
-        return {key: attribute_dict[key] for key in attribute_names}
-
-    def __repr__(self) -> str:
-        """Prints object as dict"""
-        return json.dumps(self.to_dict(), indent=4)
-
-
-class ManifestMetadataList:
-    """A list of Manifest Metadata"""
-
-    def __init__(self, response_list: list[list[list[str]]]) -> None:
-        """
-        Args:
-            response_list (list[list[list[str]]]): The input from the
-             get/projects/manifests endpoint
-        """
-        metadata_list: list[ManifestMetadata] = []
-        for item in response_list:
-            try:
-                metadata = ManifestMetadata(
-                    dataset_id=item[0][0],
-                    dataset_name=item[0][1],
-                    manifest_id=item[1][0],
-                    manifest_name=item[1][1],
-                    component_name=item[2][0],
-                )
-            except ValueError:
-                pass
-            else:
-                metadata_list.append(metadata)
-        self.metadata_list = metadata_list
-
-    def __repr__(self) -> str:
-        """Prints each metadata object as dict"""
-        return json.dumps(
-            [metadata.to_dict() for metadata in self.metadata_list], indent=4
-        )
-
-    def get_dataset_ids_for_component(self, component_name: str) -> list[str]:
-        """Gets the dataset ids from the manifest metadata matching the component name
-
-        Args:
-            component_name (str): The name of the component to get the manifest datasets ids for
-
-        Returns:
-            list[str]: A list of synapse ids for the manifest datasets
-        """
-        return [
-            metadata.dataset_id
-            for metadata in self.metadata_list
-            if metadata.component_name == component_name
-        ]
-
-    def get_manifest_ids_for_component(self, component_name: str) -> list[str]:
-        """Gets the manifest ids from the manifest metadata matching the component name
-
-        Args:
-            component_name (str): The name of the component to get the manifest ids for
-
-        Returns:
-            list[str]: A list of synapse ids for the manifests
-        """
-        return [
-            metadata.manifest_id
-            for metadata in self.metadata_list
-            if metadata.component_name == component_name
-        ]
-
-
 def get_project_manifests(
     access_token: str, project_id: str, asset_view: str
 ) -> ManifestMetadataList:
@@ -353,7 +221,18 @@ def get_project_manifests(
     response = create_schematic_api_response(
         "storage/project/manifests", params, timeout=1000
     )
-    return ManifestMetadataList(response.json())
+    metadata_list = []
+    for item in response.json():
+        metadata_list.append(
+            {
+                "dataset_id": item[0][0],
+                "dataset_name": item[0][1],
+                "manifest_id": item[1][0],
+                "manifest_name": item[1][1],
+                "component_name": item[2][0],
+            }
+        )
+    return ManifestMetadataList(metadata_list)
 
 
 def download_manifest(access_token: str, manifest_id: str) -> pandas.DataFrame:

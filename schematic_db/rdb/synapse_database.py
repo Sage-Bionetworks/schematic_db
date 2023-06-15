@@ -10,7 +10,7 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
     ColumnDatatype,
 )
-from schematic_db.synapse.synapse import Synapse, SynapseConfig
+from schematic_db.synapse.synapse import Synapse
 from .rdb import RelationalDatabase
 
 CONFIG_DATATYPES = {
@@ -164,12 +164,14 @@ def create_synapse_column(name: str, datatype: ColumnDatatype) -> sc.Column:
 class SynapseDatabase(RelationalDatabase):
     """Represents a database stored as Synapse tables"""
 
-    def __init__(self, config: SynapseConfig):
+    def __init__(self, auth_token: str, project_id: str):
         """Init
+
         Args:
-            config (SynapseConfig): A SynapseConfig object
+            auth_token (str): A Synapse auth_token
+            project_id (str): A Synapse id for a project
         """
-        self.synapse = Synapse(config)
+        self.synapse = Synapse(auth_token, project_id)
 
     def query_table(self, table_name: str) -> pd.DataFrame:
         synapse_id = self.synapse.get_synapse_id_from_table_name(table_name)

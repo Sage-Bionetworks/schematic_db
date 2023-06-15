@@ -134,7 +134,9 @@ class RDBUpdater:
         # If there are no manifests a warning is raised and breaks out of function.
         if len(manifest_ids) == 0:
             warnings.warn(
-                NoManifestWarning(table_name, self.manifest_store.manifest_metadata)
+                NoManifestWarning(
+                    table_name, self.manifest_store.get_manifest_metadata()
+                )
             )
             return
 

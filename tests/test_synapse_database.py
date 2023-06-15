@@ -12,7 +12,7 @@ from schematic_db.rdb.synapse_database import (
     SynapseDatabase,
     SynapseDatabaseDropTableError,
 )
-from schematic_db.synapse.synapse import Synapse, SynapseConfig
+from schematic_db.synapse.synapse import Synapse
 from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.db_schema.db_schema import DatabaseSchema
 
@@ -22,9 +22,7 @@ def fixture_mock_synapse_database() -> Generator:
     """Yields a SynapseDatabase object with a mocked Synapse object"""
     with patch.object(sc, "Synapse", return_value=Mock()):
         with patch.object(sc.Synapse, "login", return_value=None):
-            obj = SynapseDatabase(
-                SynapseConfig(username="x", auth_token="y", project_id="syn1")
-            )
+            obj = SynapseDatabase("y", "syn1")
             yield obj
 
 

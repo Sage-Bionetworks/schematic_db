@@ -15,10 +15,9 @@ from schematic_db.db_schema.db_schema import (
     ForeignKeySchema,
 )
 
-from schematic_db.manifest_store.manifest_store import (
-    ManifestStore,
-    ManifestStoreConfig,
-)
+from schematic_db.manifest_store.api_manifest_store import APIManifestStore
+from schematic_db.manifest_store.synapse_manifest_store import SynapseManifestStore
+from schematic_db.manifest_store.manifest_store import ManifestStoreConfig
 
 from schematic_db.query_store.query_store import QueryStore
 from schematic_db.query_store.synapse_query_store import SynapseQueryStore
@@ -27,7 +26,7 @@ from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.synapse_database import SynapseDatabase
 from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
-from schematic_db.synapse.synapse import Synapse, SynapseConfig
+from schematic_db.synapse.synapse import Synapse
 from schematic_db.schema.schema import Schema, SchemaConfig
 from schematic_db.schema.database_config import DatabaseConfig
 
@@ -112,18 +111,6 @@ def fixture_postgres_config(secrets_dict: dict) -> Generator:
     )
 
 
-@pytest.fixture(scope="session", name="synapse_config")
-def fixture_synapse_config(secrets_dict: dict[str, Any]) -> Generator:
-    """
-    Yields a Synapse Config
-    """
-    yield SynapseConfig(
-        project_id=secrets_dict["synapse"]["project_id"],
-        username=secrets_dict["synapse"]["username"],
-        auth_token=secrets_dict["synapse"]["auth_token"],
-    )
-
-
 @pytest.fixture(scope="session", name="mysql_database")
 def fixture_mysql_database(mysql_config: SQLConfig) -> Generator:
     """Yields a SQlConfig object"""
@@ -143,19 +130,25 @@ def fixture_postgres_database(postgres_config: SQLConfig) -> Generator:
 
 
 @pytest.fixture(scope="session", name="synapse_object")
-def fixture_synapse_object(synapse_config: SynapseConfig) -> Generator:
+def fixture_synapse_object(secrets_dict: dict[str, Any]) -> Generator:
     """
     Yields a Synapse object
     """
-    yield Synapse(synapse_config)
+    yield Synapse(
+        auth_token=secrets_dict["synapse"]["auth_token"],
+        project_id=secrets_dict["synapse"]["project_id"],
+    )
 
 
 @pytest.fixture(scope="session", name="synapse_database")
-def fixture_synapse_database(synapse_config: SynapseConfig) -> Generator:
+def fixture_synapse_database(secrets_dict: dict[str, Any]) -> Generator:
     """
     Yields a SynapseDatabase
     """
-    yield SynapseDatabase(synapse_config)
+    yield SynapseDatabase(
+        auth_token=secrets_dict["synapse"]["auth_token"],
+        project_id=secrets_dict["synapse"]["project_id"],
+    )
 
 
 @pytest.fixture(scope="session", name="test_synapse_project_id")
@@ -215,15 +208,33 @@ def fixture_test_schema2(test_schema_json_url: str) -> Generator:
     yield obj
 
 
-@pytest.fixture(scope="session", name="manifest_store")
-def fixture_manifest_store(
+@pytest.fixture(scope="session", name="api_manifest_store")
+def fixture_api_manifest_store(
     test_synapse_project_id: str,
     test_synapse_asset_view_id: str,
     secrets_dict: dict,
     test_schema_json_url: str,
 ) -> Generator:
-    """Yields a ManifestStore object"""
-    yield ManifestStore(
+    """Yields a APIManifestStore object"""
+    yield APIManifestStore(
+        ManifestStoreConfig(
+            test_schema_json_url,
+            test_synapse_project_id,
+            test_synapse_asset_view_id,
+            secrets_dict["synapse"]["auth_token"],
+        )
+    )
+
+
+@pytest.fixture(scope="session", name="synapse_manifest_store")
+def fixture_synapse_manifest_store(
+    test_synapse_project_id: str,
+    test_synapse_asset_view_id: str,
+    secrets_dict: dict,
+    test_schema_json_url: str,
+) -> Generator:
+    """Yields a SynapseManifestStore object"""
+    yield SynapseManifestStore(
         ManifestStoreConfig(
             test_schema_json_url,
             test_synapse_project_id,
@@ -239,11 +250,8 @@ def fixture_synapse_test_query_store(secrets_dict: dict) -> Generator:
     Yields a Synapse Query Store for the test schema
     """
     obj = SynapseQueryStore(
-        SynapseConfig(
-            project_id="syn34178981",
-            username=secrets_dict["synapse"]["username"],
-            auth_token=secrets_dict["synapse"]["auth_token"],
-        )
+        project_id="syn34178981",
+        auth_token=secrets_dict["synapse"]["auth_token"],
     )
     yield obj
 

@@ -38,21 +38,26 @@ schema = Schema(config)
 
 #### Manifest Store object
 
-The [ManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/manifest_store.py) class is used to interact with the Schematic API to download manifests needed to update the database.
+The ManifestStore class is used to interact with the asset store in Synapse to download manifests needed to update the database.
 
-It is assumed that you have setup a Synapse project where your manifests exist.
+It is assumed that you have setup a Synapse project where your manifests exist, and the appropriate fileview.
+
+There are two types of ManifestStore classes.
+The [APIManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/api_manifest_store.py) class uses the Schematic API.
+The [SynapseManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/synapse_store.py) uses the  python Synapse client.
 
 To create the manifest store:
 
 ```python
-from schematic_db.manifest_store import ManifestStore, ManifestStoreConfig
+from schematic_db.manifest_store import APIManifestStore, SynapseManifestStore  ManifestStoreConfig
 config = ManifestStoreConfig(
         schema_url = "https://raw.githubusercontent.com/Sage-Bionetworks/Schematic-DB-Test-Schemas/main/test_schema.jsonld",
         synapse_project_id = "syn1",
         synapse_asset_view_id = "syn2",
         synapse_input_token = "xxx"
     )
-manifest_store = ManifestStore(config)
+manifest_store = APIManifestStore(config)
+# or manifest_store = SynapseManifestStore(config)
 ```
 
 #### Relational database objects
@@ -82,15 +87,11 @@ For a Synapse based database:
 
 ```python
 from schematic_db.rdb.synapse_database import SynapseDatabase
-from schematic_db.synapse.synapse import SynapseConfig
 
-config = SynapseConfig(
-        project_id="syn1,
-        username="user.name@synapse.org",
-        auth_token="xxx,
-    )
-
-database =  SynapseDatabase(config)
+database =  SynapseDatabase(
+    project_id="syn1,
+    auth_token="xxx,
+)
 ```
 
 #### Building the database
@@ -207,7 +208,10 @@ The [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schemati
 
 ##### Manifest Store
 
-The [ManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/manifest_store.py) class is used to interact with the Schematic API to download manifests needed to update the database. The ManifestStore is used by the [RDBUpdater](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_updater/rdb_updater.py) class.
+The [ManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/manifest_store.py) is an Abstract Base Class. This means it is meant to be inherited from and not used. It provides no functionality, just as interface. Inheriting from it implies that child class must implement it's methods with the same signature. The child classes(see blow) interact with the asset store in Synapse to download manifests needed to update the database. The ManifestStore is used by the [RDBUpdater](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_updater/rdb_updater.py) class.
+
+The [APIManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/api_manifest_store.py) class uses the Schematic API.
+The [SynapseManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/synapse_store.py) uses the python Synapse client.
 
 ##### Schema Graph
 
