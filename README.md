@@ -44,7 +44,7 @@ It is assumed that you have setup a Synapse project where your manifests exist, 
 
 There are two types of ManifestStore classes.
 The [APIManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/api_manifest_store.py) class uses the Schematic API.
-The [SynapseManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/synapse_store.py) uses the  python Synapse client.
+The [SynapseManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/synapse_store.py) uses the  python Synapse client. This is both experimental and deprecated.
 
 To create the manifest store:
 
@@ -57,7 +57,6 @@ config = ManifestStoreConfig(
         synapse_input_token = "xxx"
     )
 manifest_store = APIManifestStore(config)
-# or manifest_store = SynapseManifestStore(config)
 ```
 
 #### Relational database objects
@@ -229,7 +228,7 @@ The [SQLAlchemyDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/m
 
 The [MySQL](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/mysql.py) and [Postgres](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/postgres.py) classes both inherit from the SQLAlchemyDatabase and so inherit it's code and the RelationDatabase interface.
 
-The [SynapseDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/synapse_database.py) inherits from the RelationDatabase, so it implements the RelationDatabase interface. It uses the [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class.
+The [SynapseDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/synapse_database.py) inherits from the RelationDatabase, so it implements the RelationDatabase interface. It uses the [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class. This is both experimental and deprecated.
 
 ##### Query Store
 

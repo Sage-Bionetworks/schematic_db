@@ -5,12 +5,17 @@ This is used to interact with manifests
 """
 from typing import Optional
 import pandas
+from deprecation import deprecated
 from schematic_db.schema_graph.schema_graph import SchemaGraph
 from schematic_db.api_utils.api_utils import ManifestMetadataList
 from schematic_db.synapse.synapse import Synapse
 from .manifest_store import ManifestStore, ManifestStoreConfig
 
 
+@deprecated(
+    deprecated_in="0.0.29",
+    details="This is both an experimental and temporary class that will be removed in the future.",
+)
 class SynapseManifestStore(ManifestStore):
     """An interface for interacting with manifests"""
 
@@ -39,7 +44,8 @@ class SynapseManifestStore(ManifestStore):
         """Gets the current objects manifest metadata."""
         query = (
             "SELECT id, name, parentId, Component FROM "
-            f"{self.synapse_asset_view_id} WHERE type = 'file'"
+            f"{self.synapse_asset_view_id} "
+            "WHERE type = 'file' AND Component IS NOT NULL AND name LIKE '%csv'"
         )
         dataframe = self.synapse.execute_sql_query(query)
         manifest_list = []
