@@ -80,38 +80,26 @@ def create_foreign_key_configs(
 
 
 def create_column_schemas(
-    table_schema: sqlalchemy.sql.schema.Table, indices: list[str]
+    table_schema: sqlalchemy.sql.schema.Table,
+    indices: list[str],
+    column_datatypes: dict[Any, ColumnDatatype],
 ) -> list[ColumnSchema]:
     """Creates a list of column schemas from a sqlalchemy table schema
 
     Args:
         table_schema (sqlalchemy.sql.schema.Table): A sqlalchemy table schema
         indices (list[str]): A list of columns in the schema to be indexed
+        column_datatypes(dict[str, Any]): A dictionary whose keys are sql column datatype,
+          and values are a ColumnDatatype
 
     Returns:
         list[ColumnSchema]: A list of column schemas
     """
-    datatypes = {
-        sqlalchemy.String: ColumnDatatype.TEXT,
-        sqlalchemy.VARCHAR: ColumnDatatype.TEXT,
-        sqlalchemy.dialects.mysql.types.VARCHAR: ColumnDatatype.TEXT,
-        sqlalchemy.Date: ColumnDatatype.DATE,
-        sqlalchemy.DATE: ColumnDatatype.DATE,
-        sqlalchemy.Integer: ColumnDatatype.INT,
-        sqlalchemy.INTEGER: ColumnDatatype.INT,
-        sqlalchemy.dialects.mysql.types.INTEGER: ColumnDatatype.INT,
-        sqlalchemy.Float: ColumnDatatype.FLOAT,
-        sqlalchemy.FLOAT: ColumnDatatype.FLOAT,
-        sqlalchemy.dialects.mysql.types.FLOAT: ColumnDatatype.FLOAT,
-        sqlalchemy.dialects.postgresql.base.DOUBLE_PRECISION: ColumnDatatype.FLOAT,
-        sqlalchemy.Boolean: ColumnDatatype.BOOLEAN,
-        sqlalchemy.BOOLEAN: ColumnDatatype.BOOLEAN,
-    }
     columns = table_schema.c
     return [
         ColumnSchema(
             name=column.name,
-            datatype=datatypes[type(column.type)],
+            datatype=column_datatypes[type(column.type)],
             required=not column.nullable,
             index=column.name in indices,
         )
@@ -149,6 +137,18 @@ class SQLAlchemyDatabase(
             verbose (bool): Sends much more to logging.info
             db_type_string (str): They type of database in string form
         """
+        self.column_datatypes = {
+            sqlalchemy.String: ColumnDatatype.TEXT,
+            sqlalchemy.VARCHAR: ColumnDatatype.TEXT,
+            sqlalchemy.Date: ColumnDatatype.DATE,
+            sqlalchemy.DATE: ColumnDatatype.DATE,
+            sqlalchemy.Integer: ColumnDatatype.INT,
+            sqlalchemy.INTEGER: ColumnDatatype.INT,
+            sqlalchemy.Float: ColumnDatatype.FLOAT,
+            sqlalchemy.FLOAT: ColumnDatatype.FLOAT,
+            sqlalchemy.Boolean: ColumnDatatype.BOOLEAN,
+            sqlalchemy.BOOLEAN: ColumnDatatype.BOOLEAN,
+        }
         self.username = config.username
         self.password = config.password
         self.host = config.host
@@ -207,8 +207,10 @@ class SQLAlchemyDatabase(
             name=table_name,
             primary_key=primary_key,
             foreign_keys=create_foreign_key_configs(table_schema),
-            columns=create_column_schemas(table_schema, indices),
+            columns=create_column_schemas(table_schema, indices, self.column_datatypes),
         )
+
+    # def _get_column_type_dict(self)
 
     def insert_table_rows(self, table_name: str, data: pandas.DataFrame) -> None:
         """Inserts the rows of the table into a target table in the database

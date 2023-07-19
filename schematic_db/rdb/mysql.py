@@ -3,7 +3,7 @@ from typing import Any
 import pandas
 import numpy
 import sqlalchemy
-from sqlalchemy.dialects.mysql import insert
+import sqlalchemy.dialects.mysql
 from sqlalchemy import exc
 from schematic_db.db_schema.db_schema import (
     ColumnDatatype,
@@ -32,6 +32,18 @@ class MySQLDatabase(SQLAlchemyDatabase):
             verbose (bool): Sends much more to logging.info
         """
         super().__init__(config, verbose, "mysql")
+        column_datatypes = self.column_datatypes.copy()
+        column_datatypes.update(
+            {
+                sqlalchemy.dialects.mysql.VARCHAR: ColumnDatatype.TEXT,
+                sqlalchemy.dialects.mysql.TEXT: ColumnDatatype.TEXT,
+                sqlalchemy.dialects.mysql.INTEGER: ColumnDatatype.INT,
+                sqlalchemy.dialects.mysql.DOUBLE: ColumnDatatype.FLOAT,
+                sqlalchemy.dialects.mysql.FLOAT: ColumnDatatype.FLOAT,
+                sqlalchemy.dialects.mysql.DATE: ColumnDatatype.DATE,
+            }
+        )
+        self.column_datatypes = column_datatypes
 
     def upsert_table_rows(self, table_name: str, data: pandas.DataFrame) -> None:
         """Inserts and/or updates the rows of the table
@@ -65,7 +77,8 @@ class MySQLDatabase(SQLAlchemyDatabase):
             table (sqlalchemy.Table):  A sqlalchemy Table to be upserted into
             table_name (str): The name of the table to be upserted into (unused)
         """
-        statement = insert(table).values(row).on_duplicate_key_update(**row)
+        statement = sqlalchemy.dialects.mysql.insert(table).values(row)
+        statement = statement.on_duplicate_key_update(**row)
         with self.engine.begin() as conn:
             conn.execute(statement)
 

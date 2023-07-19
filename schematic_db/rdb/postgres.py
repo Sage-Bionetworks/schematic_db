@@ -3,9 +3,10 @@ from typing import Any
 import numpy
 import pandas
 import sqlalchemy
-import sqlalchemy.dialects.postgresql as sqlalchemy_postgres
+import sqlalchemy.dialects.postgresql
 from sqlalchemy.inspection import inspect
 from sqlalchemy import exc
+from schematic_db.db_schema.db_schema import ColumnDatatype
 from .sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
 from .rdb import UpsertDatabaseError
 
@@ -29,6 +30,18 @@ class PostgresDatabase(SQLAlchemyDatabase):
             verbose (bool): Sends much more to logging.info
         """
         super().__init__(config, verbose, "postgresql")
+        column_datatypes = self.column_datatypes.copy()
+        column_datatypes.update(
+            {
+                sqlalchemy.dialects.postgresql.base.TEXT: ColumnDatatype.TEXT,
+                sqlalchemy.dialects.postgresql.base.VARCHAR: ColumnDatatype.TEXT,
+                sqlalchemy.dialects.postgresql.base.INTEGER: ColumnDatatype.INT,
+                sqlalchemy.dialects.postgresql.base.DOUBLE_PRECISION: ColumnDatatype.FLOAT,
+                sqlalchemy.dialects.postgresql.base.FLOAT: ColumnDatatype.FLOAT,
+                sqlalchemy.dialects.postgresql.base.DATE: ColumnDatatype.DATE,
+            }
+        )
+        self.column_datatypes = column_datatypes
 
     def upsert_table_rows(self, table_name: str, data: pandas.DataFrame) -> None:
         """Inserts and/or updates the rows of the table
@@ -65,7 +78,7 @@ class PostgresDatabase(SQLAlchemyDatabase):
             table_name (str): The name of the table to be upserted into
             primary_key (str): The name fo the primary key of the table being upserted into
         """
-        statement = sqlalchemy_postgres.insert(table).values(rows)
+        statement = sqlalchemy.dialects.postgresql.insert(table).values(rows)
         update_columns = {
             col.name: col for col in statement.excluded if col.name != primary_key
         }
