@@ -58,7 +58,7 @@ class TestAPIUtilHelpers:
                     "manifest_id": "syn47996491",
                     "as_json": True,
                 },
-                timeout=1,
+                timeout=0.1,
             )
 
     def test_filter_params(self) -> None:

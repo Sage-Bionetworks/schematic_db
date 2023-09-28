@@ -89,14 +89,14 @@ class SchematicAPITimeoutError(Exception):
 def create_schematic_api_response(
     endpoint_path: str,
     params: dict[str, Any],
-    timeout: int = 30,
+    timeout: float = 30,
 ) -> requests.Response:
     """Performs a GET request on the schematic API
 
     Args:
         endpoint_path (str): The path for the endpoint in the schematic API
         params (dict): The parameters in dict form for the requested endpoint
-        timeout (int): The amount of seconds the API call has to run
+        timeout (float): The amount of seconds the API call has to run
 
     Raises:
         SchematicAPIError: When response code is anything other than 200

@@ -115,6 +115,47 @@ RDBUpdater(rdb=database, manifest_store=manifest_store)
 rdb_updater.update_database()
 ```
 
+#### Dropping tables
+
+Assuming that a database object exists created as shown above, tables can be dropped from the database:
+
+```python
+database.drop_table(table_name)
+```
+
+This only works if the table in question has no dependencies in the database schema
+
+The above works in Synapse databases, but there is an additional method:
+
+```python
+synapse_database.drop_table_and_dependencies(table_name)
+```
+
+This will drop the table in question, and all tables that depend on it in the schema.
+
+Note:  When a table is dropped in Synapse, that means that the schema, all rows, and all annotations are deleted, but the entity remains.
+This is in order to preserve the synapse id and table name.
+
+If you want to delete the entity as well:
+
+```python
+synapse_database.delete_table(table_name)
+```
+
+#### Deleting row data
+
+Assuming that a database object exists created as shown above, tables can be dropped from the database:
+
+```python
+database.delete_table_rows(table_name, dataframe)
+```
+
+The dataframe must contain the primary key of the table, the values in the primary key column will determine what rows are deleted.
+
+Note: This is a cascading delete. Any rows that reference rows in the dataframe will also be deleted.
+Note: This is also recursive. Rows in tables that reference rows in tables that reference the rows in the dataframe and so on, will also be deleted.
+
+
 ## Local Development
 
 ### Setup
