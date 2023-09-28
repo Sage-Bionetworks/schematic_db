@@ -16,7 +16,7 @@ from schematic_db.api_utils.api_utils import (
 )
 
 
-class TestAPIUtilHelpers: #pylint: disable=too-few-public-methods
+class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
     """Testing for API util helpers"""
 
     def test_create_schematic_api_response(
