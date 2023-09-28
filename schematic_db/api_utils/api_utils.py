@@ -1,7 +1,7 @@
 """Functions that interact with the schematic API"""
 # pylint: disable=duplicate-code
 
-from typing import Any
+from typing import Any, Optional
 from os import getenv
 from datetime import datetime
 import pytz
@@ -90,6 +90,7 @@ def create_schematic_api_response(
     endpoint_path: str,
     params: dict[str, Any],
     timeout: float = 30,
+    access_token: Optional[str] = None,
 ) -> requests.Response:
     """Performs a GET request on the schematic API
 
@@ -97,6 +98,7 @@ def create_schematic_api_response(
         endpoint_path (str): The path for the endpoint in the schematic API
         params (dict): The parameters in dict form for the requested endpoint
         timeout (float): The amount of seconds the API call has to run
+        access_token (str): Access token for storage related endpoints
 
     Raises:
         SchematicAPIError: When response code is anything other than 200
@@ -106,38 +108,25 @@ def create_schematic_api_response(
         requests.Response: The response from the API
     """
     api_url = getenv("API_URL", "https://schematic.api.sagebionetworks.org/v1/")
+    api_url = "http://localhost:3001/v1/"
     endpoint_url = f"{api_url}/{endpoint_path}"
     start_time = datetime.now(pytz.timezone("US/Pacific"))
+    headers = {"Authorization": f"Bearer {access_token}"}
     try:
-        response = requests.get(endpoint_url, params=params, timeout=timeout)
+        response = requests.get(
+            endpoint_url, params=params, headers=headers, timeout=timeout
+        )
     except requests.exceptions.Timeout as exc:
-        raise SchematicAPITimeoutError(
-            endpoint_url, start_time, filter_params(params)
-        ) from exc
+        raise SchematicAPITimeoutError(endpoint_url, start_time, params) from exc
     if response.status_code != 200:
         raise SchematicAPIError(
             endpoint_url,
             response.status_code,
             response.reason,
             start_time,
-            filter_params(params),
+            params,
         )
     return response
-
-
-def filter_params(params: dict[str, Any]) -> dict[str, Any]:
-    """Removes any parameters from the input dictionary that should not be seen.
-
-    Args:
-        params (dict[str, Any]): A dictionary of parameters
-
-    Returns:
-        dict[str, Any]: A dictionary of parameters with any secrets removed
-    """
-    secret_params = ["access_token"]
-    for param in secret_params:
-        params.pop(param, None)
-    return params
 
 
 def find_class_specific_properties(schema_url: str, schema_class: str) -> list[str]:
@@ -214,12 +203,11 @@ def get_project_manifests(
         ManifestMetadataList: A list of manifests in Synapse
     """
     params = {
-        "access_token": access_token,
         "project_id": project_id,
         "asset_view": asset_view,
     }
     response = create_schematic_api_response(
-        "storage/project/manifests", params, timeout=1000
+        "storage/project/manifests", params, timeout=1000, access_token=access_token
     )
     metadata_list = []
     for item in response.json():
@@ -246,11 +234,12 @@ def download_manifest(access_token: str, manifest_id: str) -> pandas.DataFrame:
         pd.DataFrame: The manifest in dataframe form
     """
     params = {
-        "access_token": access_token,
         "manifest_id": manifest_id,
         "as_json": True,
     }
-    response = create_schematic_api_response("manifest/download", params, timeout=1000)
+    response = create_schematic_api_response(
+        "manifest/download", params, timeout=1000, access_token=access_token
+    )
     manifest = pandas.DataFrame(response.json())
     return manifest
 

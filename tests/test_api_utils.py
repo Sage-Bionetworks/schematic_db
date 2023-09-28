@@ -4,7 +4,6 @@ import pytest
 import pandas
 from schematic_db.api_utils.api_utils import (
     create_schematic_api_response,
-    filter_params,
     find_class_specific_properties,
     get_property_label_from_display_name,
     get_graph_by_edge_type,
@@ -17,7 +16,7 @@ from schematic_db.api_utils.api_utils import (
 )
 
 
-class TestAPIUtilHelpers:
+class TestAPIUtilHelpers: #pylint: disable=too-few-public-methods
     """Testing for API util helpers"""
 
     def test_create_schematic_api_response(
@@ -60,15 +59,6 @@ class TestAPIUtilHelpers:
                 },
                 timeout=0.1,
             )
-
-    def test_filter_params(self) -> None:
-        """Testing for filter_params"""
-        assert not filter_params({})
-        assert not filter_params({"access_token": "xxx"})
-        assert filter_params({"attribute": 1}) == {"attribute": 1}
-        assert filter_params({"attribute": 1, "access_token": "xxx"}) == {
-            "attribute": 1
-        }
 
 
 class TestAPIUtils:
