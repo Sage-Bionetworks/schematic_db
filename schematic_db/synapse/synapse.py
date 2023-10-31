@@ -54,12 +54,9 @@ class Synapse:  # pylint: disable=too-many-public-methods
             project_id (str): A Synapse id for a project
         """
         self.project_id = project_id
-
         syn = synapseclient.Synapse()
-        syn.login(authToken=auth_token)
-
+        syn.login(authToken=auth_token, silent=True)
         self.syn = syn
-        self.project_id = project_id
 
     def download_csv_as_dataframe(self, synapse_id: str) -> pandas.DataFrame:
         """Downloads a csv file form Synapse and reads it
