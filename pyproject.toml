@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "schematic_db"
-version = "0.0.33.temp"
+version = "0.0.dev33"
 description = ""
 authors = ["andrewelamb <andrewelamb@gmail.com>"]
 
