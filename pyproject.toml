@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "schematic_db"
-version = "0.0.33"
+version = "0.0.33-temp"
 description = ""
 authors = ["andrewelamb <andrewelamb@gmail.com>"]
 
@@ -10,7 +10,7 @@ SQLAlchemy = "^2.0.19"
 PyYAML = "^6.0"
 SQLAlchemy-Utils = "^0.41.1"
 requests = "^2.28.1"
-pandas = "^2.0.0"
+pandas = "1.5.3"
 networkx = "^2.8.6"
 tenacity = "^8.1.0"
 pydantic = "^1.10.7"
