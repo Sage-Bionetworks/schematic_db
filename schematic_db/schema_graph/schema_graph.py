@@ -9,21 +9,35 @@ class SchemaGraph:
     Stores the graph structure of the database schema
     """
 
-    def __init__(self, schema_url: str) -> None:
+    def __init__(self, schema_url: str, use_schema_labels:bool = False) -> None:
         """
         Args:
             schema_url (str): The url of the schema in jsonld form.
+            use_schema_labels (bool):
+                What to use for column names from the schema
+                If True attribute labels will be taken from the schema
+                If False, attribute display names
         """
         self.schema_url = schema_url
-        self.schema_graph = self.create_schema_graph()
+        self.schema_graph = self.create_schema_graph(use_schema_labels)
 
-    def create_schema_graph(self) -> networkx.DiGraph:
+    def create_schema_graph(self, use_schema_labels:bool=False) -> networkx.DiGraph:
         """Retrieve the edges from schematic API and store in networkx.DiGraph()
+
+        Args:
+            use_schema_labels (bool):
+                What to use for column names from the schema
+                If True attribute labels will be taken from the schema
+                If False, attribute display names
 
         Returns:
             networkx.DiGraph: The edges of the graph
         """
-        subgraph = get_graph_by_edge_type(self.schema_url, "requiresComponent")
+        subgraph = get_graph_by_edge_type(
+            schema_url=self.schema_url,
+            relationship="requiresComponent",
+            display_name_as_label=use_schema_labels
+        )
         schema_graph = networkx.DiGraph()
         schema_graph.add_edges_from(subgraph)
         return schema_graph

@@ -38,15 +38,6 @@ class ManifestStoreConfig:
             raise ValueError(f"{value} is a valid url")
         return value
 
-    @validator("schema_url")
-    @classmethod
-    def validate_is_jsonld(cls, value: str) -> str:
-        """Validates that the value is a jsonld file"""
-        is_jsonld = value.endswith(".jsonld")
-        if not is_jsonld:
-            raise ValueError(f"{value} does end with '.jsonld'")
-        return value
-
     @validator("synapse_project_id", "synapse_asset_view_id")
     @classmethod
     def validate_synapse_id(cls, value: str) -> str:

@@ -93,10 +93,15 @@ class SchemaConfig:
     """
     A config for a Schema.
     Properties:
-        schema_url (str): A url to the jsonld schema file
+        schema_url (str): A url to the schema file
+        use_schema_labels (bool):
+          What to use for column names from the schema
+          If True attribute labels will be taken from the schema
+          If False, attribute display names
     """
 
     schema_url: str
+    use_schema_labels: bool = False
 
     @validator("schema_url")
     @classmethod
@@ -105,15 +110,6 @@ class SchemaConfig:
         valid_url = validators.url(value)
         if not valid_url:
             raise ValueError(f"{value} is a valid url")
-        return value
-
-    @validator("schema_url")
-    @classmethod
-    def validate_is_jsonld(cls, value: str) -> str:
-        """Validates that the value is a jsonld file"""
-        is_jsonld = value.endswith(".jsonld")
-        if not is_jsonld:
-            raise ValueError(f"{value} does end with '.jsonld'")
         return value
 
 
@@ -127,7 +123,6 @@ class Schema:
         self,
         config: SchemaConfig,
         database_config: DatabaseConfig = DatabaseConfig([]),
-        use_display_names_as_labels: bool = False,
     ) -> None:
         """
         The Schema class handles interactions with the schematic API.
@@ -137,13 +132,11 @@ class Schema:
             config (SchemaConfig): A config describing the basic inputs for the schema table
             database_config (DatabaseConfig): Experimental and will be deprecated in the near
              future. A config describing optional database specific columns.
-            use_display_names_as_labels(bool): Experimental and will be deprecated in the near
-             future. Use when display names and labels are the same in the schema.
         """
         self.database_config = database_config
         self.schema_url = config.schema_url
-        self.use_display_names_as_labels = use_display_names_as_labels
-        self.schema_graph = SchemaGraph(config.schema_url)
+        self.use_schema_labels = config.use_schema_labels
+        self.schema_graph = SchemaGraph(config.schema_url, self.use_schema_labels)
         self.database_schema: Optional[DatabaseSchema] = None
 
     def get_database_schema(self) -> DatabaseSchema:
@@ -183,7 +176,6 @@ class Schema:
         columns = self._create_column_schemas(table_name)
         if not columns:
             return None
-
         return TableSchema(
             name=table_name,
             columns=columns,
@@ -204,7 +196,11 @@ class Schema:
             Optional[list[ColumnSchema]]: A list of columns in ColumnSchema form
         """
         # the names of the columns to be created, in label(not display) form
-        column_names = find_class_specific_properties(self.schema_url, table_name)
+        column_names = find_class_specific_properties(
+            self.schema_url,
+            table_name,
+            display_name_as_label=self.use_schema_labels
+        )
         columns = [
             self._create_column_schema(name, table_name) for name in column_names
         ]
@@ -255,7 +251,11 @@ class Schema:
             bool: Is the column required?
         """
         try:
-            is_column_required = is_node_required(self.schema_url, column_name)
+            is_column_required = is_node_required(
+                self.schema_url,
+                column_name,
+                self.use_schema_labels
+            )
         except (SchematicAPIError, SchematicAPITimeoutError) as exc:
             raise ColumnSchematicError(column_name, table_name) from exc
         return is_column_required
@@ -286,7 +286,7 @@ class Schema:
         # Try to get validation rules from Schematic API
         try:
             all_validation_rules = get_node_validation_rules(
-                self.schema_url, column_name
+                self.schema_url, column_name, self.use_schema_labels
             )
         except (SchematicAPIError, SchematicAPITimeoutError) as exc:
             raise ColumnSchematicError(column_name, table_name) from exc
@@ -368,15 +368,16 @@ class Schema:
 
         return ForeignKeySchema(column_name, foreign_table_name, foreign_column_name)
 
-    def _get_column_name(self, column_name: str) -> str:
-        """Gets the column name of a manifest column
+    def _get_column_name(self, display_name: str) -> str:
+        """Gets the name of a column using its display name from a manifest
 
         Args:
-            column_name (str): The name of the column
+            display_name (str): The display name of the column
 
         Returns:
-            str: The column name of the column
+            str: The label of the column
         """
-        if self.use_display_names_as_labels:
-            return column_name
-        return get_property_label_from_display_name(self.schema_url, column_name)
+        # If using labels as display names, then the display name is the same as the column name
+        if self.use_schema_labels:
+            return display_name
+        return get_property_label_from_display_name(display_name)

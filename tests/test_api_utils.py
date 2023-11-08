@@ -21,14 +21,14 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
 
     def test_create_schematic_api_response(
         self,
-        test_schema_json_url: str,
+        test_schema_csv_url: str,
         secrets_dict: dict,
     ) -> None:
         """Testing for create_schematic_api_response"""
         response = create_schematic_api_response(
-            endpoint_path="explorer/get_property_label_from_display_name",
+            endpoint_path="utils/get_property_label_from_display_name",
             params={
-                "schema_url": test_schema_json_url,
+                "schema_url": test_schema_csv_url,
                 "display_name": "year_of_birth",
             },
         )
@@ -64,30 +64,62 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
 class TestAPIUtils:
     """Testing for API utils"""
 
-    def test_find_class_specific_properties(self, test_schema_json_url: str) -> None:
+    def test_find_class_specific_properties(self, test_schema_csv_url: str) -> None:
         "Testing for find_class_specific_properties"
-        assert find_class_specific_properties(test_schema_json_url, "Patient") == [
+        properties = find_class_specific_properties(
+            schema_url=test_schema_csv_url,
+            schema_class="Patient",
+            display_name_as_label=False
+        )
+        assert properties == [
             "id",
             "sex",
             "yearofBirth",
-            "weight",
             "diagnosis",
+            "weight",
             "date",
         ]
+        properties2 = find_class_specific_properties(
+            schema_url=test_schema_csv_url,
+            schema_class="Patient",
+            display_name_as_label=True
+        )
+        assert properties2 == [
+            "id",
+            "Sex",
+            "yearofBirth",
+            "Diagnosis",
+            "Weight",
+            "Date",
+        ]
 
-    def test_get_property_label_from_display_name(
-        self, test_schema_json_url: str
-    ) -> None:
+    def test_get_property_label_from_display_name(self) -> None:
         "Testing for get_property_label_from_display_name"
-        assert get_property_label_from_display_name(test_schema_json_url, "id") == "id"
+        assert get_property_label_from_display_name("id") == "id"
         assert (
-            get_property_label_from_display_name(test_schema_json_url, "year_of_birth")
+            get_property_label_from_display_name("year_of_birth")
             == "yearOfBirth"
         )
 
-    def test_get_graph_by_edge_type(self, test_schema_json_url: str) -> None:
+    def test_get_graph_by_edge_type(self, test_schema_csv_url: str) -> None:
         "Testing for get_graph_by_edge_type"
-        assert get_graph_by_edge_type(test_schema_json_url, "requiresComponent") == [
+        graph = get_graph_by_edge_type(
+            schema_url= test_schema_csv_url,
+            relationship= "requiresComponent",
+            display_name_as_label=False
+        )
+        assert graph == [
+            ["Biospecimen", "Patient"],
+            ["BulkRnaSeq", "Biospecimen"],
+        ]
+
+        graph2 = get_graph_by_edge_type(
+            schema_url= test_schema_csv_url,
+            relationship= "requiresComponent",
+            display_name_as_label=False
+        )
+
+        assert graph2 == [
             ["Biospecimen", "Patient"],
             ["BulkRnaSeq", "Biospecimen"],
         ]
@@ -114,11 +146,22 @@ class TestAPIUtils:
         )
         assert isinstance(manifest, pandas.DataFrame)
 
-    def test_is_node_required(self, test_schema_json_url: str) -> None:
+    def test_is_node_required(self, test_schema_csv_url: str) -> None:
         """Testing for is_node_required"""
-        assert is_node_required(test_schema_json_url, "sex")
+        assert is_node_required(test_schema_csv_url, "sex", display_name_as_label=False)
 
-    def test_get_node_validation_rules(self, test_schema_json_url: str) -> None:
+    def test_get_node_validation_rules(self, test_schema_csv_url: str) -> None:
         """Testing for get_node_validation_rules"""
-        rules = get_node_validation_rules(test_schema_json_url, "Family History")
+        rules = get_node_validation_rules(
+            schema_url=test_schema_csv_url,
+            node_display_name="weight",
+            display_name_as_label=False
+        )
         assert isinstance(rules, list)
+
+        rules2 = get_node_validation_rules(
+            schema_url=test_schema_csv_url,
+            node_display_name="Weight",
+            display_name_as_label=True
+        )
+        assert isinstance(rules2, list)
