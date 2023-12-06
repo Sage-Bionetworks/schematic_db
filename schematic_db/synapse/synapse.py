@@ -68,7 +68,7 @@ class Synapse:  # pylint: disable=too-many-public-methods
             pandas.DataFrame: The file in dataframe form
         """
         entity = self.syn.get(synapse_id)
-        return pandas.read_csv(entity.path)
+        return pandas.read_csv(entity.path, keep_default_na=False, na_values="")
 
     def get_table_names(self) -> list[str]:
         """Gets the names of the tables in the schema
