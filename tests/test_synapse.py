@@ -30,7 +30,9 @@ def fixture_synapse_with_test_table_one(
 
 
 @pytest.fixture(name="synapse_with_no_tables")
-def fixture_synapse_with_no_tables(synapse_object: Synapse) -> Generator[Synapse, None, None]:
+def fixture_synapse_with_no_tables(
+    synapse_object: Synapse,
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object
     """
