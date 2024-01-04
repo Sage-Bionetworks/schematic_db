@@ -289,7 +289,7 @@ class SynapseDatabase(RelationalDatabase):
                     dependency=key.foreign_table_name,
                 )
 
-    def add_table(self, table_name: str, table_schema: TableSchema) -> None:
+    def add_table(self, table_schema: TableSchema) -> None:
         table_names = self.synapse.get_table_names()
         table_name = table_schema.name
         columns = [
@@ -437,6 +437,7 @@ class SynapseDatabase(RelationalDatabase):
                 how="inner",
                 left_on=foreign_key.name,
                 right_on=foreign_key.foreign_column_name,
+                validate="many_to_one",
             )
 
             # if data has no rows continue to next reverse dependency
@@ -487,7 +488,9 @@ class SynapseDatabase(RelationalDatabase):
             primary_key (str): The primary key of the table used to identify which rows to update
         """
         table = self._create_primary_key_table(table_id, primary_key)
-        merged_table = pd.merge(data, table, how="left", on=primary_key)
+        merged_table = pd.merge(
+            data, table, how="left", on=primary_key, validate="one_to_one"
+        )
         self.synapse.upsert_table_rows(table_id, merged_table)
 
     def _merge_dataframe_with_primary_key_table(
@@ -509,7 +512,9 @@ class SynapseDatabase(RelationalDatabase):
         data = data[[primary_key]]
         table = self.synapse.query_table(table_id, include_row_data=True)
         table = table[["ROW_ID", "ROW_VERSION", primary_key]]
-        merged_table = pd.merge(data, table, how="inner", on=primary_key)
+        merged_table = pd.merge(
+            data, table, how="inner", on=primary_key, validate="one_to_one"
+        )
         return merged_table
 
     def _create_primary_key_table(
