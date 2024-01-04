@@ -15,7 +15,7 @@ def fixture_synapse_with_test_table_one(
     synapse_object: Synapse,
     table_one_columns: list[sc.Column],
     table_one: pd.DataFrame,
-) -> Generator:
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object with "test_table_one" added, used only for tests that
      don't alter the state of the Synapse project
@@ -30,7 +30,7 @@ def fixture_synapse_with_test_table_one(
 
 
 @pytest.fixture(name="synapse_with_no_tables")
-def fixture_synapse_with_no_tables(synapse_object: Synapse) -> Generator:
+def fixture_synapse_with_no_tables(synapse_object: Synapse) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object
     """
@@ -46,7 +46,7 @@ def fixture_synapse_with_no_tables(synapse_object: Synapse) -> Generator:
 def fixture_synapse_with_empty_table_one(
     synapse_with_no_tables: Synapse,
     table_one_columns: list[sc.Column],
-) -> Generator:
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object with table one added
     """
@@ -58,7 +58,7 @@ def fixture_synapse_with_empty_table_one(
 @pytest.fixture(name="synapse_with_filled_table_one")
 def fixture_synapse_with_filled_table_one(
     synapse_with_empty_table_one: Synapse, table_one: pd.DataFrame
-) -> Generator:
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object with table one filled
     """

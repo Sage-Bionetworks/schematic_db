@@ -15,10 +15,11 @@ postgres:
   host: "localhost"
 
 """
-from typing import Generator
+from collections.abc import Generator
 import pytest
 import pandas as pd
 from schematic_db.db_schema.db_schema import TableSchema
+from schematic_db.rdb.rdb import RelationalDatabase
 from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.sql_alchemy_database import SQLAlchemyDatabase
@@ -29,7 +30,7 @@ from schematic_db.rdb.rdb import UpsertDatabaseError, InsertDatabaseError
 def fixture_sql_databases(
     mysql_database: MySQLDatabase,
     postgres_database: PostgresDatabase,
-) -> Generator:
+) -> Generator[list[RelationalDatabase], None, None]:
     """Yields a list of databases to test"""
     yield [mysql_database, postgres_database]
 

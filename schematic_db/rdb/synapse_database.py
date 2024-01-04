@@ -164,7 +164,7 @@ def create_synapse_column(name: str, datatype: ColumnDatatype) -> sc.Column:
 class SynapseDatabase(RelationalDatabase):
     """Represents a database stored as Synapse tables"""
 
-    def __init__(self, auth_token: str, project_id: str):
+    def __init__(self, auth_token: str, project_id: str) -> None:
         """Init
 
         Args:

@@ -129,7 +129,7 @@ class SQLAlchemyDatabase(
 
     def __init__(
         self, config: SQLConfig, verbose: bool = False, db_type_string: str = "sql"
-    ):
+    ) -> None:
         """Init
 
         Args:
