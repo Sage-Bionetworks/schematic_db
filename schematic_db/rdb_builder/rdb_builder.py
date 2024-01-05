@@ -53,5 +53,5 @@ class RDBBuilder:  # pylint: disable=too-few-public-methods
         logging.info("Building database")
         for table_schema in database_schema.table_schemas:
             logging.info(f"Adding table to database schema: {table_schema.name}")
-            self.rdb.add_table(table_schema.name, table_schema)
+            self.rdb.add_table(table_schema)
         logging.info("Database built")

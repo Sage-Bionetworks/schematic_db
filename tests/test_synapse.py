@@ -6,13 +6,16 @@ import synapseclient as sc  # type: ignore
 from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.synapse.synapse import Synapse
 
+SYNAPSE_LOGIN_METHOD = "synapseclient.Synapse.login"
+SCHEMATIC_GET_TABLES_METHOD = "schematic_db.synapse.synapse.Synapse._get_tables"
+
 
 @pytest.fixture(name="synapse_with_test_table_one", scope="class")
 def fixture_synapse_with_test_table_one(
     synapse_object: Synapse,
     table_one_columns: list[sc.Column],
     table_one: pd.DataFrame,
-) -> Generator:
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object with "test_table_one" added, used only for tests that
      don't alter the state of the Synapse project
@@ -27,7 +30,9 @@ def fixture_synapse_with_test_table_one(
 
 
 @pytest.fixture(name="synapse_with_no_tables")
-def fixture_synapse_with_no_tables(synapse_object: Synapse) -> Generator:
+def fixture_synapse_with_no_tables(
+    synapse_object: Synapse,
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object
     """
@@ -43,7 +48,7 @@ def fixture_synapse_with_no_tables(synapse_object: Synapse) -> Generator:
 def fixture_synapse_with_empty_table_one(
     synapse_with_no_tables: Synapse,
     table_one_columns: list[sc.Column],
-) -> Generator:
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object with table one added
     """
@@ -55,7 +60,7 @@ def fixture_synapse_with_empty_table_one(
 @pytest.fixture(name="synapse_with_filled_table_one")
 def fixture_synapse_with_filled_table_one(
     synapse_with_empty_table_one: Synapse, table_one: pd.DataFrame
-) -> Generator:
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object with table one filled
     """
@@ -72,7 +77,7 @@ class TestMockSynapse:
     def test_get_table_names(self, mocker: Any) -> None:
         """Testing for Synapse.get_table_names"""
         tables = [{"name": "table1", "id": "syn1"}, {"name": "table2", "id": "syn2"}]
-        mocker.patch("synapseclient.Synapse.login", return_value=None)
+        mocker.patch(SYNAPSE_LOGIN_METHOD, return_value=None)
         mocker.patch(
             "schematic_db.synapse.synapse.Synapse._get_tables", return_value=tables
         )
@@ -82,10 +87,8 @@ class TestMockSynapse:
     def test_get_synapse_id_from_table_name(self, mocker: Any) -> None:
         """Testing for Synapse.get_synapse_id_from_table_name"""
         tables = [{"name": "table1", "id": "syn1"}, {"name": "table2", "id": "syn2"}]
-        mocker.patch("synapseclient.Synapse.login", return_value=None)
-        mocker.patch(
-            "schematic_db.synapse.synapse.Synapse._get_tables", return_value=tables
-        )
+        mocker.patch(SYNAPSE_LOGIN_METHOD, return_value=None)
+        mocker.patch(SCHEMATIC_GET_TABLES_METHOD, return_value=tables)
         obj = Synapse("", "")
         assert obj.get_synapse_id_from_table_name("table1") == "syn1"
         assert obj.get_synapse_id_from_table_name("table2") == "syn2"
@@ -93,10 +96,8 @@ class TestMockSynapse:
     def test_get_table_name_from_synapse_id(self, mocker: Any) -> None:
         """Testing for Synapse.get_table_name_from_synapse_id"""
         tables = [{"name": "table1", "id": "syn1"}, {"name": "table2", "id": "syn2"}]
-        mocker.patch("synapseclient.Synapse.login", return_value=None)
-        mocker.patch(
-            "schematic_db.synapse.synapse.Synapse._get_tables", return_value=tables
-        )
+        mocker.patch(SYNAPSE_LOGIN_METHOD, return_value=None)
+        mocker.patch(SCHEMATIC_GET_TABLES_METHOD, return_value=tables)
         obj = Synapse("", "")
         assert obj.get_table_name_from_synapse_id("syn1") == "table1"
         assert obj.get_table_name_from_synapse_id("syn2") == "table2"
@@ -105,10 +106,8 @@ class TestMockSynapse:
         """Testing for Synapse.query_table"""
         tables = [{"name": "table1", "id": "syn1"}, {"name": "table2", "id": "syn2"}]
         query_result = pd.DataFrame({"col1": ["a", "b"], "col2": [1, 2]})
-        mocker.patch("synapseclient.Synapse.login", return_value=None)
-        mocker.patch(
-            "schematic_db.synapse.synapse.Synapse._get_tables", return_value=tables
-        )
+        mocker.patch(SYNAPSE_LOGIN_METHOD, return_value=None)
+        mocker.patch(SCHEMATIC_GET_TABLES_METHOD, return_value=tables)
         mocker.patch(
             "schematic_db.synapse.synapse.Synapse.execute_sql_query",
             return_value=query_result,

@@ -17,7 +17,7 @@ class UpsertDatabaseError(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
-        return f"{self.message}; " f"Table Name: {self.table_name}"
+        return f"{self.message}; Table Name: {self.table_name}"
 
 
 class InsertDatabaseError(Exception):
@@ -33,7 +33,7 @@ class InsertDatabaseError(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
-        return f"{self.message}; " f"Table Name: {self.table_name}"
+        return f"{self.message}; Table Name: {self.table_name}"
 
 
 class RelationalDatabase(ABC):
@@ -83,11 +83,10 @@ class RelationalDatabase(ABC):
         """
 
     @abstractmethod
-    def add_table(self, table_name: str, table_schema: TableSchema) -> None:
+    def add_table(self, table_schema: TableSchema) -> None:
         """Adds a table to the schema
 
         Args:
-            table_name (str): The name of the table
             table_schema (TableSchema): The schema for the table being added
         """
 
