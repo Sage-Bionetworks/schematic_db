@@ -34,6 +34,25 @@ class SynapseDatabaseMissingTableAnnotationsError(Exception):
         return f"{self.message}; " f"name: {self.table_name};"
 
 
+class InputDataframeMissingColumn(Exception):
+    """Raised when an input dataframe is missing a needed column(s)"""
+
+    def __init__(
+        self, message: str, table_columns: list[str], missing_columns: list[str]
+    ) -> None:
+        self.message = message
+        self.table_columns = table_columns
+        self.missing_columns = missing_columns
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.message}; "
+            f"table_columns: {self.table_columns}"
+            f"missing_columns: {self.missing_columns}"
+        )
+
+
 class SynapseDatabaseDropTableError(Exception):
     """SynapseDatabaseDropTableError"""
 
@@ -485,8 +504,20 @@ class SynapseDatabase(RelationalDatabase):
         Args:
             table_id (str): The Synapse id of the table to be upserted into.
             data (pd.DataFrame): The table the rows will come from
-            primary_key (str): The primary key of the table used to identify which rows to update
+            primary_key (str): The primary key of the table used to identify
+              which rows to update
+
+        Raises:
+            InputDataframeMissingColumn: Raised when the input dataframe has
+              no column that matches the primary key argument.
         """
+        if primary_key not in list(data.columns):
+            raise InputDataframeMissingColumn(
+                "Input dataframe missing primary key column.",
+                list(data.columns),
+                [primary_key],
+            )
+
         table = self._create_primary_key_table(table_id, primary_key)
         merged_table = pd.merge(
             data, table, how="left", on=primary_key, validate="one_to_one"
@@ -529,7 +560,17 @@ class SynapseDatabase(RelationalDatabase):
         Returns:
             pd.DataFrame: The table in pandas.DataFrame form with the primary key, ROW_ID, and
              ROW_VERSION columns
+
+        Raises:
+            InputDataframeMissingColumn: Raised when the synapse table has no column that
+              matches the primary key argument.
         """
         table = self.synapse.query_table(table_id, include_row_data=True)
+        if primary_key not in list(table.columns):
+            raise InputDataframeMissingColumn(
+                "Synapse table missing primary key column.",
+                list(table.columns),
+                [primary_key],
+            )
         table = table[["ROW_ID", "ROW_VERSION", primary_key]]
         return table
