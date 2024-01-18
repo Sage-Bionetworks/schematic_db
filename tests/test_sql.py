@@ -15,10 +15,11 @@ postgres:
   host: "localhost"
 
 """
-from typing import Generator
+from collections.abc import Generator
 import pytest
 import pandas as pd
 from schematic_db.db_schema.db_schema import TableSchema
+from schematic_db.rdb.rdb import RelationalDatabase
 from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.sql_alchemy_database import SQLAlchemyDatabase
@@ -29,7 +30,7 @@ from schematic_db.rdb.rdb import UpsertDatabaseError, InsertDatabaseError
 def fixture_sql_databases(
     mysql_database: MySQLDatabase,
     postgres_database: PostgresDatabase,
-) -> Generator:
+) -> Generator[list[RelationalDatabase], None, None]:
     """Yields a list of databases to test"""
     yield [mysql_database, postgres_database]
 
@@ -44,7 +45,7 @@ class TestSQLGetters:
         """Tests RelationalDatabase.get_table_names()"""
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             assert obj.get_table_names() == ["table_one"]
             obj.drop_table("table_one")
             assert obj.get_table_names() == []
@@ -59,9 +60,9 @@ class TestSQLGetters:
         """Tests RelationalDatabase.get_table_schema()"""
         obj = postgres_database
         assert obj.get_table_names() == []
-        obj.add_table("table_one", table_one_schema)
-        obj.add_table("table_two", table_two_schema)
-        obj.add_table("table_three", table_three_schema)
+        obj.add_table(table_one_schema)
+        obj.add_table(table_two_schema)
+        obj.add_table(table_three_schema)
         assert obj.get_table_names() == ["table_one", "table_three", "table_two"]
 
         assert obj.get_table_schema("table_one") == (table_one_schema)
@@ -78,7 +79,7 @@ class TestSQLGetters:
         """Tests RelationalDatabase.execute_sql_query()"""
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             assert obj.get_table_names() == ["table_one"]
             result = obj.execute_sql_query("SELECT * FROM table_one;")
             assert isinstance(result, pd.DataFrame)
@@ -91,13 +92,9 @@ class TestSQLGetters:
     ) -> None:
         """Tests RelationalDatabase.execute_sql_query()"""
         for obj in sql_databases:
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             result1 = obj.query_table("table_one")
             assert isinstance(result1, pd.DataFrame)
-
-            obj.add_table("Table_one", table_one_schema)
-            result2 = obj.query_table("Table_one")
-            assert isinstance(result2, pd.DataFrame)
 
             obj.drop_all_tables()
 
@@ -116,11 +113,11 @@ class TestSQLUpdateTables:
         """Testing for MySQLDatabase.add_table() and and MySQLDatabase.drop_table()"""
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             assert obj.get_table_names() == ["table_one"]
-            obj.add_table("table_two", table_two_schema)
+            obj.add_table(table_two_schema)
             assert obj.get_table_names() == ["table_one", "table_two"]
-            obj.add_table("table_three", table_three_schema)
+            obj.add_table(table_three_schema)
             assert obj.get_table_names() == ["table_one", "table_three", "table_two"]
             obj.drop_table("table_three")
             assert obj.get_table_names() == ["table_one", "table_two"]
@@ -139,9 +136,9 @@ class TestSQLUpdateTables:
         """Testing for MySQLDatabase.drop_all_tables()"""
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
-            obj.add_table("table_two", table_two_schema)
-            obj.add_table("table_three", table_three_schema)
+            obj.add_table(table_one_schema)
+            obj.add_table(table_two_schema)
+            obj.add_table(table_three_schema)
             assert obj.get_table_names() == ["table_one", "table_three", "table_two"]
             obj.drop_all_tables()
             assert obj.get_table_names() == []
@@ -162,7 +159,7 @@ class TestSQLUpdateRows:
         """
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             assert obj.get_table_names() == ["table_one"]
 
             obj.insert_table_rows("table_one", table_one)
@@ -205,7 +202,7 @@ class TestSQLUpdateRows:
         """
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             assert obj.get_table_names() == ["table_one"]
 
             obj.upsert_table_rows("table_one", table_one)
@@ -236,7 +233,7 @@ class TestSQLUpdateRows:
         """
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             assert obj.get_table_names() == ["table_one"]
 
             obj.upsert_table_rows("table_one", table_one)
@@ -264,7 +261,7 @@ class TestSQLUpdateRows:
         """
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_two", table_two_schema)
+            obj.add_table(table_two_schema)
             assert obj.get_table_names() == ["table_two"]
 
             obj.upsert_table_rows("table_two", table_two)
@@ -314,7 +311,7 @@ class TestSQLUpdateRows:
         """
         for obj in sql_databases:
             with pytest.raises(UpsertDatabaseError):
-                obj.add_table("table_two", table_two_schema)
+                obj.add_table(table_two_schema)
                 obj.upsert_table_rows(
                     "table_two", pd.DataFrame({"pk_two_col": [pd.NA]})
                 )
@@ -329,7 +326,7 @@ class TestSQLUpdateRows:
         """Testing for RelationalDatabase.delete_table_rows()"""
         for obj in sql_databases:
             assert obj.get_table_names() == []
-            obj.add_table("table_one", table_one_schema)
+            obj.add_table(table_one_schema)
             assert obj.get_table_names() == ["table_one"]
             obj.upsert_table_rows("table_one", table_one)
             result1 = obj.query_table("table_one")

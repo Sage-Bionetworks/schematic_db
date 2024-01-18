@@ -129,7 +129,7 @@ class SQLAlchemyDatabase(
 
     def __init__(
         self, config: SQLConfig, verbose: bool = False, db_type_string: str = "sql"
-    ):
+    ) -> None:
         """Init
 
         Args:
@@ -266,17 +266,16 @@ class SQLAlchemyDatabase(
         inspector = sqlalchemy.inspect(self.engine)
         return sorted(inspector.get_table_names())
 
-    def add_table(self, table_name: str, table_schema: TableSchema) -> None:
+    def add_table(self, table_schema: TableSchema) -> None:
         """Adds a table to the schema
 
         Args:
-            table_name (str): The name of the table
             table_schema (TableSchema): The schema for the table to be added
         """
         metadata = self._get_current_metadata()
         columns = self._create_columns(table_schema)
         sqlalchemy.Table(
-            table_name,
+            table_schema.name,
             metadata,
             *columns,
             sqlalchemy.PrimaryKeyConstraint(table_schema.primary_key),
