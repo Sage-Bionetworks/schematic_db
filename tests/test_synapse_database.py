@@ -11,6 +11,7 @@ import synapseclient as sc  # type: ignore
 from schematic_db.rdb.synapse_database import (
     SynapseDatabase,
     SynapseDatabaseDropTableError,
+    InputDataframeMissingColumn,
 )
 from schematic_db.synapse.synapse import Synapse
 from schematic_db.db_schema.db_schema import TableSchema
@@ -390,6 +391,20 @@ class TestSynapseDatabase:
         assert table3["pk_one_col"].tolist() == ["key1", "key2", "key3", "key4"]
         assert table3["string_one_col"].tolist() == ["a", "b", "c", "d"]
 
+    def test__upsert_table_rows(
+        self,
+        synapse_with_filled_tables: SynapseDatabase,
+    ) -> None:
+        """Testing for SynapseDatabase._upsert_table_rows()"""
+        with pytest.raises(
+            InputDataframeMissingColumn,
+            match=("Synapse table missing primary key column"),
+        ):
+            obj = synapse_with_filled_tables
+            table_id = obj.synapse.get_synapse_id_from_table_name("table_one")
+            upsert_table1 = pd.DataFrame({"not_a_column": ["a"]})
+            obj._upsert_table_rows(table_id, upsert_table1, "not_a_column")
+
     def test_create_primary_key_table(
         self,
         synapse_with_filled_tables: SynapseDatabase,
@@ -397,7 +412,11 @@ class TestSynapseDatabase:
         """Testing for SynapseDatabase._create_primary_key_table()"""
         obj = synapse_with_filled_tables
         synapse_id = obj.synapse.get_synapse_id_from_table_name("table_one")
-        table = obj._create_primary_key_table(  # pylint: disable=protected-access
-            synapse_id, "pk_one_col"
-        )
+        table = obj._create_primary_key_table(synapse_id, "pk_one_col")
         assert list(table.columns) == ["ROW_ID", "ROW_VERSION", "pk_one_col"]
+
+        with pytest.raises(
+            InputDataframeMissingColumn,
+            match=("Synapse table missing primary key column"),
+        ):
+            obj._create_primary_key_table(synapse_id, "not_a_column")
