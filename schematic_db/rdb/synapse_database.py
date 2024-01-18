@@ -48,7 +48,7 @@ class InputDataframeMissingColumn(Exception):
     def __str__(self) -> str:
         return (
             f"{self.message}; "
-            f"table_columns: {self.table_columns}"
+            f"table_columns: {self.table_columns}; "
             f"missing_columns: {self.missing_columns}"
         )
 
@@ -568,7 +568,7 @@ class SynapseDatabase(RelationalDatabase):
         table = self.synapse.query_table(table_id, include_row_data=True)
         if primary_key not in list(table.columns):
             raise InputDataframeMissingColumn(
-                "Synapse table missing primary key column.",
+                "Synapse table missing primary key column",
                 list(table.columns),
                 [primary_key],
             )
