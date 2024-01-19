@@ -2,7 +2,7 @@ name: Publish schematic_db to PYPI
 on:
   push:
     branches:
-      - main
+      - develop
 
 jobs:
   test:
@@ -23,8 +23,7 @@ jobs:
 
       - name: Publish package to Pypi
         env:
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
           poetry build
-          poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
+          poetry publish -u $PYPI_TOKEN
