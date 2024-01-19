@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  test:
+  publish:
     runs-on: ubuntu-latest
     steps:
 
@@ -23,8 +23,7 @@ jobs:
 
       - name: Publish package to Pypi
         env:
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
           poetry build
-          poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
+          poetry publish -u __token__ -p $PYPI_TOKEN
