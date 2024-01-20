@@ -113,7 +113,9 @@ def fixture_postgres_config(secrets_dict: dict) -> Generator[SQLConfig, None, No
 
 
 @pytest.fixture(scope="session", name="mysql_database")
-def fixture_mysql_database(mysql_config: SQLConfig) -> Generator[MySQLDatabase, None, None]:
+def fixture_mysql_database(
+    mysql_config: SQLConfig,
+) -> Generator[MySQLDatabase, None, None]:
     """Yields a SQlConfig object"""
     obj = MySQLDatabase(mysql_config)
     yield obj
@@ -121,7 +123,9 @@ def fixture_mysql_database(mysql_config: SQLConfig) -> Generator[MySQLDatabase, 
 
 
 @pytest.fixture(scope="session", name="postgres_database")
-def fixture_postgres_database(postgres_config: SQLConfig) -> Generator[PostgresDatabase, None, None]:
+def fixture_postgres_database(
+    postgres_config: SQLConfig,
+) -> Generator[PostgresDatabase, None, None]:
     """
     Yields a Postgres object
     """
@@ -131,7 +135,9 @@ def fixture_postgres_database(postgres_config: SQLConfig) -> Generator[PostgresD
 
 
 @pytest.fixture(scope="session", name="synapse_object")
-def fixture_synapse_object(secrets_dict: dict[str, Any]) -> Generator[Synapse, None, None]:
+def fixture_synapse_object(
+    secrets_dict: dict[str, Any]
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object
     """
@@ -142,7 +148,9 @@ def fixture_synapse_object(secrets_dict: dict[str, Any]) -> Generator[Synapse, N
 
 
 @pytest.fixture(scope="session", name="synapse_database")
-def fixture_synapse_database(secrets_dict: dict[str, Any]) -> Generator[SynapseDatabase, None, None]:
+def fixture_synapse_database(
+    secrets_dict: dict[str, Any]
+) -> Generator[SynapseDatabase, None, None]:
     """
     Yields a SynapseDatabase
     """
@@ -246,7 +254,9 @@ def fixture_synapse_manifest_store(
 
 
 @pytest.fixture(scope="session", name="synapse_test_query_store")
-def fixture_synapse_test_query_store(secrets_dict: dict) -> Generator[SynapseQueryStore, None, None]:
+def fixture_synapse_test_query_store(
+    secrets_dict: dict,
+) -> Generator[SynapseQueryStore, None, None]:
     """
     Yields a Synapse Query Store for the test schema
     """

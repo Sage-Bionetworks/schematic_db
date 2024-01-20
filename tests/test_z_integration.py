@@ -74,7 +74,9 @@ def fixture_rdb_updater_synapse(
 
 
 @pytest.fixture(scope="function", name="query_store")
-def fixture_query_store(synapse_test_query_store: QueryStore) -> Generator[QueryStore, None, None]:
+def fixture_query_store(
+    synapse_test_query_store: QueryStore,
+) -> Generator[QueryStore, None, None]:
     """Yields a query store"""
     obj = synapse_test_query_store
     yield obj

@@ -28,7 +28,9 @@ def fixture_mock_synapse_database() -> Generator[SynapseDatabase, None, None]:
 
 
 @pytest.fixture(name="synapse_database")
-def fixture_synapse_no_extra_tables(synapse_database: SynapseDatabase) -> Generator[SynapseDatabase, None, None]:
+def fixture_synapse_no_extra_tables(
+    synapse_database: SynapseDatabase,
+) -> Generator[SynapseDatabase, None, None]:
     """Yields a SynapseDatabase object"""
     obj = synapse_database
     yield obj
