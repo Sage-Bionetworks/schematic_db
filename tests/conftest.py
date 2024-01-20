@@ -46,13 +46,19 @@ def fixture_data_directory() -> Generator[str, None, None]:
 
 
 @pytest.fixture(scope="session", name="secrets_dict")
-def fixture_secrets_dict() -> Generator[dict, None, None]:
+def fixture_secrets_dict() -> Generator[dict[str, dict[str, str]], None, None]:
     """
     Yields a dict with various secrets, either locally or from a github action
     """
     with open(SECRETS_PATH, mode="rt", encoding="utf-8") as file:
         config = safe_load(file)
     assert isinstance(config, dict)
+    for key, value in config.items():
+        assert isinstance(key, str)
+        assert isinstance(value, dict)
+        for key, value in value.items():
+            assert isinstance(key, str)
+            assert isinstance(value, str)
     yield config
 
 
