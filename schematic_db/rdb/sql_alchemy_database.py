@@ -1,5 +1,4 @@
 """SQLAlchemy"""
-from typing import Any
 from dataclasses import dataclass
 import pandas
 import numpy
@@ -7,6 +6,7 @@ import sqlalchemy
 import sqlalchemy_utils
 from sqlalchemy import exc
 from sqlalchemy.inspection import inspect
+from sqlalchemy.sql.schema import Table as SQLAlchemyTable
 from schematic_db.db_schema.db_schema import (
     TableSchema,
     ColumnDatatype,
@@ -30,7 +30,7 @@ class DataframeKeyError(Exception):
 
 def create_foreign_key_column(
     name: str,
-    datatype: Any,
+    datatype: sqlalchemy.types.TypeEngine,
     foreign_table_name: str,
     foreign_table_column: str,
 ) -> sqlalchemy.Column:
@@ -38,7 +38,7 @@ def create_foreign_key_column(
 
     Args:
         name (str): The name of the column
-        datatype (Any): The SQL datatype of the column
+        datatype (sqlalchemy.types.TypeEngine): The SQLAlchemy datatype of the column to be created
         foreign_table_name (str): The name of the table the foreign key is referencing
         foreign_table_column (str): The name of the column the foreign key is referencing
 
@@ -58,12 +58,12 @@ def create_foreign_key_column(
 
 
 def create_foreign_key_configs(
-    table_schema: sqlalchemy.sql.schema.Table,
+    table_schema: SQLAlchemyTable,
 ) -> list[ForeignKeySchema]:
     """Creates a list of foreign key configs from a sqlalchemy table schema
 
     Args:
-        table_schema (sqlalchemy.sql.schema.Table): A sqlalchemy table schema
+        table_schema (SQLAlchemyTable): A sqlalchemy table schema
 
     Returns:
         list[ForeignKeySchema]: A list of foreign key configs
@@ -80,17 +80,17 @@ def create_foreign_key_configs(
 
 
 def create_column_schemas(
-    table_schema: sqlalchemy.sql.schema.Table,
+    table_schema: SQLAlchemyTable,
     indexed_columns: list[str],
-    column_datatypes: dict[Any, ColumnDatatype],
+    column_datatypes: dict[type, ColumnDatatype],
 ) -> list[ColumnSchema]:
     """Creates a list of column schemas from a sqlalchemy table schema
 
     Args:
-        table_schema (sqlalchemy.sql.schema.Table): A sqlalchemy table schema
+        table_schema (SQLAlchemyTable): A sqlalchemy table schema
         indexed_columns (list[str]): A list of columns in the schema to be indexed
-        column_datatypes(dict[Any, ColumnDatatype]): A dictionary whose keys
-          are a sql column datatype, and values are a ColumnDatatype
+        column_datatypes(dict[type, ColumnDatatype]): A dictionary whose keys
+          are a SQLAlchemy column data type, and values are a ColumnDatatype
 
     Returns:
         list[ColumnSchema]: A list of column schemas
@@ -210,8 +210,6 @@ class SQLAlchemyDatabase(
             ),
         )
 
-    # def _get_column_type_dict(self)
-
     def insert_table_rows(self, table_name: str, data: pandas.DataFrame) -> None:
         """Inserts the rows of the table into a target table in the database
 
@@ -294,28 +292,28 @@ class SQLAlchemyDatabase(
         query = f"SELECT * FROM `{table_name}`"
         return self.execute_sql_query(query)
 
-    def _execute_sql_statement(self, statement: Any) -> Any:
+    def _execute_sql_statement(
+        self, statement: sqlalchemy.sql.expression.Executable
+    ) -> sqlalchemy.CursorResult:
         """Executes a sql statement
 
         Args:
-            statement (Any): A sql statement in sqlalchemy.text form
+            statement (sqlalchemy.sql.expression.Executable): The sql executable to run
 
         Returns:
-            Any: The result, if any, from the sql statement
+            sqlalchemy.CursorResult: The result from the sql statement
         """
         with self.engine.begin() as conn:
             return conn.execute(statement)
 
-    def _create_columns(
-        self, table_schema: TableSchema
-    ) -> list[sqlalchemy.Column[Any]]:
+    def _create_columns(self, table_schema: TableSchema) -> list[sqlalchemy.Column]:
         """Creates a list SQLAlchemy columns for a table
 
         Args:
             table_schema (TableSchema): The schema of the table to create columns for
 
         Returns:
-            list[sqlalchemy.Column[Any]]: A list SQLAlchemy columns
+            list[sqlalchemy.Column]: A list SQLAlchemy columns
         """
         columns = [
             self._create_column(att, table_schema) for att in table_schema.columns
@@ -382,7 +380,7 @@ class SQLAlchemyDatabase(
         column_schema: ColumnSchema,
         primary_key: str,  # pylint: disable=unused-argument
         foreign_keys: list[str],  # pylint: disable=unused-argument
-    ) -> Any:
+    ) -> sqlalchemy.types.TypeEngine:
         """
         Gets the datatype of the column based on its schema
         Other _get_datatype methods depend on primary and foreign keys
@@ -393,14 +391,14 @@ class SQLAlchemyDatabase(
             foreign_keys (list[str]): A list of foreign keys for the the column (unused)
 
         Returns:
-            Any: The SQLAlchemy datatype
+            sqlalchemy.types.TypeEngine: The SQLAlchemy datatype of the column input
         """
-        datatypes = {
-            ColumnDatatype.TEXT: sqlalchemy.VARCHAR,
-            ColumnDatatype.DATE: sqlalchemy.Date,
-            ColumnDatatype.INT: sqlalchemy.Integer,
-            ColumnDatatype.FLOAT: sqlalchemy.Float,
-            ColumnDatatype.BOOLEAN: sqlalchemy.Boolean,
+        datatypes: dict[ColumnDatatype, sqlalchemy.types.TypeEngine] = {
+            ColumnDatatype.TEXT: sqlalchemy.VARCHAR(),
+            ColumnDatatype.DATE: sqlalchemy.Date(),
+            ColumnDatatype.INT: sqlalchemy.Integer(),
+            ColumnDatatype.FLOAT: sqlalchemy.Float(),
+            ColumnDatatype.BOOLEAN: sqlalchemy.Boolean(),
         }
         return datatypes[column_schema.datatype]
 

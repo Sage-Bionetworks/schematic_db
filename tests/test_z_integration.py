@@ -16,7 +16,7 @@ from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
 @pytest.fixture(scope="module", name="rdb_builder_mysql")
 def fixture_rdb_builder_mysql(
     mysql_database: MySQLDatabase, test_schema2: Schema
-) -> Generator:
+) -> Generator[RDBBuilder, None, None]:
     """Yields a RDBBuilder with a mysql database and test schema"""
     obj = RDBBuilder(rdb=mysql_database, schema=test_schema2)
     yield obj
@@ -26,7 +26,7 @@ def fixture_rdb_builder_mysql(
 @pytest.fixture(scope="module", name="rdb_builder_postgres")
 def fixture_rdb_builder_postgres(
     postgres_database: PostgresDatabase, test_schema2: Schema
-) -> Generator:
+) -> Generator[RDBBuilder, None, None]:
     """Yields a RDBBuilder with a mysql database and test schema"""
     obj = RDBBuilder(rdb=postgres_database, schema=test_schema2)
     yield obj
@@ -36,7 +36,7 @@ def fixture_rdb_builder_postgres(
 @pytest.fixture(scope="module", name="rdb_builder_synapse")
 def fixture_rdb_builder_synapse(
     synapse_database: SynapseDatabase, test_schema2: Schema
-) -> Generator:
+) -> Generator[RDBBuilder, None, None]:
     """Yields a RDBBuilder with a synapse database and test schema"""
     obj = RDBBuilder(rdb=synapse_database, schema=test_schema2)
     yield obj
@@ -46,7 +46,7 @@ def fixture_rdb_builder_synapse(
 @pytest.fixture(scope="class", name="rdb_updater_mysql")
 def fixture_rdb_updater_mysql(
     mysql_database: MySQLDatabase, api_manifest_store: APIManifestStore
-) -> Generator:
+) -> Generator[RDBUpdater, None, None]:
     """Yields a RDBUpdater with a mysql database and test schema"""
     obj = RDBUpdater(rdb=mysql_database, manifest_store=api_manifest_store)
     yield obj
@@ -56,7 +56,7 @@ def fixture_rdb_updater_mysql(
 @pytest.fixture(scope="class", name="rdb_updater_postgres")
 def fixture_rdb_updater_postgres(
     postgres_database: PostgresDatabase, api_manifest_store: APIManifestStore
-) -> Generator:
+) -> Generator[RDBUpdater, None, None]:
     """Yields a RDBUpdater with a mysql database and test schema"""
     obj = RDBUpdater(rdb=postgres_database, manifest_store=api_manifest_store)
     yield obj
@@ -66,7 +66,7 @@ def fixture_rdb_updater_postgres(
 @pytest.fixture(scope="class", name="rdb_updater_synapse")
 def fixture_rdb_updater_synapse(
     synapse_database: SynapseDatabase, api_manifest_store: APIManifestStore
-) -> Generator:
+) -> Generator[RDBUpdater, None, None]:
     """Yields a RDBUpdater with a synapse database and test schema"""
     obj = RDBUpdater(rdb=synapse_database, manifest_store=api_manifest_store)
     yield obj
@@ -74,7 +74,9 @@ def fixture_rdb_updater_synapse(
 
 
 @pytest.fixture(scope="function", name="query_store")
-def fixture_query_store(synapse_test_query_store: QueryStore) -> Generator:
+def fixture_query_store(
+    synapse_test_query_store: QueryStore,
+) -> Generator[QueryStore, None, None]:
     """Yields a query store"""
     obj = synapse_test_query_store
     yield obj
@@ -84,7 +86,7 @@ def fixture_query_store(synapse_test_query_store: QueryStore) -> Generator:
 def fixture_rdb_queryer_mysql(
     mysql_database: MySQLDatabase,
     query_store: QueryStore,
-) -> Generator:
+) -> Generator[RDBQueryer, None, None]:
     """Yields a RDBQueryer with a mysql database with test schema tables added"""
     obj = RDBQueryer(
         rdb=mysql_database,
@@ -99,7 +101,7 @@ def fixture_rdb_queryer_mysql(
 def fixture_rdb_queryer_postgres(
     postgres_database: MySQLDatabase,
     query_store: QueryStore,
-) -> Generator:
+) -> Generator[RDBQueryer, None, None]:
     """Yields a RDBQueryer with a postgres database with test schema tables added"""
     obj = RDBQueryer(
         rdb=postgres_database,

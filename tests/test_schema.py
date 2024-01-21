@@ -1,5 +1,5 @@
 """Testing for Schema."""
-from typing import Generator
+from typing import Generator, Any
 import pytest
 from deprecation import fail_if_not_removed
 from pydantic import ValidationError
@@ -21,9 +21,9 @@ from schematic_db.schema.database_config import DatabaseTableConfig
 
 
 @pytest.fixture(name="database_config")
-def fixture_database_config() -> Generator:
+def fixture_database_config() -> Generator[DatabaseConfig, None, None]:
     """Yields a DatabaseConfig"""
-    data = [
+    data: list[dict[str, Any]] = [
         {
             "name": "object1",
             "primary_key": "att1",
@@ -70,17 +70,17 @@ def fixture_database_config() -> Generator:
             ],
         },
     ]
-    obj = DatabaseConfig(data)  # type: ignore
+    obj = DatabaseConfig(data)
     yield obj
 
 
 @pytest.fixture(name="database_object_config")
-def fixture_database_object_config() -> Generator:
-    """Yields a DatabaseObjectConfig"""
-    data = {
-        "name": "object1",
-        "primary_key": "att1",
-        "foreign_keys": [
+def fixture_database_object_config() -> Generator[DatabaseTableConfig, None, None]:
+    """Yields a DatabaseTableConfig"""
+    obj = DatabaseTableConfig(
+        name="object1",
+        primary_key="att1",
+        foreign_keys=[
             {
                 "column_name": "att2",
                 "foreign_table_name": "object2",
@@ -92,8 +92,7 @@ def fixture_database_object_config() -> Generator:
                 "foreign_column_name": "att1",
             },
         ],
-    }
-    obj = DatabaseTableConfig(**data)  # type: ignore
+    )
     yield obj
 
 

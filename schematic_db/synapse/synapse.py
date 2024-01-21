@@ -170,7 +170,7 @@ class Synapse:  # pylint: disable=too-many-public-methods
 
     def execute_sql_statement(
         self, statement: str, include_row_data: bool = False
-    ) -> Any:
+    ) -> synapseclient.table.CsvFileTable:
         """Execute a SQL statement
 
         Args:
@@ -178,11 +178,14 @@ class Synapse:  # pylint: disable=too-many-public-methods
             include_row_data (bool): Include row_id and row_etag. Defaults to False.
 
         Returns:
-            any: An object from
+            synapseclient.table.CsvFileTable: The synapse table result from
+              the provided statement
         """
-        return self.syn.tableQuery(
+        table = self.syn.tableQuery(
             statement, includeRowIdAndRowVersion=include_row_data
         )
+        assert isinstance(table, synapseclient.table.CsvFileTable)
+        return table
 
     def build_table(self, table_name: str, table: pandas.DataFrame) -> None:
         """Adds a table to the project based on the input table
