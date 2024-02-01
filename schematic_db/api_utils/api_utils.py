@@ -108,6 +108,7 @@ def create_schematic_api_response(
         requests.Response: The response from the API
     """
     api_url = getenv("API_URL", "https://schematic.api.sagebionetworks.org/v1/")
+    api_url = "http://localhost:3001/v1/"
     endpoint_url = f"{api_url}/{endpoint_path}"
     start_time = datetime.now(pytz.timezone("US/Pacific"))
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -140,7 +141,7 @@ def find_class_specific_properties(schema_url: str, schema_class: str) -> list[s
     """
     params = {"schema_url": schema_url, "schema_class": schema_class}
     response = create_schematic_api_response(
-        "explorer/find_class_specific_properties", params
+        "/schemas/find_class_specific_properties", params
     )
     return response.json()
 
@@ -165,7 +166,7 @@ def get_property_label_from_display_name(
         "strict_camel_case": strict_camel_case,
     }
     response = create_schematic_api_response(
-        "explorer/get_property_label_from_display_name", params
+        "/utils/get_property_label_from_display_name", params
     )
     return response.json()
 

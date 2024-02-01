@@ -40,11 +40,11 @@ class ManifestStoreConfig:
 
     @validator("schema_url")
     @classmethod
-    def validate_is_jsonld(cls, value: str) -> str:
-        """Validates that the value is a jsonld file"""
-        is_jsonld = value.endswith(".jsonld")
-        if not is_jsonld:
-            raise ValueError(f"{value} does end with '.jsonld'")
+    def validate_is_valid_type(cls, value: str) -> str:
+        """Validates that the value is a jsonld or csv file"""
+        is_valid_type = value.endswith(".jsonld") | value.endswith(".csv")
+        if not is_valid_type:
+            raise ValueError(f"{value} does end with '.jsonld', or '.csv")
         return value
 
     @validator("synapse_project_id", "synapse_asset_view_id")
