@@ -10,14 +10,17 @@ class SchemaGraph:
     Stores the graph structure of the database schema
     """
 
-    def __init__(self, schema_url: str, display_label_type: DisplayLabelType) -> None:
+    def __init__(
+        self, schema_url: str, display_label_type: DisplayLabelType = "display_label"
+    ) -> None:
         """
         Args:
             schema_url (str): The url of the schema in jsonld form.
+            display_label_type (DisplayLabelType): The type of display label used
         """
         self.schema_url = schema_url
-        self.schema_graph = self.create_schema_graph()
         self.display_label_type = display_label_type
+        self.schema_graph = self.create_schema_graph()
 
     def create_schema_graph(self) -> networkx.DiGraph:
         """Retrieve the edges from schematic API and store in networkx.DiGraph()

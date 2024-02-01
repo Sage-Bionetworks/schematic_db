@@ -69,10 +69,21 @@ class TestAPIUtils:
         assert find_class_specific_properties(test_schema_csv_url, "Patient") == [
             "id",
             "sex",
-            "yearofBirth",
+            "yearOfBirth",
             "diagnosis",
             "weight",
             "date",
+        ]
+
+        assert find_class_specific_properties(
+            test_schema_csv_url, "Patient", data_model_labels="display_label"
+        ) == [
+            "id",
+            "Sex",
+            "Year_Of_Birth",
+            "Diagnosis",
+            "Weight",
+            "Date",
         ]
 
     def test_get_property_label_from_display_name(self) -> None:
@@ -85,6 +96,12 @@ class TestAPIUtils:
         assert get_graph_by_edge_type(test_schema_csv_url, "requiresComponent") == [
             ["Biospecimen", "Patient"],
             ["BulkRnaSeq", "Biospecimen"],
+        ]
+        assert get_graph_by_edge_type(
+            test_schema_csv_url, "requiresComponent", data_model_labels="display_label"
+        ) == [
+            ["Biospecimen", "Patient"],
+            ["Bulk_Rna_Seq", "Biospecimen"],
         ]
 
     def test_get_project_manifests(
@@ -112,8 +129,15 @@ class TestAPIUtils:
     def test_is_node_required(self, test_schema_csv_url: str) -> None:
         """Testing for is_node_required"""
         assert is_node_required(test_schema_csv_url, "sex")
+        assert is_node_required(
+            test_schema_csv_url, "Sex", data_model_labels="display_label"
+        )
 
     def test_get_node_validation_rules(self, test_schema_csv_url: str) -> None:
         """Testing for get_node_validation_rules"""
         rules = get_node_validation_rules(test_schema_csv_url, "Patient")
+        assert isinstance(rules, list)
+        rules = get_node_validation_rules(
+            test_schema_csv_url, "Patient", data_model_labels="display_label"
+        )
         assert isinstance(rules, list)
