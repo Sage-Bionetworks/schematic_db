@@ -124,9 +124,7 @@ jobs:
           poetry run mypy --install-types --non-interactive --disallow-untyped-defs .
 
       - name: Code formatting with black
-        uses: psf/black@stable
-        with:
-          options: "--check --verbose"
+        run: poetry run black . --check --verbose
 
       - name: Code formatting with pylint
         run: poetry run pylint schematic_db/* tests/*
