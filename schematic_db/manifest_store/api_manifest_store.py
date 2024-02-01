@@ -9,6 +9,7 @@ from schematic_db.api_utils.api_utils import (
     ManifestMetadataList,
 )
 from schematic_db.schema_graph.schema_graph import SchemaGraph
+from schematic_db.utils import DisplayLabelType
 from .manifest_store import ManifestStore, ManifestStoreConfig
 
 
@@ -50,18 +51,23 @@ class APIManifestStore(ManifestStore):
     The APIManifestStore class interacts with the Schematic API download manifests.
     """
 
-    def __init__(self, config: ManifestStoreConfig) -> None:
+    def __init__(
+        self,
+        config: ManifestStoreConfig,
+        display_label_type: DisplayLabelType = "class_label",
+    ) -> None:
         """
         The Schema class handles interactions with the schematic API.
         The main responsibilities are creating the database schema, and retrieving manifests.
 
         Args:
             config (SchemaConfig): A config describing the basic inputs for the schema object
+            display_model_type (DisplayLabelType): The type of label used for display purposes
         """
         self.synapse_project_id = config.synapse_project_id
         self.synapse_asset_view_id = config.synapse_asset_view_id
         self.synapse_auth_token = config.synapse_auth_token
-        self.schema_graph = SchemaGraph(config.schema_url)
+        self.schema_graph = SchemaGraph(config.schema_url, display_label_type)
         self.manifest_metadata: Optional[ManifestMetadataList] = None
 
     def create_sorted_table_name_list(self) -> list[str]:

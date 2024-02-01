@@ -2,6 +2,7 @@
 
 import networkx
 from schematic_db.api_utils.api_utils import get_graph_by_edge_type
+from schematic_db.utils import DisplayLabelType
 
 
 class SchemaGraph:
@@ -9,13 +10,14 @@ class SchemaGraph:
     Stores the graph structure of the database schema
     """
 
-    def __init__(self, schema_url: str) -> None:
+    def __init__(self, schema_url: str, display_label_type: DisplayLabelType) -> None:
         """
         Args:
             schema_url (str): The url of the schema in jsonld form.
         """
         self.schema_url = schema_url
         self.schema_graph = self.create_schema_graph()
+        self.display_label_type = display_label_type
 
     def create_schema_graph(self) -> networkx.DiGraph:
         """Retrieve the edges from schematic API and store in networkx.DiGraph()
@@ -23,7 +25,9 @@ class SchemaGraph:
         Returns:
             networkx.DiGraph: The edges of the graph
         """
-        subgraph = get_graph_by_edge_type(self.schema_url, "requiresComponent")
+        subgraph = get_graph_by_edge_type(
+            self.schema_url, "requiresComponent", self.display_label_type
+        )
         schema_graph = networkx.DiGraph()
         schema_graph.add_edges_from(subgraph)
         return schema_graph
