@@ -142,9 +142,7 @@ def find_class_specific_properties(
     Args:
         schema_url (str): Data Model URL
         schema_class (str): The class/name fo the component
-        data_model_labels (DisplayLabelType):
-          if "display_label", use the display name as a label, if it is valid.
-          otherwise use the class_label
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         list[str]: A list of properties of a given class/component.
@@ -194,9 +192,7 @@ def get_graph_by_edge_type(
         schema_url (str): Data Model URL
         relationship (str): Relationship (i.e. parentOf, requiresDependency,
             rangeValue, domainValue)
-        data_model_labels (DisplayLabelType):
-          if "display_label", use the display name as a label, if it is valid.
-          otherwise use the class_label
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         list[tuple[str, str]]: A subgraph in the form of a list of tuples.
@@ -277,9 +273,7 @@ def is_node_required(
     Args:
         schema_url (str): Data Model URL
         node_display_name (str): Label/display name for the node to check
-        data_model_labels (DisplayLabelType):
-          if "display_label", use the display name as a label, if it is valid.
-          otherwise use the class_label
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         bool: Wether or not the node is required
@@ -304,9 +298,7 @@ def get_node_validation_rules(
     Args:
         schema_url (str): Data Model URL
         node_display_name (str): Label/display name for the node to check
-        data_model_labels (DisplayLabelType):
-          if "display_label", use the display name as a label, if it is valid.
-          otherwise use the class_label
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         list[str]: A list of validation rules
