@@ -64,7 +64,10 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
 class TestAPIUtils:
     """Testing for API utils"""
 
-    def test_find_class_specific_properties(self, test_schema_csv_url: str) -> None:
+    def test_find_class_specific_properties(
+        self,
+        test_schema_csv_url: str,
+    ) -> None:
         "Testing for find_class_specific_properties"
         assert find_class_specific_properties(test_schema_csv_url, "Patient") == [
             "id",
@@ -135,9 +138,7 @@ class TestAPIUtils:
 
     def test_get_node_validation_rules(self, test_schema_csv_url: str) -> None:
         """Testing for get_node_validation_rules"""
-        rules = get_node_validation_rules(test_schema_csv_url, "Patient")
-        assert isinstance(rules, list)
-        rules = get_node_validation_rules(
-            test_schema_csv_url, "Patient", data_model_labels="display_label"
-        )
-        assert isinstance(rules, list)
+        assert get_node_validation_rules(test_schema_csv_url, "sex") == ["str"]
+        assert get_node_validation_rules(
+            test_schema_csv_url, "Sex", data_model_labels="display_label"
+        ) == ["str"]
