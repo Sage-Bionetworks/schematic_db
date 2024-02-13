@@ -107,7 +107,9 @@ def create_schematic_api_response(
     Returns:
         requests.Response: The response from the API
     """
-    api_url = getenv("API_URL", "https://schematic.api.sagebionetworks.org/v1/")
+    # Using the staging API as schematic v24.1.1 introduces breaking changes to several endpoints.
+    # This should be changed back after v24.1.1 is deployed to the production API
+    api_url = getenv("API_URL", "https://schematic-staging.api.sagebionetworks.org/v1/")
     endpoint_url = f"{api_url}/{endpoint_path}"
     start_time = datetime.now(pytz.timezone("US/Pacific"))
     headers = {"Authorization": f"Bearer {access_token}"}
