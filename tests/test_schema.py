@@ -110,7 +110,7 @@ class TestSchemaConfig:
         with pytest.raises(ValidationError):
             SchemaConfig(
                 schema_url="https://raw.githubusercontent.com/Sage-Bionetworks/"
-                "Schematic-DB-Test-Schemas/main/test_schema.csv"
+                "Schematic-DB-Test-Schemas/main/README.md"
             )
 
 
@@ -176,13 +176,13 @@ class TestSchema:
                 required=False,
                 index=False,
             ),
-            ColumnSchema(name="weight", datatype=ColumnDatatype.FLOAT, required=False),
             ColumnSchema(
                 name="diagnosis",
                 datatype=ColumnDatatype.TEXT,
                 required=True,
                 index=False,
             ),
+            ColumnSchema(name="weight", datatype=ColumnDatatype.FLOAT, required=False),
             ColumnSchema(name="date", datatype=ColumnDatatype.DATE, required=False),
         ]
         assert obj._create_column_schemas("Biospecimen") == [
@@ -206,13 +206,13 @@ class TestSchema:
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
+            ColumnSchema(name="filename", datatype=ColumnDatatype.TEXT, required=True),
             ColumnSchema(
                 name="biospecimenId",
                 datatype=ColumnDatatype.TEXT,
                 required=False,
                 index=False,
             ),
-            ColumnSchema(name="filename", datatype=ColumnDatatype.TEXT, required=True),
             ColumnSchema(
                 name="fileFormat",
                 datatype=ColumnDatatype.TEXT,
@@ -291,13 +291,13 @@ class TestSchema2:
                 required=False,
                 index=False,
             ),
-            ColumnSchema(name="weight", datatype=ColumnDatatype.FLOAT, required=False),
             ColumnSchema(
                 name="diagnosis",
                 datatype=ColumnDatatype.TEXT,
                 required=True,
                 index=False,
             ),
+            ColumnSchema(name="weight", datatype=ColumnDatatype.FLOAT, required=False),
             ColumnSchema(name="date", datatype=ColumnDatatype.DATE, required=False),
         ]
         assert obj._create_column_schemas("Biospecimen") == [
@@ -321,13 +321,13 @@ class TestSchema2:
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
+            ColumnSchema(name="filename", datatype=ColumnDatatype.TEXT, required=True),
             ColumnSchema(
                 name="biospecimenId",
                 datatype=ColumnDatatype.TEXT,
                 required=False,
                 index=False,
             ),
-            ColumnSchema(name="filename", datatype=ColumnDatatype.TEXT, required=True),
             ColumnSchema(
                 name="fileFormat",
                 datatype=ColumnDatatype.TEXT,
