@@ -84,7 +84,7 @@ class MySQLDatabase(SQLAlchemyDatabase):
 
     def _get_datatype(
         self, column_schema: ColumnSchema, primary_key: str, foreign_keys: list[str]
-    ) -> Any:
+    ) -> sqlalchemy.types.TypeEngine:
         """
         Gets the datatype of the column based on its schema
 
@@ -94,14 +94,14 @@ class MySQLDatabase(SQLAlchemyDatabase):
             foreign_keys (list[str]): A list of foreign keys for the the column
 
         Returns:
-            Any: The SQLAlchemy datatype
+            sqlalchemy.types.TypeEngine: The SQLAlchemy datatype of the input column
         """
-        datatypes = {
+        datatypes: dict[ColumnDatatype, sqlalchemy.types.TypeEngine] = {
             ColumnDatatype.TEXT: sqlalchemy.VARCHAR(5000),
-            ColumnDatatype.DATE: sqlalchemy.Date,
-            ColumnDatatype.INT: sqlalchemy.Integer,
-            ColumnDatatype.FLOAT: sqlalchemy.Float,
-            ColumnDatatype.BOOLEAN: sqlalchemy.Boolean,
+            ColumnDatatype.DATE: sqlalchemy.Date(),
+            ColumnDatatype.INT: sqlalchemy.Integer(),
+            ColumnDatatype.FLOAT: sqlalchemy.Float(),
+            ColumnDatatype.BOOLEAN: sqlalchemy.Boolean(),
         }
         # Keys need to be max 100 chars
         if column_schema.datatype == ColumnDatatype.TEXT and (

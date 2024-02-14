@@ -140,7 +140,7 @@ def find_class_specific_properties(schema_url: str, schema_class: str) -> list[s
     """
     params = {"schema_url": schema_url, "schema_class": schema_class}
     response = create_schematic_api_response(
-        "explorer/find_class_specific_properties", params
+        "/schemas/find_class_specific_properties", params
     )
     return response.json()
 
@@ -165,7 +165,7 @@ def get_property_label_from_display_name(
         "strict_camel_case": strict_camel_case,
     }
     response = create_schematic_api_response(
-        "explorer/get_property_label_from_display_name", params
+        "/utils/get_property_label_from_display_name", params
     )
     return response.json()
 

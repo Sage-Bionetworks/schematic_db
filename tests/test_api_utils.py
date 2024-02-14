@@ -26,7 +26,7 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
     ) -> None:
         """Testing for create_schematic_api_response"""
         response = create_schematic_api_response(
-            endpoint_path="explorer/get_property_label_from_display_name",
+            endpoint_path="utils/get_property_label_from_display_name",
             params={
                 "schema_url": test_schema_json_url,
                 "display_name": "year_of_birth",
@@ -39,7 +39,7 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
             match="Error accessing Schematic endpoint",
         ):
             create_schematic_api_response(
-                endpoint_path="explorer/get_property_label_from_display_name",
+                endpoint_path="schemas/get_node_validation_rules",
                 params={
                     "schema_url": "NOT_A_URL",
                     "display_name": "NOT_A_COMPONENT",
@@ -70,8 +70,8 @@ class TestAPIUtils:
             "id",
             "sex",
             "yearofBirth",
-            "weight",
             "diagnosis",
+            "weight",
             "date",
         ]
 
@@ -120,5 +120,5 @@ class TestAPIUtils:
 
     def test_get_node_validation_rules(self, test_schema_json_url: str) -> None:
         """Testing for get_node_validation_rules"""
-        rules = get_node_validation_rules(test_schema_json_url, "Family History")
+        rules = get_node_validation_rules(test_schema_json_url, "Patient")
         assert isinstance(rules, list)

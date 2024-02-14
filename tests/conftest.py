@@ -38,7 +38,7 @@ SECRETS_PATH = os.path.join(DATA_DIR, "secrets.yml")
 
 
 @pytest.fixture(scope="session", name="data_directory")
-def fixture_data_directory() -> Generator:
+def fixture_data_directory() -> Generator[str, None, None]:
     """
     Yields the path to the testing data directory
     """
@@ -46,17 +46,24 @@ def fixture_data_directory() -> Generator:
 
 
 @pytest.fixture(scope="session", name="secrets_dict")
-def fixture_secrets_dict() -> Generator:
+def fixture_secrets_dict() -> Generator[dict[str, dict[str, str]], None, None]:
     """
     Yields a dict with various secrets, either locally or from a github action
     """
     with open(SECRETS_PATH, mode="rt", encoding="utf-8") as file:
         config = safe_load(file)
+    assert isinstance(config, dict)
+    for key, value in config.items():
+        assert isinstance(key, str)
+        assert isinstance(value, dict)
+        for key, value in value.items():
+            assert isinstance(key, str)
+            assert isinstance(value, str)
     yield config
 
 
 @pytest.fixture(scope="session", name="query_csv_path")
-def fixture_query_csv_path() -> Generator:
+def fixture_query_csv_path() -> Generator[str, None, None]:
     """Yields a path to a file of test SQL queries"""
     path = os.path.join(DATA_DIR, "queries.csv")
     yield path
@@ -67,7 +74,7 @@ def fixture_query_csv_path() -> Generator:
 
 
 @pytest.fixture(scope="session", name="test_schema_table_names")
-def fixture_test_schema_table_names() -> Generator:
+def fixture_test_schema_table_names() -> Generator[list[str], None, None]:
     """
     Yields a list of table names the test schema database should have.
     """
@@ -80,17 +87,17 @@ def fixture_test_schema_table_names() -> Generator:
 
 
 @pytest.fixture(scope="session", name="test_schema_json_url")
-def fixture_test_schema_json_url() -> Generator:
+def fixture_test_schema_json_url() -> Generator[str, None, None]:
     """Yields the url for the main test schema json"""
     url = (
         "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/main/test_schema.jsonld"
+        "Schematic-DB-Test-Schemas/main/test_schema.csv"
     )
     yield url
 
 
 @pytest.fixture(scope="session", name="mysql_config")
-def fixture_mysql_config(secrets_dict: dict) -> Generator:
+def fixture_mysql_config(secrets_dict: dict) -> Generator[SQLConfig, None, None]:
     """Yields a MYSQlConfig object"""
     yield SQLConfig(
         username=secrets_dict["mysql"]["username"],
@@ -101,7 +108,7 @@ def fixture_mysql_config(secrets_dict: dict) -> Generator:
 
 
 @pytest.fixture(scope="session", name="postgres_config")
-def fixture_postgres_config(secrets_dict: dict) -> Generator:
+def fixture_postgres_config(secrets_dict: dict) -> Generator[SQLConfig, None, None]:
     """Yields a SQlConfig object"""
     yield SQLConfig(
         username=secrets_dict["postgres"]["username"],
@@ -112,7 +119,9 @@ def fixture_postgres_config(secrets_dict: dict) -> Generator:
 
 
 @pytest.fixture(scope="session", name="mysql_database")
-def fixture_mysql_database(mysql_config: SQLConfig) -> Generator:
+def fixture_mysql_database(
+    mysql_config: SQLConfig,
+) -> Generator[MySQLDatabase, None, None]:
     """Yields a SQlConfig object"""
     obj = MySQLDatabase(mysql_config)
     yield obj
@@ -120,7 +129,9 @@ def fixture_mysql_database(mysql_config: SQLConfig) -> Generator:
 
 
 @pytest.fixture(scope="session", name="postgres_database")
-def fixture_postgres_database(postgres_config: SQLConfig) -> Generator:
+def fixture_postgres_database(
+    postgres_config: SQLConfig,
+) -> Generator[PostgresDatabase, None, None]:
     """
     Yields a Postgres object
     """
@@ -130,7 +141,9 @@ def fixture_postgres_database(postgres_config: SQLConfig) -> Generator:
 
 
 @pytest.fixture(scope="session", name="synapse_object")
-def fixture_synapse_object(secrets_dict: dict[str, Any]) -> Generator:
+def fixture_synapse_object(
+    secrets_dict: dict[str, Any]
+) -> Generator[Synapse, None, None]:
     """
     Yields a Synapse object
     """
@@ -141,7 +154,9 @@ def fixture_synapse_object(secrets_dict: dict[str, Any]) -> Generator:
 
 
 @pytest.fixture(scope="session", name="synapse_database")
-def fixture_synapse_database(secrets_dict: dict[str, Any]) -> Generator:
+def fixture_synapse_database(
+    secrets_dict: dict[str, Any]
+) -> Generator[SynapseDatabase, None, None]:
     """
     Yields a SynapseDatabase
     """
@@ -152,13 +167,13 @@ def fixture_synapse_database(secrets_dict: dict[str, Any]) -> Generator:
 
 
 @pytest.fixture(scope="session", name="test_synapse_project_id")
-def fixture_test_synapse_project_id() -> Generator:
+def fixture_test_synapse_project_id() -> Generator[str, None, None]:
     """Yields the synapse id for the test schema project id"""
     yield "syn47994571"
 
 
 @pytest.fixture(scope="session", name="test_synapse_asset_view_id")
-def fixture_test_synapse_asset_view_id() -> Generator:
+def fixture_test_synapse_asset_view_id() -> Generator[str, None, None]:
     """Yields the synapse id for the test schema asset view"""
     yield "syn47997084"
 
@@ -166,7 +181,7 @@ def fixture_test_synapse_asset_view_id() -> Generator:
 @pytest.fixture(scope="session", name="test_schema1")
 def fixture_test_schema1(
     test_schema_json_url: str,
-) -> Generator:
+) -> Generator[Schema, None, None]:
     """Yields a Schema using the database specific test schema"""
     config = SchemaConfig(test_schema_json_url)
     obj = Schema(config)
@@ -174,7 +189,7 @@ def fixture_test_schema1(
 
 
 @pytest.fixture(scope="session", name="test_schema2")
-def fixture_test_schema2(test_schema_json_url: str) -> Generator:
+def fixture_test_schema2(test_schema_json_url: str) -> Generator[Schema, None, None]:
     """Yields a Schema using the database specific test schema"""
     config = SchemaConfig(test_schema_json_url)
     database_config = DatabaseConfig(
@@ -214,7 +229,7 @@ def fixture_api_manifest_store(
     test_synapse_asset_view_id: str,
     secrets_dict: dict,
     test_schema_json_url: str,
-) -> Generator:
+) -> Generator[APIManifestStore, None, None]:
     """Yields a APIManifestStore object"""
     yield APIManifestStore(
         ManifestStoreConfig(
@@ -232,7 +247,7 @@ def fixture_synapse_manifest_store(
     test_synapse_asset_view_id: str,
     secrets_dict: dict,
     test_schema_json_url: str,
-) -> Generator:
+) -> Generator[SynapseManifestStore, None, None]:
     """Yields a SynapseManifestStore object"""
     yield SynapseManifestStore(
         ManifestStoreConfig(
@@ -245,7 +260,9 @@ def fixture_synapse_manifest_store(
 
 
 @pytest.fixture(scope="session", name="synapse_test_query_store")
-def fixture_synapse_test_query_store(secrets_dict: dict) -> Generator:
+def fixture_synapse_test_query_store(
+    secrets_dict: dict,
+) -> Generator[SynapseQueryStore, None, None]:
     """
     Yields a Synapse Query Store for the test schema
     """
@@ -264,7 +281,7 @@ def fixture_synapse_test_query_store(secrets_dict: dict) -> Generator:
 @pytest.fixture(scope="module", name="rdb_queryer_mysql")
 def fixture_rdb_queryer_mysql(
     mysql: MySQLDatabase, synapse_query_store: QueryStore
-) -> Generator:
+) -> Generator[RDBQueryer, None, None]:
     """Yields a RDBQueryer"""
     obj = RDBQueryer(
         rdb=mysql,
@@ -274,7 +291,7 @@ def fixture_rdb_queryer_mysql(
 
 
 @pytest.fixture(scope="session")
-def table_one() -> Generator:
+def table_one() -> Generator[pd.DataFrame, None, None]:
     """
     Yields a pd.Dataframe.
     """
@@ -294,7 +311,7 @@ def table_one() -> Generator:
 
 
 @pytest.fixture(scope="session", name="table_one_schema")
-def fixture_table_one_schema() -> Generator:
+def fixture_table_one_schema() -> Generator[TableSchema, None, None]:
     """
     Yields a TableSchema object with one primary and no foreign keys
     """
@@ -333,7 +350,7 @@ def fixture_table_one_schema() -> Generator:
 
 
 @pytest.fixture(name="table_one_columns", scope="session")
-def fixture_table_one_columns() -> Generator:
+def fixture_table_one_columns() -> Generator[list[sc.Column], None, None]:
     """Yields a list of synapse columns for table one"""
     yield [
         sc.Column(name="pk_one_col", columnType="LARGETEXT"),
@@ -346,7 +363,7 @@ def fixture_table_one_columns() -> Generator:
 
 
 @pytest.fixture(scope="session")
-def table_two() -> Generator:
+def table_two() -> Generator[pd.DataFrame, None, None]:
     """
     Yields a pd.Dataframe.
     """
@@ -360,7 +377,7 @@ def table_two() -> Generator:
 
 
 @pytest.fixture(name="table_two_columns", scope="session")
-def fixture_table_two_columns() -> Generator:
+def fixture_table_two_columns() -> Generator[list[sc.Column], None, None]:
     """Yields a list of synapse columns for table two"""
     yield [
         sc.Column(name="pk_two_col", columnType="LARGETEXT"),
@@ -369,7 +386,7 @@ def fixture_table_two_columns() -> Generator:
 
 
 @pytest.fixture(scope="session")
-def table_two_b() -> Generator:
+def table_two_b() -> Generator[pd.DataFrame, None, None]:
     """
     Yields a pd.Dataframe.
     """
@@ -383,7 +400,7 @@ def table_two_b() -> Generator:
 
 
 @pytest.fixture(scope="session", name="table_two_schema")
-def fixture_table_two_schema() -> Generator:
+def fixture_table_two_schema() -> Generator[TableSchema, None, None]:
     """
     Yields a TableSchema object with one primary and no foreign keys
     """
@@ -404,7 +421,7 @@ def fixture_table_two_schema() -> Generator:
 
 
 @pytest.fixture(scope="session", name="table_two_schema_combined")
-def fixture_table_two_schema_combined() -> Generator:
+def fixture_table_two_schema_combined() -> Generator[TableSchema, None, None]:
     """
     Yields a TableSchema object with one primary and no foreign keys
     """
@@ -425,7 +442,7 @@ def fixture_table_two_schema_combined() -> Generator:
 
 
 @pytest.fixture(scope="session")
-def table_three() -> Generator:
+def table_three() -> Generator[pd.DataFrame, None, None]:
     """
     Yields a pd.Dataframe.
     """
@@ -441,7 +458,7 @@ def table_three() -> Generator:
 
 
 @pytest.fixture(scope="session", name="table_three_schema")
-def fixture_table_three_schema() -> Generator:
+def fixture_table_three_schema() -> Generator[TableSchema, None, None]:
     """
     Yields a TableSchema object with two keys that are both primary and foreign
     """
@@ -479,7 +496,7 @@ def fixture_table_three_schema() -> Generator:
 
 
 @pytest.fixture(name="table_three_columns", scope="session")
-def fixture_table_three_columns() -> Generator:
+def fixture_table_three_columns() -> Generator[list[sc.Column], None, None]:
     """Yields a list of synapse columns for table three"""
     yield [
         sc.Column(name="pk_zero_col", columnType="LARGETEXT"),
@@ -490,7 +507,7 @@ def fixture_table_three_columns() -> Generator:
 
 
 @pytest.fixture(scope="session")
-def table_123_unormalized() -> Generator:
+def table_123_unormalized() -> Generator[pd.DataFrame, None, None]:
     """
     Yields a pd.Dataframe. This is what a merged table might look like.
     """
@@ -510,6 +527,6 @@ def fixture_database_schema(
     table_one_schema: TableSchema,
     table_two_schema: TableSchema,
     table_three_schema: TableSchema,
-) -> Generator:
+) -> Generator[DatabaseSchema, None, None]:
     """Yields a TableSchemaList"""
     yield DatabaseSchema([table_one_schema, table_two_schema, table_three_schema])

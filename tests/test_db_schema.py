@@ -18,7 +18,7 @@ from schematic_db.db_schema.db_schema import (
 
 
 @pytest.fixture(name="pk_col1_schema", scope="module")
-def fixture_pk_col1_schema() -> Generator:
+def fixture_pk_col1_schema() -> Generator[ColumnSchema, None, None]:
     """
     Yields a ColumnSchema
     """
@@ -27,7 +27,7 @@ def fixture_pk_col1_schema() -> Generator:
 
 
 @pytest.fixture(name="pk_col1b_schema", scope="module")
-def fixture_pk_col1b_schema() -> Generator:
+def fixture_pk_col1b_schema() -> Generator[ColumnSchema, None, None]:
     """
     Yields a ColumnSchema
     """
@@ -38,7 +38,7 @@ def fixture_pk_col1b_schema() -> Generator:
 
 
 @pytest.fixture(name="pk_col2_schema", scope="module")
-def fixture_pk_col2_schema() -> Generator:
+def fixture_pk_col2_schema() -> Generator[ColumnSchema, None, None]:
     """
     Yields a ColumnSchema
     """

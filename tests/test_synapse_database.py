@@ -19,7 +19,7 @@ from schematic_db.db_schema.db_schema import DatabaseSchema
 
 
 @pytest.fixture(name="mock_synapse_database")
-def fixture_mock_synapse_database() -> Generator:
+def fixture_mock_synapse_database() -> Generator[SynapseDatabase, None, None]:
     """Yields a SynapseDatabase object with a mocked Synapse object"""
     with patch.object(sc, "Synapse", return_value=Mock()):
         with patch.object(sc.Synapse, "login", return_value=None):
@@ -28,7 +28,9 @@ def fixture_mock_synapse_database() -> Generator:
 
 
 @pytest.fixture(name="synapse_database")
-def fixture_synapse_no_extra_tables(synapse_database: SynapseDatabase) -> Generator:
+def fixture_synapse_no_extra_tables(
+    synapse_database: SynapseDatabase,
+) -> Generator[SynapseDatabase, None, None]:
     """Yields a SynapseDatabase object"""
     obj = synapse_database
     yield obj
@@ -47,7 +49,7 @@ def fixture_synapse_with_empty_tables(  # pylint: disable=too-many-arguments
     table_one_columns: list[sc.Column],
     table_two_columns: list[sc.Column],
     table_three_columns: list[sc.Column],
-) -> Generator:
+) -> Generator[SynapseDatabase, None, None]:
     """Yields a SynapseDatabase object with tables added"""
     obj = synapse_database
     obj.synapse.add_table("table_one", table_one_columns)
@@ -65,7 +67,7 @@ def fixture_synapse_with_filled_tables(
     table_one: pd.DataFrame,
     table_two: pd.DataFrame,
     table_three: pd.DataFrame,
-) -> Generator:
+) -> Generator[SynapseDatabase, None, None]:
     """Yields a SynapseDatabase object with tables added and filled"""
     obj = synapse_with_empty_tables
     synapse_id1 = obj.synapse.get_synapse_id_from_table_name("table_one")
