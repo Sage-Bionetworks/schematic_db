@@ -108,10 +108,7 @@ def create_schematic_api_response(
     Returns:
         requests.Response: The response from the API
     """
-    """
     api_url = getenv("API_URL", "https://schematic.api.sagebionetworks.org/v1/")
-    """
-    api_url = "http://localhost:3001/v1/"
     endpoint_url = f"{api_url}/{endpoint_path}"
     start_time = datetime.now(pytz.timezone("US/Pacific"))
     headers = {"Authorization": f"Bearer {access_token}"}
