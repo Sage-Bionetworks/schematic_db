@@ -89,15 +89,9 @@ def fixture_test_schema_table_names() -> Generator[list[str], None, None]:
 @pytest.fixture(scope="session", name="test_schema_csv_url")
 def fixture_test_schema_csv_url() -> Generator[str, None, None]:
     """Yields the url for the main test schema json"""
-    """
     url = (
         "https://raw.githubusercontent.com/Sage-Bionetworks/"
         "Schematic-DB-Test-Schemas/main/test_schema.csv"
-    )
-    """
-    url = (
-        "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/develop/test_schema.csv"
     )
     yield url
 
@@ -105,15 +99,9 @@ def fixture_test_schema_csv_url() -> Generator[str, None, None]:
 @pytest.fixture(scope="session", name="test_schema_json_url")
 def fixture_test_schema_json_url() -> Generator[str, None, None]:
     """Yields the url for the main test schema json"""
-    """
     url = (
         "https://raw.githubusercontent.com/Sage-Bionetworks/"
         "Schematic-DB-Test-Schemas/main/test_schema.jsonld"
-    )
-    """
-    url = (
-        "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/develop/test_schema.jsonld"
     )
     yield url
 
@@ -121,12 +109,6 @@ def fixture_test_schema_json_url() -> Generator[str, None, None]:
 @pytest.fixture(scope="session", name="test_schema_display_name_json_url")
 def fixture_test_schema_display_name_json_url() -> Generator[str, None, None]:
     """Yields the url for the main test schema json"""
-    """
-    url = (
-        "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/main/test_schema_display_label.jsonld"
-    )
-    """
     url = (
         "https://raw.githubusercontent.com/Sage-Bionetworks/"
         "Schematic-DB-Test-Schemas/develop/test_schema_display_label.jsonld"
