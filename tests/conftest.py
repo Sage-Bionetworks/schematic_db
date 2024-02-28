@@ -91,7 +91,7 @@ def fixture_test_schema_csv_url() -> Generator[str, None, None]:
     """Yields the url for the main test schema json"""
     url = (
         "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/main/test_schema.csv"
+        "Schematic-DB-Test-Schemas/develop/test_schema.csv"
     )
     yield url
 
