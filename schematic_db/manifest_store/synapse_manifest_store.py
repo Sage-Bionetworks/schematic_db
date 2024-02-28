@@ -8,20 +8,26 @@ import pandas
 from schematic_db.schema_graph.schema_graph import SchemaGraph
 from schematic_db.api_utils.api_utils import ManifestMetadataList
 from schematic_db.synapse.synapse import Synapse
+from schematic_db.utils import DisplayLabelType
 from .manifest_store import ManifestStore, ManifestStoreConfig
 
 
 class SynapseManifestStore(ManifestStore):
     """An interface for interacting with manifests"""
 
-    def __init__(self, config: ManifestStoreConfig) -> None:
+    def __init__(
+        self,
+        config: ManifestStoreConfig,
+        display_label_type: DisplayLabelType = "class_label",
+    ) -> None:
         """
         Args:
             config (ManifestStoreConfig): A config with setup values
+            display_model_type (DisplayLabelType): The type of label used for display purposes
         """
         self.synapse_asset_view_id = config.synapse_asset_view_id
         self.synapse = Synapse(config.synapse_auth_token, config.synapse_project_id)
-        self.schema_graph = SchemaGraph(config.schema_url)
+        self.schema_graph = SchemaGraph(config.schema_url, display_label_type)
         self.manifest_metadata: Optional[ManifestMetadataList] = None
 
     def create_sorted_table_name_list(self) -> list[str]:

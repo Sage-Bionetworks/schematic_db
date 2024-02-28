@@ -22,6 +22,7 @@ from schematic_db.api_utils.api_utils import (
     SchematicAPITimeoutError,
 )
 from schematic_db.schema_graph.schema_graph import SchemaGraph
+from schematic_db.utils import DisplayLabelType
 from .database_config import DatabaseConfig
 
 
@@ -127,7 +128,7 @@ class Schema:
         self,
         config: SchemaConfig,
         database_config: DatabaseConfig = DatabaseConfig([]),
-        use_display_names_as_labels: bool = False,
+        display_label_type: DisplayLabelType = "class_label",
     ) -> None:
         """
         The Schema class handles interactions with the schematic API.
@@ -137,13 +138,12 @@ class Schema:
             config (SchemaConfig): A config describing the basic inputs for the schema table
             database_config (DatabaseConfig): Experimental and will be deprecated in the near
              future. A config describing optional database specific columns.
-            use_display_names_as_labels(bool): Experimental and will be deprecated in the near
-             future. Use when display names and labels are the same in the schema.
+            display_label_type (DisplayLabelType): The type of label used for display purposes
         """
         self.database_config = database_config
         self.schema_url = config.schema_url
-        self.use_display_names_as_labels = use_display_names_as_labels
-        self.schema_graph = SchemaGraph(config.schema_url)
+        self.display_label_type = display_label_type
+        self.schema_graph = SchemaGraph(config.schema_url, display_label_type)
         self.database_schema: Optional[DatabaseSchema] = None
 
     def get_database_schema(self) -> DatabaseSchema:
@@ -204,7 +204,9 @@ class Schema:
             Optional[list[ColumnSchema]]: A list of columns in ColumnSchema form
         """
         # the names of the columns to be created, in label(not display) form
-        column_names = find_class_specific_properties(self.schema_url, table_name)
+        column_names = find_class_specific_properties(
+            self.schema_url, table_name, self.display_label_type
+        )
         columns = [
             self._create_column_schema(name, table_name) for name in column_names
         ]
@@ -255,7 +257,9 @@ class Schema:
             bool: Is the column required?
         """
         try:
-            is_column_required = is_node_required(self.schema_url, column_name)
+            is_column_required = is_node_required(
+                self.schema_url, column_name, self.display_label_type
+            )
         except (SchematicAPIError, SchematicAPITimeoutError) as exc:
             raise ColumnSchematicError(column_name, table_name) from exc
         return is_column_required
@@ -286,7 +290,7 @@ class Schema:
         # Try to get validation rules from Schematic API
         try:
             all_validation_rules = get_node_validation_rules(
-                self.schema_url, column_name
+                self.schema_url, column_name, self.display_label_type
             )
         except (SchematicAPIError, SchematicAPITimeoutError) as exc:
             raise ColumnSchematicError(column_name, table_name) from exc
@@ -377,6 +381,4 @@ class Schema:
         Returns:
             str: The column name of the column
         """
-        if self.use_display_names_as_labels:
-            return column_name
-        return get_property_label_from_display_name(self.schema_url, column_name)
+        return get_property_label_from_display_name(column_name)

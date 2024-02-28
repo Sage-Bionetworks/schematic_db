@@ -86,12 +86,32 @@ def fixture_test_schema_table_names() -> Generator[list[str], None, None]:
     yield table_names
 
 
+@pytest.fixture(scope="session", name="test_schema_csv_url")
+def fixture_test_schema_csv_url() -> Generator[str, None, None]:
+    """Yields the url for the main test schema json"""
+    url = (
+        "https://raw.githubusercontent.com/Sage-Bionetworks/"
+        "Schematic-DB-Test-Schemas/main/test_schema.csv"
+    )
+    yield url
+
+
 @pytest.fixture(scope="session", name="test_schema_json_url")
 def fixture_test_schema_json_url() -> Generator[str, None, None]:
     """Yields the url for the main test schema json"""
     url = (
         "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/main/test_schema.csv"
+        "Schematic-DB-Test-Schemas/main/test_schema.jsonld"
+    )
+    yield url
+
+
+@pytest.fixture(scope="session", name="test_schema_display_name_json_url")
+def fixture_test_schema_display_name_json_url() -> Generator[str, None, None]:
+    """Yields the url for the main test schema json"""
+    url = (
+        "https://raw.githubusercontent.com/Sage-Bionetworks/"
+        "Schematic-DB-Test-Schemas/main/test_schema_display_label.jsonld"
     )
     yield url
 
@@ -180,18 +200,18 @@ def fixture_test_synapse_asset_view_id() -> Generator[str, None, None]:
 
 @pytest.fixture(scope="session", name="test_schema1")
 def fixture_test_schema1(
-    test_schema_json_url: str,
+    test_schema_csv_url: str,
 ) -> Generator[Schema, None, None]:
     """Yields a Schema using the database specific test schema"""
-    config = SchemaConfig(test_schema_json_url)
+    config = SchemaConfig(test_schema_csv_url)
     obj = Schema(config)
     yield obj
 
 
 @pytest.fixture(scope="session", name="test_schema2")
-def fixture_test_schema2(test_schema_json_url: str) -> Generator[Schema, None, None]:
+def fixture_test_schema2(test_schema_csv_url: str) -> Generator[Schema, None, None]:
     """Yields a Schema using the database specific test schema"""
-    config = SchemaConfig(test_schema_json_url)
+    config = SchemaConfig(test_schema_csv_url)
     database_config = DatabaseConfig(
         [
             {
@@ -228,12 +248,12 @@ def fixture_api_manifest_store(
     test_synapse_project_id: str,
     test_synapse_asset_view_id: str,
     secrets_dict: dict,
-    test_schema_json_url: str,
+    test_schema_csv_url: str,
 ) -> Generator[APIManifestStore, None, None]:
     """Yields a APIManifestStore object"""
     yield APIManifestStore(
         ManifestStoreConfig(
-            test_schema_json_url,
+            test_schema_csv_url,
             test_synapse_project_id,
             test_synapse_asset_view_id,
             secrets_dict["synapse"]["auth_token"],
@@ -246,12 +266,12 @@ def fixture_synapse_manifest_store(
     test_synapse_project_id: str,
     test_synapse_asset_view_id: str,
     secrets_dict: dict,
-    test_schema_json_url: str,
+    test_schema_csv_url: str,
 ) -> Generator[SynapseManifestStore, None, None]:
     """Yields a SynapseManifestStore object"""
     yield SynapseManifestStore(
         ManifestStoreConfig(
-            test_schema_json_url,
+            test_schema_csv_url,
             test_synapse_project_id,
             test_synapse_asset_view_id,
             secrets_dict["synapse"]["auth_token"],

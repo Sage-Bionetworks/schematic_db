@@ -21,14 +21,14 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
 
     def test_create_schematic_api_response(
         self,
-        test_schema_json_url: str,
+        test_schema_csv_url: str,
         secrets_dict: dict,
     ) -> None:
         """Testing for create_schematic_api_response"""
         response = create_schematic_api_response(
             endpoint_path="utils/get_property_label_from_display_name",
             params={
-                "schema_url": test_schema_json_url,
+                "schema_url": test_schema_csv_url,
                 "display_name": "year_of_birth",
             },
         )
@@ -64,32 +64,47 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
 class TestAPIUtils:
     """Testing for API utils"""
 
-    def test_find_class_specific_properties(self, test_schema_json_url: str) -> None:
+    def test_find_class_specific_properties(
+        self,
+        test_schema_csv_url: str,
+    ) -> None:
         "Testing for find_class_specific_properties"
-        assert find_class_specific_properties(test_schema_json_url, "Patient") == [
+        assert find_class_specific_properties(test_schema_csv_url, "Patient") == [
             "id",
             "sex",
-            "yearofBirth",
+            "yearOfBirth",
             "diagnosis",
             "weight",
             "date",
         ]
 
-    def test_get_property_label_from_display_name(
-        self, test_schema_json_url: str
-    ) -> None:
-        "Testing for get_property_label_from_display_name"
-        assert get_property_label_from_display_name(test_schema_json_url, "id") == "id"
-        assert (
-            get_property_label_from_display_name(test_schema_json_url, "year_of_birth")
-            == "yearOfBirth"
-        )
+        assert find_class_specific_properties(
+            test_schema_csv_url, "Patient", data_model_labels="display_label"
+        ) == [
+            "id",
+            "Sex",
+            "Year_Of_Birth",
+            "Diagnosis",
+            "Weight",
+            "Date",
+        ]
 
-    def test_get_graph_by_edge_type(self, test_schema_json_url: str) -> None:
+    def test_get_property_label_from_display_name(self) -> None:
+        "Testing for get_property_label_from_display_name"
+        assert get_property_label_from_display_name("id") == "id"
+        assert get_property_label_from_display_name("year_of_birth") == "yearOfBirth"
+
+    def test_get_graph_by_edge_type(self, test_schema_csv_url: str) -> None:
         "Testing for get_graph_by_edge_type"
-        assert get_graph_by_edge_type(test_schema_json_url, "requiresComponent") == [
+        assert get_graph_by_edge_type(test_schema_csv_url, "requiresComponent") == [
             ["Biospecimen", "Patient"],
             ["BulkRnaSeq", "Biospecimen"],
+        ]
+        assert get_graph_by_edge_type(
+            test_schema_csv_url, "requiresComponent", data_model_labels="display_label"
+        ) == [
+            ["Biospecimen", "Patient"],
+            ["Bulk_Rna_Seq", "Biospecimen"],
         ]
 
     def test_get_project_manifests(
@@ -114,11 +129,16 @@ class TestAPIUtils:
         )
         assert isinstance(manifest, pandas.DataFrame)
 
-    def test_is_node_required(self, test_schema_json_url: str) -> None:
+    def test_is_node_required(self, test_schema_csv_url: str) -> None:
         """Testing for is_node_required"""
-        assert is_node_required(test_schema_json_url, "sex")
+        assert is_node_required(test_schema_csv_url, "sex")
+        assert is_node_required(
+            test_schema_csv_url, "Sex", data_model_labels="display_label"
+        )
 
-    def test_get_node_validation_rules(self, test_schema_json_url: str) -> None:
+    def test_get_node_validation_rules(self, test_schema_csv_url: str) -> None:
         """Testing for get_node_validation_rules"""
-        rules = get_node_validation_rules(test_schema_json_url, "Patient")
-        assert isinstance(rules, list)
+        assert get_node_validation_rules(test_schema_csv_url, "sex") == ["str"]
+        assert get_node_validation_rules(
+            test_schema_csv_url, "Sex", data_model_labels="display_label"
+        ) == ["str"]

@@ -8,6 +8,7 @@ import pytz
 import requests
 import pandas
 from schematic_db.manifest_store.manifest_metadata_list import ManifestMetadataList
+from schematic_db.utils import DisplayLabelType
 
 
 class SchematicAPIError(Exception):
@@ -128,17 +129,26 @@ def create_schematic_api_response(
     return response
 
 
-def find_class_specific_properties(schema_url: str, schema_class: str) -> list[str]:
+def find_class_specific_properties(
+    schema_url: str,
+    schema_class: str,
+    data_model_labels: DisplayLabelType = "class_label",
+) -> list[str]:
     """Find properties specifically associated with a given class
 
     Args:
         schema_url (str): Data Model URL
         schema_class (str): The class/name fo the component
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         list[str]: A list of properties of a given class/component.
     """
-    params = {"schema_url": schema_url, "schema_class": schema_class}
+    params = {
+        "schema_url": schema_url,
+        "schema_class": schema_class,
+        "data_model_labels": data_model_labels,
+    }
     response = create_schematic_api_response(
         "/schemas/find_class_specific_properties", params
     )
@@ -146,12 +156,11 @@ def find_class_specific_properties(schema_url: str, schema_class: str) -> list[s
 
 
 def get_property_label_from_display_name(
-    schema_url: str, display_name: str, strict_camel_case: bool = True
+    display_name: str, strict_camel_case: bool = True
 ) -> str:
     """Converts a given display name string into a proper property label string
 
     Args:
-        schema_url (str): Data Model URL
         display_name (str): The display name to be converted
         strict_camel_case (bool, optional): If true the more strict way of converting
             to camel case is used. Defaults to True.
@@ -160,7 +169,6 @@ def get_property_label_from_display_name(
         str: the property label name
     """
     params = {
-        "schema_url": schema_url,
         "display_name": display_name,
         "strict_camel_case": strict_camel_case,
     }
@@ -170,18 +178,27 @@ def get_property_label_from_display_name(
     return response.json()
 
 
-def get_graph_by_edge_type(schema_url: str, relationship: str) -> list[tuple[str, str]]:
+def get_graph_by_edge_type(
+    schema_url: str,
+    relationship: str,
+    data_model_labels: DisplayLabelType = "class_label",
+) -> list[tuple[str, str]]:
     """Get a subgraph containing all edges of a given type (aka relationship)
 
     Args:
         schema_url (str): Data Model URL
         relationship (str): Relationship (i.e. parentOf, requiresDependency,
             rangeValue, domainValue)
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         list[tuple[str, str]]: A subgraph in the form of a list of tuples.
     """
-    params = {"schema_url": schema_url, "relationship": relationship}
+    params = {
+        "schema_url": schema_url,
+        "relationship": relationship,
+        "data_model_labels": data_model_labels,
+    }
     response = create_schematic_api_response("schemas/get/graph_by_edge_type", params)
     return response.json()
 
@@ -243,28 +260,42 @@ def download_manifest(access_token: str, manifest_id: str) -> pandas.DataFrame:
     return manifest
 
 
-def is_node_required(schema_url: str, node_label: str) -> bool:
+def is_node_required(
+    schema_url: str,
+    node_display_name: str,
+    data_model_labels: DisplayLabelType = "class_label",
+) -> bool:
     """Checks if node is required
 
     Args:
         schema_url (str): Data Model URL
-        node_label (str): Label/display name for the node to check
+        node_display_name (str): Label/display name for the node to check
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         bool: Wether or not the node is required
     """
 
-    params = {"schema_url": schema_url, "node_display_name": node_label}
+    params = {
+        "schema_url": schema_url,
+        "node_display_name": node_display_name,
+        "data_model_labels": data_model_labels,
+    }
     response = create_schematic_api_response("schemas/is_node_required", params)
     return response.json()
 
 
-def get_node_validation_rules(schema_url: str, node_display_name: str) -> list[str]:
+def get_node_validation_rules(
+    schema_url: str,
+    node_display_name: str,
+    data_model_labels: DisplayLabelType = "class_label",
+) -> list[str]:
     """Gets the validation rules for the node
 
     Args:
         schema_url (str): Data Model URL
         node_display_name (str): Label/display name for the node to check
+        data_model_labels (DisplayLabelType): The type of label to use as display
 
     Returns:
         list[str]: A list of validation rules
@@ -272,6 +303,7 @@ def get_node_validation_rules(schema_url: str, node_display_name: str) -> list[s
     params = {
         "schema_url": schema_url,
         "node_display_name": node_display_name,
+        "data_model_labels": data_model_labels,
     }
     response = create_schematic_api_response(
         "schemas/get_node_validation_rules", params

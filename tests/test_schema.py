@@ -171,7 +171,7 @@ class TestSchema:
                 name="sex", datatype=ColumnDatatype.TEXT, required=True, index=False
             ),
             ColumnSchema(
-                name="yearofBirth",
+                name="yearOfBirth",
                 datatype=ColumnDatatype.INT,
                 required=False,
                 index=False,
@@ -192,13 +192,13 @@ class TestSchema:
             ColumnSchema(
                 name="patientId",
                 datatype=ColumnDatatype.TEXT,
-                required=False,
+                required=True,
                 index=False,
             ),
             ColumnSchema(
                 name="tissueStatus",
                 datatype=ColumnDatatype.TEXT,
-                required=True,
+                required=False,
                 index=False,
             ),
         ]
@@ -210,7 +210,7 @@ class TestSchema:
             ColumnSchema(
                 name="biospecimenId",
                 datatype=ColumnDatatype.TEXT,
-                required=False,
+                required=True,
                 index=False,
             ),
             ColumnSchema(
@@ -286,7 +286,7 @@ class TestSchema2:
                 name="sex", datatype=ColumnDatatype.TEXT, required=True, index=True
             ),
             ColumnSchema(
-                name="yearofBirth",
+                name="yearOfBirth",
                 datatype=ColumnDatatype.INT,
                 required=False,
                 index=False,
@@ -307,13 +307,13 @@ class TestSchema2:
             ColumnSchema(
                 name="patientId",
                 datatype=ColumnDatatype.TEXT,
-                required=False,
+                required=True,
                 index=False,
             ),
             ColumnSchema(
                 name="tissueStatus",
                 datatype=ColumnDatatype.TEXT,
-                required=True,
+                required=False,
                 index=False,
             ),
         ]
@@ -325,7 +325,7 @@ class TestSchema2:
             ColumnSchema(
                 name="biospecimenId",
                 datatype=ColumnDatatype.TEXT,
-                required=False,
+                required=True,
                 index=False,
             ),
             ColumnSchema(
