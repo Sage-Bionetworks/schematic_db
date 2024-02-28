@@ -135,6 +135,5 @@ jobs:
       - name: pytest
         env:
           API_URL: ${{vars.API_URL}}
-        print(vars.API_URL)
         run: poetry run pytest -vvs
 
