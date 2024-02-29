@@ -134,6 +134,6 @@ jobs:
 
       - name: pytest
         env:
-          API_URL: ${{secrets.API_URL}}
+          API_URL: ${{vars.API_URL}}
         run: poetry run pytest -vvs
 
