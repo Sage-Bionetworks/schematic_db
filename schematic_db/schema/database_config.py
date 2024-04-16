@@ -2,7 +2,7 @@
 A config for database specific items
 """
 
-from typing import Any
+from typing import Any, Optional
 from deprecation import deprecated
 from schematic_db.db_schema.db_schema import (
     ForeignKeySchema,
@@ -174,7 +174,7 @@ class DatabaseConfig:
             return None
         return columns[0]
 
-    def _get_table_by_name(self, table_name: str) -> DatabaseTableConfig | None:
+    def _get_table_by_name(self, table_name: str) -> Optional[DatabaseTableConfig]:
         """Gets the config for the table if it exists
 
         Args:
