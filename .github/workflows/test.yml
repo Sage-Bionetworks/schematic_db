@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
 
@@ -23,6 +23,7 @@ jobs:
             "3.1": "syn51138340",
             "3.11": "syn51138343",
             "3.12": "syn51138344",
+            # The version '3.13' with architecture 'x64' was not found for Ubuntu 22.04.
             "3.13": "syn57392034",
           }
           import yaml
