@@ -113,9 +113,7 @@ class TableColumnError(Exception):
 class TableKeyError(Exception):
     """TableKeyError"""
 
-    def __init__(
-        self, message: str, table_name: str, key: str | None = None
-    ) -> None:
+    def __init__(self, message: str, table_name: str, key: str | None = None) -> None:
         """
         Args:
             message (str): A message describing the error
