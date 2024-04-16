@@ -23,7 +23,7 @@ jobs:
             "3.1": "syn51138340",
             "3.11": "syn51138343",
             "3.12": "syn51138344",
-            "3.12": "syn57392034",
+            "3.13": "syn57392034",
           }
           import yaml
           python_version = str( ${{ matrix.python-version }} )
