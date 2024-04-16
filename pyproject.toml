@@ -5,13 +5,13 @@ description = ""
 authors = ["andrewelamb <andrewelamb@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 SQLAlchemy = "^2.0.19"
 PyYAML = "^6.0"
 SQLAlchemy-Utils = "^0.41.1"
 requests = "^2.28.1"
 pandas = "^2.0.0"
-networkx = "^2.8.6"
+networkx = "^3.3.0"
 tenacity = "^8.1.0"
 pydantic = "^1.10.7"
 mysqlclient = {version = "^2.1.1", optional = true}
@@ -30,10 +30,10 @@ synapse = ["synapseclient"]
 pytest = "^7.2.1"
 pytest-mock = "^3.10.0"
 pdoc = "^12.1.0"
-mypy = "^1.0.1"
+mypy = "^1.9.0"
 mypy-extensions = "^1.0.0"
-pylint = "^2.16.1"
-black = "23.3.0"
+pylint = "^3.1.0"
+black = "24.4.0"
 coverage = "^7.2.0"
 interrogate = "^1.5.0"
 
