@@ -1,6 +1,7 @@
 """DB schema
 These are a set of classes for defining a database table in a dialect agnostic way.
 """
+
 from enum import Enum
 from typing import Any, Optional, TypeVar
 from pydantic.dataclasses import dataclass

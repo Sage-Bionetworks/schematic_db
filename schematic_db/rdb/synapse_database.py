@@ -1,4 +1,5 @@
 """SynapseDatabase"""
+
 from typing import Union
 from functools import partial
 import pandas as pd

@@ -1,4 +1,5 @@
 """RDBUpdater"""
+
 # pylint: disable=logging-fstring-interpolation
 import warnings
 import logging

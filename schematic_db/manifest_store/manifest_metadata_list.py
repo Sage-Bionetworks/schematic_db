@@ -1,4 +1,5 @@
 """Metadata for a manifest in Synapse."""
+
 # pylint: disable=duplicate-code
 from typing import Any
 import json

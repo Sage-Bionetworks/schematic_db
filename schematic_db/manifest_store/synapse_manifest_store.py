@@ -3,6 +3,7 @@ SynapseManifestStore implements the ManifestStore interface.
 It interacts with Synapse through the Python client.
 This is used to interact with manifests
 """
+
 from typing import Optional
 import pandas
 from schematic_db.schema_graph.schema_graph import SchemaGraph

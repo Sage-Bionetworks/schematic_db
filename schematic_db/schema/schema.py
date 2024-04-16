@@ -1,4 +1,5 @@
 """Schema class"""
+
 # pylint: disable=duplicate-code
 
 from typing import Optional

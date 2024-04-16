@@ -1,6 +1,7 @@
 """
 A config for database specific items
 """
+
 from typing import Optional, Any
 from deprecation import deprecated
 from schematic_db.db_schema.db_schema import (

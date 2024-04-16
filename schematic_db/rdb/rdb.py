@@ -1,4 +1,5 @@
 """RelationalDatabase"""
+
 from abc import ABC, abstractmethod
 import pandas as pd
 from schematic_db.db_schema.db_schema import TableSchema

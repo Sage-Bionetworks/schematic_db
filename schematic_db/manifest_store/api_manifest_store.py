@@ -1,4 +1,5 @@
 """The APIManifestStore class interacts with the Schematic API download manifests."""
+
 # pylint: disable=duplicate-code
 
 from typing import Optional
