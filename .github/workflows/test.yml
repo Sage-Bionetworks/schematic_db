@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
 
@@ -19,7 +19,6 @@ jobs:
       - name: create secrets config
         run: |
           test_projects = {
-            "3.9": "syn51138339",
             # Yaml is shortening 3.10 to 3.1 here
             "3.1": "syn51138340",
             "3.11": "syn51138343",
