@@ -1,6 +1,5 @@
 """SynapseDatabase"""
 
-from typing import Union
 from functools import partial
 import pandas as pd
 import synapseclient as sc  # type: ignore
@@ -336,7 +335,7 @@ class SynapseDatabase(RelationalDatabase):
             table_schema (TableSchema): The config for the table
         """
         synapse_id = self.synapse.get_synapse_id_from_table_name(table_name)
-        annotations: dict[str, Union[str, list[str]]] = {
+        annotations: dict[str, str | list[str]] = {
             f"attribute{str(i)}": create_attribute_annotation_string(att)
             for i, att in enumerate(table_schema.columns)
         }

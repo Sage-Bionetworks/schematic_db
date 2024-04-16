@@ -2,7 +2,7 @@
 A config for database specific items
 """
 
-from typing import Optional, Any
+from typing import Any
 from deprecation import deprecated
 from schematic_db.db_schema.db_schema import (
     ForeignKeySchema,
@@ -32,9 +32,9 @@ class DatabaseTableConfig:  # pylint: disable=too-few-public-methods
     def __init__(
         self,
         name: str,
-        primary_key: Optional[str] = None,
-        foreign_keys: Optional[list[dict[str, str]]] = None,
-        columns: Optional[list[dict[str, Any]]] = None,
+        primary_key: str | None = None,
+        foreign_keys: list[dict[str, str]] | None = None,
+        columns: list[dict[str, Any]] | None = None,
     ) -> None:
         """
         Init
@@ -76,7 +76,7 @@ class DatabaseTableConfig:  # pylint: disable=too-few-public-methods
             if len(column_names) != len(list(set(column_names))):
                 raise ValueError("There are duplicate column names")
 
-    def _get_column_names(self) -> Optional[list[str]]:
+    def _get_column_names(self) -> list[str] | None:
         """Gets the list of column names in the config
 
         Returns:
@@ -97,7 +97,7 @@ class DatabaseTableConfig:  # pylint: disable=too-few-public-methods
             if len(foreign_keys_names) != len(list(set(foreign_keys_names))):
                 raise ValueError("There are duplicate column names")
 
-    def _get_foreign_key_names(self) -> Optional[list[str]]:
+    def _get_foreign_key_names(self) -> list[str] | None:
         """Gets the list of foreign key names in the config
 
         Returns:
@@ -120,7 +120,7 @@ class DatabaseConfig:
         ]
         self._check_table_names()
 
-    def get_primary_key(self, table_name: str) -> Optional[str]:
+    def get_primary_key(self, table_name: str) -> str | None:
         """Gets the primary key for an table
 
         Args:
@@ -132,7 +132,7 @@ class DatabaseConfig:
         table = self._get_table_by_name(table_name)
         return None if table is None else table.primary_key
 
-    def get_foreign_keys(self, table_name: str) -> Optional[list[ForeignKeySchema]]:
+    def get_foreign_keys(self, table_name: str) -> list[ForeignKeySchema] | None:
         """Gets the foreign keys for an table
 
         Args:
@@ -144,7 +144,7 @@ class DatabaseConfig:
         table = self._get_table_by_name(table_name)
         return None if table is None else table.foreign_keys
 
-    def get_columns(self, table_name: str) -> Optional[list[ColumnSchema]]:
+    def get_columns(self, table_name: str) -> list[ColumnSchema] | None:
         """Gets the columns for an table
 
         Args:
@@ -156,7 +156,7 @@ class DatabaseConfig:
         table = self._get_table_by_name(table_name)
         return None if table is None else table.columns
 
-    def get_column(self, table_name: str, column_name: str) -> Optional[ColumnSchema]:
+    def get_column(self, table_name: str, column_name: str) -> ColumnSchema | None:
         """Gets a column for a table
 
         Args:
@@ -174,7 +174,7 @@ class DatabaseConfig:
             return None
         return columns[0]
 
-    def _get_table_by_name(self, table_name: str) -> Optional[DatabaseTableConfig]:
+    def _get_table_by_name(self, table_name: str) -> DatabaseTableConfig | None:
         """Gets the config for the table if it exists
 
         Args:

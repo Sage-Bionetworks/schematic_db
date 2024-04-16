@@ -2,7 +2,6 @@
 
 # pylint: disable=duplicate-code
 
-from typing import Optional
 import warnings
 from pydantic.dataclasses import dataclass
 from pydantic import validator
@@ -145,7 +144,7 @@ class Schema:
         self.schema_url = config.schema_url
         self.display_label_type = display_label_type
         self.schema_graph = SchemaGraph(config.schema_url, display_label_type)
-        self.database_schema: Optional[DatabaseSchema] = None
+        self.database_schema: DatabaseSchema | None = None
 
     def get_database_schema(self) -> DatabaseSchema:
         """Gets the current database schema
@@ -169,7 +168,7 @@ class Schema:
         ]
         self.database_schema = DatabaseSchema(table_schemas)
 
-    def _create_table_schema(self, table_name: str) -> Optional[TableSchema]:
+    def _create_table_schema(self, table_name: str) -> TableSchema | None:
         """Creates the the schema for one table in the database, if any column
          schemas can be created.
 
@@ -195,14 +194,14 @@ class Schema:
     def _create_column_schemas(
         self,
         table_name: str,
-    ) -> Optional[list[ColumnSchema]]:
+    ) -> list[ColumnSchema] | None:
         """Create the column schemas for the table, if any can be created.
 
         Args:
             table_name (str): The name of the table to create the column schemas for
 
         Returns:
-            Optional[list[ColumnSchema]]: A list of columns in ColumnSchema form
+            list[ColumnSchema] | None: A list of columns in ColumnSchema form
         """
         # the names of the columns to be created, in label(not display) form
         column_names = find_class_specific_properties(

@@ -3,7 +3,7 @@ These are a set of classes for defining a database table in a dialect agnostic w
 """
 
 from enum import Enum
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 from pydantic.dataclasses import dataclass
 from pydantic import validator
 
@@ -114,7 +114,7 @@ class TableKeyError(Exception):
     """TableKeyError"""
 
     def __init__(
-        self, message: str, table_name: str, key: Optional[str] = None
+        self, message: str, table_name: str, key: str | None = None
     ) -> None:
         """
         Args:
