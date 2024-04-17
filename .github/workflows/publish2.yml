@@ -16,7 +16,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: "echo latest release: '${{ steps.get_latest_release.outputs.data }}'"
       - name: Override version tag
-        run: TAGS=${{ steps.get_latest_release.outputs.data }} poetry run python3 scripts/set_package_version.py
+        run: poetry run python3 scripts/set_package_version.py
         shell: sh
 
 
