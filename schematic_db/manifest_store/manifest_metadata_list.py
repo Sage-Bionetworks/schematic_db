@@ -5,7 +5,7 @@ from typing import Any
 import json
 import re
 from pydantic.dataclasses import dataclass
-from pydantic import validator
+from pydantic import field_validator
 
 
 @dataclass()
@@ -18,7 +18,7 @@ class ManifestMetadata:
     manifest_name: str
     component_name: str
 
-    @validator("dataset_id", "manifest_id")
+    @field_validator("dataset_id", "manifest_id")
     @classmethod
     def validate_synapse_id(cls, value: str) -> str:
         """Check if string is a valid synapse id
@@ -36,7 +36,7 @@ class ManifestMetadata:
             raise ValueError(f"{value} is not a valid Synapse id")
         return value
 
-    @validator("dataset_name", "manifest_name", "component_name")
+    @field_validator("dataset_name", "manifest_name", "component_name")
     @classmethod
     def validate_string_is_not_empty(cls, value: str) -> str:
         """Check if string  is not empty(has at least one char)

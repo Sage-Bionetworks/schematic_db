@@ -5,7 +5,7 @@ These are a set of classes for defining a database table in a dialect agnostic w
 from enum import Enum
 from typing import Any, TypeVar
 from pydantic.dataclasses import dataclass
-from pydantic import validator
+from pydantic import field_validator
 
 
 class ColumnDatatype(Enum):
@@ -33,7 +33,7 @@ class ColumnSchema:
     required: bool = False
     index: bool = False
 
-    @validator("name")
+    @field_validator("name")
     @classmethod
     def validate_string_is_not_empty(cls, value: str) -> str:
         """Check if string is not empty(has at least one char)
@@ -60,7 +60,7 @@ class ForeignKeySchema:
     foreign_table_name: str
     foreign_column_name: str
 
-    @validator("name", "foreign_table_name", "foreign_column_name")
+    @field_validator("name", "foreign_table_name", "foreign_column_name")
     @classmethod
     def validate_string_is_not_empty(cls, value: str) -> str:
         """Check if string  is not empty(has at least one char)
@@ -140,7 +140,7 @@ class TableSchema:
     primary_key: str
     foreign_keys: list[ForeignKeySchema]
 
-    @validator("name", "primary_key")
+    @field_validator("name", "primary_key")
     @classmethod
     def validate_string_is_not_empty(cls, value: str) -> str:
         """Check if string  is not empty(has at least one char)

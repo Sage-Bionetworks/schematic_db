@@ -4,7 +4,7 @@
 
 import warnings
 from pydantic.dataclasses import dataclass
-from pydantic import validator
+from pydantic import field_validator
 import validators
 from schematic_db.db_schema.db_schema import (
     DatabaseSchema,
@@ -99,7 +99,7 @@ class SchemaConfig:
 
     schema_url: str
 
-    @validator("schema_url")
+    @field_validator("schema_url", mode="before")
     @classmethod
     def validate_url(cls, value: str) -> str:
         """Validates that the value is a valid URL"""
@@ -108,7 +108,7 @@ class SchemaConfig:
             raise ValueError(f"{value} is a valid url")
         return value
 
-    @validator("schema_url")
+    @field_validator("schema_url", mode="before")
     @classmethod
     def validate_is_valid_type(cls, value: str) -> str:
         """Validates that the value is a jsonld or csv file"""
