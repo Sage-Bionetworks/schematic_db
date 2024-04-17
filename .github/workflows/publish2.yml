@@ -15,13 +15,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: "echo latest release: '${{ steps.get_latest_release.outputs.data }}'"
-      - name: print tags python
-        run: |
-          tags = ${{ steps.get_latest_release.outputs.data }}
-          print(tags)
-          for dct in tags:
-              print(dct)
-              print(dct["ref"])
-        shell: python
+      - name: Override version tag
+        run: TAGS=${{ steps.get_latest_release.outputs.data }} poetry run python3 override_version.py
+        shell: sh
 
 

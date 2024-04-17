@@ -1,8 +1,17 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "schematic_db"
-version = "0.1.1"
+version = "24.4.3"
 description = ""
-authors = ["andrewelamb <andrewelamb@gmail.com>"]
+authors = [ "andrewelamb <andrewelamb@gmail.com>",]
+
+[tool.interrogate]
+ignore-init-module = true
+ignore-magic = true
+fail-under = 90
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -16,42 +25,58 @@ tenacity = "^8.1.0"
 pydantic = "^2.7.0"
 validators = "^0.28.0"
 deprecation = "^2.1.0"
-
-mysqlclient = {version = "^2.1.1", optional = true}
-synapseclient = {version = "^4.1.0", optional = true}
-psycopg2-binary = {version = "^2.9.5", optional = true}
-
-pytest = {version = "^8.0.0", optional = true}
-pytest-mock = {version = "^3.10.0", optional = true}
-pdoc = {version = "^14.0.0", optional = true}
-mypy = {version = "^1.9.0", optional = true}
-mypy-extensions = {version = "^1.0.0", optional = true}
-pylint = {version = "^3.1.0", optional = true}
-black = {version = "24.4.0", optional = true}
-coverage = {version = "^7.2.0", optional = true}
-interrogate = {version = "^1.5.0", optional = true}
+toml = "^0.10.2"
 
 [tool.poetry.extras]
-mysql = ["mysqlclient"]
-postgres = ["psycopg2-binary"]
-synapse = ["synapseclient"]
-dev = [
-  "pytest", 
-  "pytest-mock", 
-  "pdoc", 
-  "mypy",
-  "mypy-extensions",
-  "pylint",
-  "black",
-  "coverage",
-  "interrogate"
-]
+mysql = [ "mysqlclient",]
+postgres = [ "psycopg2-binary",]
+synapse = [ "synapseclient",]
+dev = [ "pytest", "pytest-mock", "pdoc", "mypy", "mypy-extensions", "pylint", "black", "coverage", "interrogate",]
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.dependencies.mysqlclient]
+version = "^2.1.1"
+optional = true
 
-[tool.interrogate]
-ignore-init-module = true
-ignore-magic = true
-fail-under = 90
+[tool.poetry.dependencies.synapseclient]
+version = "^4.1.0"
+optional = true
+
+[tool.poetry.dependencies.psycopg2-binary]
+version = "^2.9.5"
+optional = true
+
+[tool.poetry.dependencies.pytest]
+version = "^8.0.0"
+optional = true
+
+[tool.poetry.dependencies.pytest-mock]
+version = "^3.10.0"
+optional = true
+
+[tool.poetry.dependencies.pdoc]
+version = "^14.0.0"
+optional = true
+
+[tool.poetry.dependencies.mypy]
+version = "^1.9.0"
+optional = true
+
+[tool.poetry.dependencies.mypy-extensions]
+version = "^1.0.0"
+optional = true
+
+[tool.poetry.dependencies.pylint]
+version = "^3.1.0"
+optional = true
+
+[tool.poetry.dependencies.black]
+version = "24.4.0"
+optional = true
+
+[tool.poetry.dependencies.coverage]
+version = "^7.2.0"
+optional = true
+
+[tool.poetry.dependencies.interrogate]
+version = "^1.5.0"
+optional = true
