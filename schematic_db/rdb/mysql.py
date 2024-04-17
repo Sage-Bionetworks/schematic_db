@@ -1,4 +1,5 @@
 """MySQLDatabase"""
+
 from typing import Any
 import pandas
 import numpy

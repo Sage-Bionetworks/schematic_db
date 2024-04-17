@@ -2,6 +2,7 @@
 ManifestStore is an abstract base class that implements an interface.
 The interface is used to interact with manifests
 """
+
 # pylint: disable=duplicate-code
 from abc import ABC, abstractmethod
 import re

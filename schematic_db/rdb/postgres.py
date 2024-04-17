@@ -1,4 +1,5 @@
 """Represents a Postgres database."""
+
 from typing import Any
 import numpy
 import pandas

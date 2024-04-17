@@ -1,4 +1,5 @@
 """Testing for RDBUpdater."""
+
 from typing import Generator
 import os
 import pytest
