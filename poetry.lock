@@ -1781,4 +1781,4 @@ synapse = ["synapseclient"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "effea605b588fc5fa5591bff658a31071a9262ae0c56258fd8df09c72aed98c8"
+content-hash = "c3802a20abeee7ac33abb2483d76eb29b1159b1fc144c356f8a14cca703339a4"

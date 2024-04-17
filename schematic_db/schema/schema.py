@@ -5,7 +5,6 @@
 import warnings
 from pydantic.dataclasses import dataclass
 from pydantic import field_validator
-import validators
 from schematic_db.db_schema.db_schema import (
     DatabaseSchema,
     TableSchema,
@@ -13,7 +12,7 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
     ColumnDatatype,
 )
-from schematic_db.api_utils.api_utils import (
+from schematic_db.utils.api_utils import (
     find_class_specific_properties,
     get_property_label_from_display_name,
     is_node_required,
@@ -22,7 +21,8 @@ from schematic_db.api_utils.api_utils import (
     SchematicAPITimeoutError,
 )
 from schematic_db.schema_graph.schema_graph import SchemaGraph
-from schematic_db.utils import DisplayLabelType
+from schematic_db.utils.types import DisplayLabelType
+from schematic_db.utils.validators import is_valid_url, is_data_model_file
 from .database_config import DatabaseConfig
 
 
@@ -95,27 +95,14 @@ class SchemaConfig:
     A config for a Schema.
     Properties:
         schema_url (str): A url to the jsonld schema file
+        display_label_type (DisplayLabelType): The type of label used for display purposes
     """
 
     schema_url: str
+    display_label_type: DisplayLabelType = "class_label"
 
-    @field_validator("schema_url", mode="before")
-    @classmethod
-    def validate_url(cls, value: str) -> str:
-        """Validates that the value is a valid URL"""
-        valid_url = validators.url(value)
-        if not valid_url:
-            raise ValueError(f"{value} is a valid url")
-        return value
-
-    @field_validator("schema_url", mode="before")
-    @classmethod
-    def validate_is_valid_type(cls, value: str) -> str:
-        """Validates that the value is a jsonld or csv file"""
-        is_valid_type = value.endswith(".jsonld") | value.endswith(".csv")
-        if not is_valid_type:
-            raise ValueError(f"{value} does end with '.jsonld', or '.csv")
-        return value
+    _validate_url = field_validator("schema_url")(is_valid_url)
+    _validate_url2 = field_validator("schema_url")(is_data_model_file)
 
 
 class Schema:
@@ -128,7 +115,6 @@ class Schema:
         self,
         config: SchemaConfig,
         database_config: DatabaseConfig = DatabaseConfig([]),
-        display_label_type: DisplayLabelType = "class_label",
     ) -> None:
         """
         The Schema class handles interactions with the schematic API.
@@ -138,12 +124,12 @@ class Schema:
             config (SchemaConfig): A config describing the basic inputs for the schema table
             database_config (DatabaseConfig): Experimental and will be deprecated in the near
              future. A config describing optional database specific columns.
-            display_label_type (DisplayLabelType): The type of label used for display purposes
+
         """
         self.database_config = database_config
         self.schema_url = config.schema_url
-        self.display_label_type = display_label_type
-        self.schema_graph = SchemaGraph(config.schema_url, display_label_type)
+        self.display_label_type = config.display_label_type
+        self.schema_graph = SchemaGraph(config.schema_url, config.display_label_type)
         self.database_schema: DatabaseSchema | None = None
 
     def get_database_schema(self) -> DatabaseSchema:

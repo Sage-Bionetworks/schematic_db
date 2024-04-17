@@ -3,9 +3,10 @@
 # pylint: disable=duplicate-code
 from typing import Any
 import json
-import re
 from pydantic.dataclasses import dataclass
 from pydantic import field_validator
+
+from schematic_db.utils.validators import is_synapse_id, string_is_not_empty
 
 
 @dataclass()
@@ -18,41 +19,11 @@ class ManifestMetadata:
     manifest_name: str
     component_name: str
 
-    @field_validator("dataset_id", "manifest_id")
-    @classmethod
-    def validate_synapse_id(cls, value: str) -> str:
-        """Check if string is a valid synapse id
-
-        Args:
-            value (str): A string
-
-        Raises:
-            ValueError: If the value isn't a valid Synapse id
-
-        Returns:
-            (str): The input value
-        """
-        if not re.search("^syn[0-9]+", value):
-            raise ValueError(f"{value} is not a valid Synapse id")
-        return value
-
-    @field_validator("dataset_name", "manifest_name", "component_name")
-    @classmethod
-    def validate_string_is_not_empty(cls, value: str) -> str:
-        """Check if string  is not empty(has at least one char)
-
-        Args:
-            value (str): A string
-
-        Raises:
-            ValueError: If the value is zero characters long
-
-        Returns:
-            (str): The input value
-        """
-        if len(value) == 0:
-            raise ValueError(f"{value} is an empty string")
-        return value
+    _validate_dataset_id = field_validator("dataset_id")(is_synapse_id)
+    _validate_manifest_id = field_validator("manifest_id")(is_synapse_id)
+    _validate_dataset_name = field_validator("dataset_name")(string_is_not_empty)
+    _validate_manifest_name = field_validator("manifest_name")(string_is_not_empty)
+    _validate_component_name = field_validator("component_name")(string_is_not_empty)
 
     def to_dict(self) -> dict[str, str]:
         """Returns object attributes as dict
@@ -73,6 +44,7 @@ class ManifestMetadata:
     def __repr__(self) -> str:
         """Prints object as dict"""
         return json.dumps(self.to_dict(), indent=4)
+
 
 
 class ManifestMetadataList:

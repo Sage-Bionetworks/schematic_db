@@ -65,6 +65,7 @@ class TestManifestMetadata:
         }
         manifest = ManifestMetadata(**dct)
         print(manifest)
+        assert False
 
 
 @pytest.mark.fast
