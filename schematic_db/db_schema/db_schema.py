@@ -1,8 +1,9 @@
 """DB schema
 These are a set of classes for defining a database table in a dialect agnostic way.
 """
+
 from enum import Enum
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 from pydantic.dataclasses import dataclass
 from pydantic import validator
 
@@ -112,9 +113,7 @@ class TableColumnError(Exception):
 class TableKeyError(Exception):
     """TableKeyError"""
 
-    def __init__(
-        self, message: str, table_name: str, key: Optional[str] = None
-    ) -> None:
+    def __init__(self, message: str, table_name: str, key: str | None = None) -> None:
         """
         Args:
             message (str): A message describing the error

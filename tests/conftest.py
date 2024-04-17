@@ -1,4 +1,5 @@
 """Fixtures for all tests"""
+
 import os
 from datetime import datetime
 from typing import Generator, Any

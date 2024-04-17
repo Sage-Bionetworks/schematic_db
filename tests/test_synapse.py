@@ -1,4 +1,5 @@
 """Testing for Synapse."""
+
 from typing import Any, Generator
 import pytest
 import pandas as pd

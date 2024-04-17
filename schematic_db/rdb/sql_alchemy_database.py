@@ -1,4 +1,5 @@
 """SQLAlchemy"""
+
 from dataclasses import dataclass
 import pandas
 import numpy

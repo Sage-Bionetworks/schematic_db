@@ -1,4 +1,5 @@
 """RDB Queryer"""
+
 import pandas as pd
 from schematic_db.rdb.rdb import RelationalDatabase
 from schematic_db.query_store.synapse_query_store import QueryStore

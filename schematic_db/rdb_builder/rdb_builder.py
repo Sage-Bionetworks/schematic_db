@@ -1,4 +1,5 @@
 """RDBBuilder"""
+
 # pylint: disable=logging-fstring-interpolation
 import logging
 from schematic_db.rdb.rdb import RelationalDatabase

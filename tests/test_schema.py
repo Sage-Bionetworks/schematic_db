@@ -1,4 +1,5 @@
 """Testing for Schema."""
+
 from typing import Generator, Any
 import pytest
 from deprecation import fail_if_not_removed

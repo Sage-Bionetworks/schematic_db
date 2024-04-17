@@ -1,7 +1,7 @@
 """The APIManifestStore class interacts with the Schematic API download manifests."""
+
 # pylint: disable=duplicate-code
 
-from typing import Optional
 import pandas
 from schematic_db.api_utils.api_utils import (
     get_project_manifests,
@@ -68,7 +68,7 @@ class APIManifestStore(ManifestStore):
         self.synapse_asset_view_id = config.synapse_asset_view_id
         self.synapse_auth_token = config.synapse_auth_token
         self.schema_graph = SchemaGraph(config.schema_url, display_label_type)
-        self.manifest_metadata: Optional[ManifestMetadataList] = None
+        self.manifest_metadata: ManifestMetadataList | None = None
 
     def create_sorted_table_name_list(self) -> list[str]:
         """

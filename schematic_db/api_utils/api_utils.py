@@ -1,7 +1,8 @@
 """Functions that interact with the schematic API"""
+
 # pylint: disable=duplicate-code
 
-from typing import Any, Optional
+from typing import Any
 from os import getenv
 from datetime import datetime
 import pytz
@@ -91,7 +92,7 @@ def create_schematic_api_response(
     endpoint_path: str,
     params: dict[str, Any],
     timeout: float = 30,
-    access_token: Optional[str] = None,
+    access_token: str | None = None,
 ) -> requests.Response:
     """Performs a GET request on the schematic API
 
