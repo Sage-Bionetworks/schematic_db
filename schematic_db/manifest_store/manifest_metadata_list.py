@@ -46,7 +46,6 @@ class ManifestMetadata:
         return json.dumps(self.to_dict(), indent=4)
 
 
-
 class ManifestMetadataList:
     """A list of Manifest Metadata"""
 
