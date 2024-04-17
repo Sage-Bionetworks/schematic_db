@@ -11,7 +11,7 @@ from schematic_db.rdb.rdb import (
 )
 from schematic_db.manifest_store.manifest_store import ManifestStore
 from schematic_db.db_schema.db_schema import TableSchema
-from schematic_db.api_utils.api_utils import ManifestMetadataList
+from schematic_db.utils.api_utils import ManifestMetadataList
 
 
 logging.getLogger(__name__)

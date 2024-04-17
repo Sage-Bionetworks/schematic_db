@@ -3,9 +3,12 @@ These are a set of classes for defining a database table in a dialect agnostic w
 """
 
 from enum import Enum
-from typing import Any, TypeVar
+from typing import Any
+from typing_extensions import Self
 from pydantic.dataclasses import dataclass
-from pydantic import validator
+from pydantic import field_validator, model_validator
+
+from schematic_db.utils.validators import string_is_not_empty
 
 
 class ColumnDatatype(Enum):
@@ -18,12 +21,6 @@ class ColumnDatatype(Enum):
     BOOLEAN = "boolean"
 
 
-# mypy types so that a class can refer to its own type
-X = TypeVar("X", bound="ColumnSchema")
-Y = TypeVar("Y", bound="TableSchema")
-T = TypeVar("T", bound="DatabaseSchema")
-
-
 @dataclass()
 class ColumnSchema:
     """A schema for a table column (attribute)."""
@@ -33,23 +30,7 @@ class ColumnSchema:
     required: bool = False
     index: bool = False
 
-    @validator("name")
-    @classmethod
-    def validate_string_is_not_empty(cls, value: str) -> str:
-        """Check if string is not empty(has at least one char)
-
-        Args:
-            value (str): A string
-
-        Raises:
-            ValueError: If the value is zero characters long
-
-        Returns:
-            (str): The input value
-        """
-        if len(value) == 0:
-            raise ValueError(f"{value} is an empty string")
-        return value
+    _validate_name = field_validator("name")(string_is_not_empty)
 
 
 @dataclass()
@@ -60,24 +41,13 @@ class ForeignKeySchema:
     foreign_table_name: str
     foreign_column_name: str
 
-    @validator("name", "foreign_table_name", "foreign_column_name")
-    @classmethod
-    def validate_string_is_not_empty(cls, value: str) -> str:
-        """Check if string  is not empty(has at least one char)
-
-        Args:
-            value (str): A string
-
-        Raises:
-            ValueError: If the value is zero characters long
-
-        Returns:
-            (str): The input value
-        """
-
-        if len(value) == 0:
-            raise ValueError(f"{value} is an empty string")
-        return value
+    _validate_name = field_validator("name")(string_is_not_empty)
+    _validate_foreign_table_name = field_validator("foreign_table_name")(
+        string_is_not_empty
+    )
+    _validate_foreign_column_name = field_validator("foreign_column_name")(
+        string_is_not_empty
+    )
 
     def get_column_dict(self) -> dict[str, str]:
         """Returns the foreign key in dict form
@@ -140,33 +110,24 @@ class TableSchema:
     primary_key: str
     foreign_keys: list[ForeignKeySchema]
 
-    @validator("name", "primary_key")
-    @classmethod
-    def validate_string_is_not_empty(cls, value: str) -> str:
-        """Check if string  is not empty(has at least one char)
+    _validate_name = field_validator("name")(string_is_not_empty)
+    _validate_primary_key = field_validator("primary_key")(string_is_not_empty)
 
-        Args:
-            value (str): A string
-
-        Raises:
-            ValueError: If the value is zero characters long
+    @model_validator(mode="after")
+    def check_self(self) -> Self:
+        """Performs validation on whole object
 
         Returns:
-            (str): The input value
+            Self: The object itself
         """
-        if len(value) == 0:
-            raise ValueError(f"{value} is an empty string")
-        return value
-
-    def __post_init__(self) -> None:
-        """Happens after initialization"""
         self.columns.sort(key=lambda x: x.name)
         self.foreign_keys.sort(key=lambda x: x.name)
         self._check_columns()
         self._check_primary_key()
         self._check_foreign_keys()
+        return self
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: Self) -> bool:  # type: ignore[override]
         """Overrides the default implementation"""
         return self.get_sorted_columns() == other.get_sorted_columns()
 
@@ -339,9 +300,16 @@ class DatabaseSchema:
 
     table_schemas: list[TableSchema]
 
-    def __post_init__(self) -> None:
+    @model_validator(mode="after")
+    def check_self(self) -> Self:
+        """Performs validation on whole object
+
+        Returns:
+            Self: The object itself
+        """
         for schema in self.table_schemas:
             self._check_foreign_keys(schema)
+        return self
 
     def __eq__(self, other: Any) -> bool:
         """Overrides the default implementation"""

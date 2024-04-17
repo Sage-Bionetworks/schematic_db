@@ -6,9 +6,9 @@ This is used to interact with manifests
 
 import pandas
 from schematic_db.schema_graph.schema_graph import SchemaGraph
-from schematic_db.api_utils.api_utils import ManifestMetadataList
+from schematic_db.utils.api_utils import ManifestMetadataList
 from schematic_db.synapse.synapse import Synapse
-from schematic_db.utils import DisplayLabelType
+from schematic_db.utils.types import DisplayLabelType
 from .manifest_store import ManifestStore, ManifestStoreConfig
 
 

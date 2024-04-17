@@ -9,7 +9,7 @@ import pytz
 import requests
 import pandas
 from schematic_db.manifest_store.manifest_metadata_list import ManifestMetadataList
-from schematic_db.utils import DisplayLabelType
+from schematic_db.utils.types import DisplayLabelType
 
 
 class SchematicAPIError(Exception):

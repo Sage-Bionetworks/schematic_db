@@ -5,12 +5,16 @@ The interface is used to interact with manifests
 
 # pylint: disable=duplicate-code
 from abc import ABC, abstractmethod
-import re
 import pandas
 from pydantic.dataclasses import dataclass
-from pydantic import validator
-import validators
-from schematic_db.api_utils.api_utils import ManifestMetadataList
+from pydantic import field_validator
+from schematic_db.utils.validators import (
+    is_valid_url,
+    is_data_model_file,
+    is_synapse_id,
+    string_is_not_empty,
+)
+from schematic_db.utils.api_utils import ManifestMetadataList
 
 
 @dataclass()
@@ -30,39 +34,11 @@ class ManifestStoreConfig:
     synapse_asset_view_id: str
     synapse_auth_token: str
 
-    @validator("schema_url")
-    @classmethod
-    def validate_url(cls, value: str) -> str:
-        """Validates that the value is a valid URL"""
-        valid_url = validators.url(value)
-        if not valid_url:
-            raise ValueError(f"{value} is a valid url")
-        return value
-
-    @validator("schema_url")
-    @classmethod
-    def validate_is_valid_type(cls, value: str) -> str:
-        """Validates that the value is a jsonld or csv file"""
-        is_valid_type = value.endswith(".jsonld") | value.endswith(".csv")
-        if not is_valid_type:
-            raise ValueError(f"{value} does end with '.jsonld', or '.csv")
-        return value
-
-    @validator("synapse_project_id", "synapse_asset_view_id")
-    @classmethod
-    def validate_synapse_id(cls, value: str) -> str:
-        """Check if string is a valid synapse id"""
-        if not re.search("^syn[0-9]+", value):
-            raise ValueError(f"{value} is not a valid Synapse id")
-        return value
-
-    @validator("synapse_auth_token")
-    @classmethod
-    def validate_string_is_not_empty(cls, value: str) -> str:
-        """Check if string  is not empty(has at least one char)"""
-        if len(value) == 0:
-            raise ValueError(f"{value} is an empty string")
-        return value
+    _validate_url = field_validator("schema_url")(is_valid_url)
+    _validate_url2 = field_validator("schema_url")(is_data_model_file)
+    _validate_project_id = field_validator("synapse_project_id")(is_synapse_id)
+    _validate_asset_view_id = field_validator("synapse_asset_view_id")(is_synapse_id)
+    _validate_auth_token = field_validator("synapse_auth_token")(string_is_not_empty)
 
 
 class ManifestStore(ABC):
