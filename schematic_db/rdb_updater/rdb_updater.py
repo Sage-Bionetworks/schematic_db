@@ -6,7 +6,6 @@ import logging
 import pandas as pd
 from schematic_db.rdb.rdb import (
     RelationalDatabase,
-    UpsertDatabaseError,
     InsertDatabaseError,
 )
 from schematic_db.manifest_store.manifest_store import ManifestStore
@@ -248,6 +247,6 @@ class RDBUpdater:
                 raise ValueError(
                     f"Parameter method must be one of ['insert', 'upsert'] not {method}"
                 )
-        except (UpsertDatabaseError, InsertDatabaseError) as exc:
+        except (InsertDatabaseError) as exc:
             raise UpdateError(table_name, manifest_id) from exc
         logging.info("Finished updating manifest")

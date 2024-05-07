@@ -7,9 +7,10 @@ import sqlalchemy
 import sqlalchemy.dialects.postgresql
 from sqlalchemy.inspection import inspect
 from sqlalchemy import exc
+from sqlalchemy.exc import DataError, SQLAlchemyError
 from schematic_db.db_schema.db_schema import ColumnDatatype
 from .sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
-from .rdb import UpsertDatabaseError
+from .rdb import InsertDatabaseError
 
 
 class PostgresDatabase(SQLAlchemyDatabase):
@@ -52,7 +53,7 @@ class PostgresDatabase(SQLAlchemyDatabase):
             data (pandas.DataFrame): The rows to be upserted
 
         Raises:
-            UpsertDatabaseError: Raised when a SQLAlchemy error caught
+            InsertDatabaseError: Raised when a SQLAlchemy error caught while tryign to do the upsert
         """
         table = self._get_table_object(table_name)
         data = data.replace({numpy.nan: None})
@@ -61,8 +62,11 @@ class PostgresDatabase(SQLAlchemyDatabase):
         primary_key = inspect(table_schema).primary_key.columns.values()[0].name
         try:
             self._upsert_table_rows(rows, table, table_name, primary_key)
-        except exc.SQLAlchemyError as exception:
-            raise UpsertDatabaseError(table_name) from exception
+        except DataError as exception:
+            # Insert errors can be quite large, so only part of the error message is presented
+            raise InsertDatabaseError(table_name, exception.args[0]) from None
+        except SQLAlchemyError as exception:
+            raise InsertDatabaseError(table_name) from exception
 
     def _upsert_table_rows(
         self,

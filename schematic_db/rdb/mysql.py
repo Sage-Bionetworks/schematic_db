@@ -11,7 +11,7 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
 )
 from .sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
-from .rdb import UpsertDatabaseError
+from .rdb import InsertDatabaseError
 
 
 class MySQLDatabase(SQLAlchemyDatabase):
@@ -54,7 +54,7 @@ class MySQLDatabase(SQLAlchemyDatabase):
             data (pandas.DataFrame): The rows to be upserted
 
         Raises:
-            UpsertDatabaseError: Raised when a SQLAlchemy error caught
+            InsertDatabaseError: Raised when a SQLAlchemy error caught
         """
         table = self._get_table_object(table_name)
         data = data.replace({numpy.nan: None})
@@ -63,7 +63,7 @@ class MySQLDatabase(SQLAlchemyDatabase):
             try:
                 self._upsert_table_row(row, table, table_name)
             except exc.SQLAlchemyError as exception:
-                raise UpsertDatabaseError(table_name) from exception
+                raise InsertDatabaseError(table_name) from exception
 
     def _upsert_table_row(
         self,
