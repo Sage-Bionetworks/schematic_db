@@ -23,7 +23,7 @@ DATATYPES = {
     deprecated_in="0.0.27",
     details=(
         "Functionality will be accomplished with future Schematic API calls. "
-        "This will be sunsetted in ~0.1.1.",
+        "This will be sunsetted in ~1.0 .",
     ),
 )
 class DatabaseTableConfig:  # pylint: disable=too-few-public-methods
