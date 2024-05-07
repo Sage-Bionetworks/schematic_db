@@ -6,7 +6,6 @@ import pandas
 import sqlalchemy
 import sqlalchemy.dialects.postgresql
 from sqlalchemy.inspection import inspect
-from sqlalchemy import exc
 from sqlalchemy.exc import DataError, SQLAlchemyError
 from schematic_db.db_schema.db_schema import ColumnDatatype
 from .sql_alchemy_database import SQLAlchemyDatabase, SQLConfig

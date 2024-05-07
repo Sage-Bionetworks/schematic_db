@@ -5,7 +5,7 @@ import pandas
 import numpy
 import sqlalchemy
 import sqlalchemy_utils
-from sqlalchemy import exc
+from sqlalchemy.exc import DataError, SQLAlchemyError
 from sqlalchemy.inspection import inspect
 from sqlalchemy.sql.schema import Table as SQLAlchemyTable
 from schematic_db.db_schema.db_schema import (
@@ -228,7 +228,10 @@ class SQLAlchemyDatabase(
         try:
             with self.engine.begin() as conn:
                 conn.execute(statement)
-        except exc.SQLAlchemyError as exception:
+        except DataError as exception:
+            # Insert errors can be quite large, so only part of the error message is presented
+            raise InsertDatabaseError(table_name, exception.args[0]) from None
+        except SQLAlchemyError as exception:
             raise InsertDatabaseError(table_name) from exception
 
     def drop_table(self, table_name: str) -> None:

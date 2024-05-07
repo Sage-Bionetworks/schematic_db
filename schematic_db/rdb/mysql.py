@@ -5,7 +5,7 @@ import pandas
 import numpy
 import sqlalchemy
 import sqlalchemy.dialects.mysql
-from sqlalchemy import exc
+from sqlalchemy.exc import DataError, SQLAlchemyError
 from schematic_db.db_schema.db_schema import (
     ColumnDatatype,
     ColumnSchema,
@@ -62,7 +62,10 @@ class MySQLDatabase(SQLAlchemyDatabase):
         for row in rows:
             try:
                 self._upsert_table_row(row, table, table_name)
-            except exc.SQLAlchemyError as exception:
+            except DataError as exception:
+                # Insert errors can be quite large, so only part of the error message is presented
+                raise InsertDatabaseError(table_name, exception.args[0]) from None
+            except SQLAlchemyError as exception:
                 raise InsertDatabaseError(table_name) from exception
 
     def _upsert_table_row(
