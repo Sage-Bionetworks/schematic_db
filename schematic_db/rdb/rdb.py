@@ -5,36 +5,26 @@ import pandas as pd
 from schematic_db.db_schema.db_schema import TableSchema
 
 
-class UpsertDatabaseError(Exception):
-    """Raised when a database class catches an error doing an upsert"""
-
-    def __init__(self, table_name: str) -> None:
-        """
-        Args:
-            table_name (str): The name of the table being upserted into
-        """
-        self.message = "Error upserting table"
-        self.table_name = table_name
-        super().__init__(self.message)
-
-    def __str__(self) -> str:
-        return f"{self.message}; Table Name: {self.table_name}"
-
-
 class InsertDatabaseError(Exception):
     """Raised when a database class catches an error doing an insert"""
 
-    def __init__(self, table_name: str) -> None:
+    def __init__(self, table_name: str, sql_error: str | None = None) -> None:
         """
         Args:
             table_name (str): The name of the table being inserted into
+            sql_error (str | None): An otpional SQL error message
+
         """
-        self.message = "Error inserting table"
+        self.message = "Error inserting/upserting dataframe into table:"
         self.table_name = table_name
+        self.sql_error = sql_error
         super().__init__(self.message)
 
     def __str__(self) -> str:
-        return f"{self.message}; Table Name: {self.table_name}"
+        msg = f"{self.message}; Name: {self.table_name}"
+        if self.sql_error is not None:
+            msg = f"{msg}; Error: {self.sql_error}"
+        return msg
 
 
 class RelationalDatabase(ABC):

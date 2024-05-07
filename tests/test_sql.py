@@ -24,7 +24,7 @@ from schematic_db.rdb.rdb import RelationalDatabase
 from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.sql_alchemy_database import SQLAlchemyDatabase
-from schematic_db.rdb.rdb import UpsertDatabaseError, InsertDatabaseError
+from schematic_db.rdb.rdb import InsertDatabaseError
 
 
 @pytest.fixture(name="sql_databases", scope="module")
@@ -311,7 +311,7 @@ class TestSQLUpdateRows:
         Expecting errors
         """
         for obj in sql_databases:
-            with pytest.raises(UpsertDatabaseError):
+            with pytest.raises(InsertDatabaseError):
                 obj.add_table(table_two_schema)
                 obj.upsert_table_rows(
                     "table_two", pd.DataFrame({"pk_two_col": [pd.NA]})
