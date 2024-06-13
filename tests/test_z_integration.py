@@ -237,7 +237,7 @@ class TestIntegration2:
             assert len(table.index) > 0
 
 
-class TestIntegration3: # pylint: disable=too-few-public-methods
+class TestIntegration3:  # pylint: disable=too-few-public-methods
     """Integration tests with upserts only update one table"""
 
     def test_mysql(  # pylint: disable=too-many-arguments
