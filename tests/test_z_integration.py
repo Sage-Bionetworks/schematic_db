@@ -237,7 +237,7 @@ class TestIntegration2:
             assert len(table.index) > 0
 
 
-class TestIntegration3:
+class TestIntegration3: # pylint: disable=too-few-public-methods
     """Integration tests with upserts only update one table"""
 
     def test_mysql(  # pylint: disable=too-many-arguments
@@ -251,7 +251,6 @@ class TestIntegration3:
         assert rdb_builder.rdb.get_table_names() == []
         rdb_builder.build_database()
         assert rdb_builder.rdb.get_table_names() == test_schema_table_names
-
 
         rdb_updater = rdb_updater_mysql
         rdb_updater.update_database(table_names=["Patient"])
