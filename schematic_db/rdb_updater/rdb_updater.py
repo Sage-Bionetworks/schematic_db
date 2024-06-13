@@ -110,15 +110,22 @@ class RDBUpdater:
         self.rdb = rdb
         self.manifest_store = manifest_store
 
-    def update_database(self, method: UpdateMethod = "upsert") -> None:
+    def update_database(
+        self, method: UpdateMethod = "upsert", table_names: list[str] | None = None
+    ) -> None:
         """Updates all tables in database
 
         Args:
             method (UpdateMethod): The method used to update each table. Defaults to "upsert".
+            table_names (list[str] | None): If not None, only these tables will be updated
         """
         logging.info("Updating database")
-        table_names = self.manifest_store.create_sorted_table_name_list()
-        for name in table_names:
+        tables_to_update = self.manifest_store.create_sorted_table_name_list()
+        if table_names is not None:
+            tables_to_update = [
+                table for table in tables_to_update if table in table_names
+            ]
+        for name in tables_to_update:
             self.update_table(name, method=method)
         logging.info("Database updated")
 

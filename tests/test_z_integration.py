@@ -235,3 +235,30 @@ class TestIntegration2:
         for name in test_schema_table_names:
             table = rdb_updater.rdb.query_table(name)
             assert len(table.index) > 0
+
+
+class TestIntegration3:
+    """Integration tests with upserts only update one table"""
+
+    def test_mysql(  # pylint: disable=too-many-arguments
+        self,
+        rdb_builder_mysql: RDBBuilder,
+        rdb_updater_mysql: RDBUpdater,
+        test_schema_table_names: list[str],
+    ) -> None:
+        """Creates the test database in MySQL"""
+        rdb_builder = rdb_builder_mysql
+        assert rdb_builder.rdb.get_table_names() == []
+        rdb_builder.build_database()
+        assert rdb_builder.rdb.get_table_names() == test_schema_table_names
+
+
+        rdb_updater = rdb_updater_mysql
+        rdb_updater.update_database(table_names=["Patient"])
+
+        for name in test_schema_table_names:
+            table = rdb_updater.rdb.query_table(name)
+            if name == "Patient":
+                assert len(table.index) > 0
+            else:
+                assert len(table.index) == 0
