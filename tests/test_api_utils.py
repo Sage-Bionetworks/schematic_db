@@ -2,7 +2,7 @@
 
 import pytest
 import pandas
-from schematic_db.api_utils.api_utils import (
+from schematic_db.utils.api_utils import (
     create_schematic_api_response,
     find_class_specific_properties,
     get_property_label_from_display_name,

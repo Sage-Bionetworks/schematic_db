@@ -1,8 +1,8 @@
 """Stores the graph structure of the database schema"""
 
 import networkx
-from schematic_db.api_utils.api_utils import get_graph_by_edge_type
-from schematic_db.utils import DisplayLabelType
+from schematic_db.utils.api_utils import get_graph_by_edge_type
+from schematic_db.utils.types import DisplayLabelType
 
 
 class SchemaGraph:

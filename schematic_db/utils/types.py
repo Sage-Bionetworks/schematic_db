@@ -1,4 +1,4 @@
-"""Utils used by various modules"""
+"""Types used by various modules"""
 
 from typing import Literal
 

@@ -3,13 +3,13 @@
 # pylint: disable=duplicate-code
 
 import pandas
-from schematic_db.api_utils.api_utils import (
+from schematic_db.utils.api_utils import (
     get_project_manifests,
     download_manifest,
     ManifestMetadataList,
 )
 from schematic_db.schema_graph.schema_graph import SchemaGraph
-from schematic_db.utils import DisplayLabelType
+from schematic_db.utils.types import DisplayLabelType
 from .manifest_store import ManifestStore, ManifestStoreConfig
 
 
