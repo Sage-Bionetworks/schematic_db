@@ -19,16 +19,19 @@ class SynapseManifestStore(ManifestStore):
         self,
         config: ManifestStoreConfig,
         display_label_type: DisplayLabelType = "class_label",
+        purge_synapse_cache: bool = False,
     ) -> None:
         """
         Args:
             config (ManifestStoreConfig): A config with setup values
             display_model_type (DisplayLabelType): The type of label used for display purposes
+            purge_synapse_cache (bool): If True, the synapse cache is purged after downloading a csv
         """
         self.synapse_asset_view_id = config.synapse_asset_view_id
         self.synapse = Synapse(config.synapse_auth_token, config.synapse_project_id)
         self.schema_graph = SchemaGraph(config.schema_url, display_label_type)
         self.manifest_metadata: ManifestMetadataList | None = None
+        self.purge_synapse_cache = purge_synapse_cache
 
     def create_sorted_table_name_list(self) -> list[str]:
         """
@@ -82,4 +85,6 @@ class SynapseManifestStore(ManifestStore):
         Returns:
             pandas.DataFrame: The manifest in dataframe form
         """
-        return self.synapse.download_csv_as_dataframe(manifest_id)
+        return self.synapse.download_csv_as_dataframe(
+            manifest_id, purge_cache=self.purge_synapse_cache
+        )

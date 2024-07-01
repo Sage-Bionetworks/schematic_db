@@ -1,6 +1,8 @@
 """Synapse"""
 
 from typing import Any
+import os
+from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 import synapseclient  # type: ignore
 import pandas  # type: ignore
@@ -47,29 +49,46 @@ class Synapse:  # pylint: disable=too-many-public-methods
     The Synapse class handles interactions with a project in Synapse.
     """
 
-    def __init__(self, auth_token: str, project_id: str) -> None:
+    def __init__(
+        self, auth_token: str, project_id: str, cache_root_dir: str | None = None
+    ) -> None:
         """Init
 
         Args:
             auth_token (str): A Synapse auth_token
             project_id (str): A Synapse id for a project
+            cache_root_dir( str | None): Where the directory of the synapse cache should be located
         """
         self.project_id = project_id
-        syn = synapseclient.Synapse()
+        syn = synapseclient.Synapse(cache_root_dir=cache_root_dir)
         syn.login(authToken=auth_token, silent=True)
         self.syn = syn
 
-    def download_csv_as_dataframe(self, synapse_id: str) -> pandas.DataFrame:
+    def purge_cache(self) -> None:
+        """purges the synapse cache"""
+        self.syn.cache.purge(before_date=datetime.now())
+
+    def list_files_in_cache(self) -> list[str]:
+        """creates a flat list of all files in the cache"""
+        return sum([f for _, _, f in os.walk(self.syn.cache.cache_root_dir)], [])
+
+    def download_csv_as_dataframe(
+        self, synapse_id: str, purge_cache: bool = False
+    ) -> pandas.DataFrame:
         """Downloads a csv file form Synapse and reads it
 
         Args:
             synapse_id (str): The Synapse id of the file
+            purge_cache (bool): If true the synapse cache is purged after downloading
 
         Returns:
             pandas.DataFrame: The file in dataframe form
         """
         entity = self.syn.get(synapse_id)
-        return pandas.read_csv(entity.path, keep_default_na=False, na_values="")
+        df = pandas.read_csv(entity.path, keep_default_na=False, na_values="")
+        if purge_cache:
+            self.purge_cache()
+        return df
 
     def get_table_names(self) -> list[str]:
         """Gets the names of the tables in the schema
