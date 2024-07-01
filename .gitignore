@@ -68,3 +68,6 @@ pytestdebug.log
 # Translations
 *.mo
 *.pot
+
+# generated test files
+tests/cache/*

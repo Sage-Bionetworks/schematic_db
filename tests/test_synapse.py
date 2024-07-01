@@ -117,6 +117,29 @@ class TestMockSynapse:
         assert isinstance(obj.query_table("syn1"), pd.DataFrame)
 
 
+class TestSynapse:
+    """Testing for Synapse class methods"""
+
+    def test_download_csv_as_dataframe(
+        self, synapse_object_with_cache: Synapse
+    ) -> None:
+        """Testing for Synapse.download_csv_as_dataframe"""
+        df = synapse_object_with_cache.download_csv_as_dataframe("syn47996491")
+        assert isinstance(df, pd.DataFrame)
+        df = synapse_object_with_cache.download_csv_as_dataframe(
+            "syn47996491", purge_cache=True
+        )
+        assert isinstance(df, pd.DataFrame)
+
+    def test_cache(self, synapse_object_with_cache: Synapse) -> None:
+        """Testing for Synapse.purge_cache and Synapse.list_files_in_cache"""
+        obj = synapse_object_with_cache
+        obj.download_csv_as_dataframe("syn47996491")
+        assert "synapse_storage_manifest.csv" in obj.list_files_in_cache()
+        synapse_object_with_cache.purge_cache()
+        assert "synapse_storage_manifest.csv" not in obj.list_files_in_cache()
+
+
 class TestSynapseGetters:
     """Testing for Synapse class getters"""
 

@@ -174,6 +174,20 @@ def fixture_synapse_object(
     )
 
 
+@pytest.fixture(scope="session", name="synapse_object_with_cache")
+def fixture_synapse_object_with_cache(
+    secrets_dict: dict[str, Any]
+) -> Generator[Synapse, None, None]:
+    """
+    Yields a Synapse object
+    """
+    yield Synapse(
+        auth_token=secrets_dict["synapse"]["auth_token"],
+        project_id=secrets_dict["synapse"]["project_id"],
+        cache_root_dir="./tests/cache",
+    )
+
+
 @pytest.fixture(scope="session", name="synapse_database")
 def fixture_synapse_database(
     secrets_dict: dict[str, Any]
