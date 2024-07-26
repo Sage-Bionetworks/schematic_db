@@ -261,3 +261,25 @@ class TestIntegration3:  # pylint: disable=too-few-public-methods
                 assert len(table.index) > 0
             else:
                 assert len(table.index) == 0
+
+
+class TestIntegration4:  # pylint: disable=too-few-public-methods
+    """Integration tests with chunking patient table"""
+
+    def test_mysql(  # pylint: disable=too-many-arguments
+        self,
+        rdb_builder_mysql: RDBBuilder,
+        rdb_updater_mysql: RDBUpdater,
+        test_schema_table_names: list[str],
+    ) -> None:
+        """Creates the test database in MySQL"""
+        rdb_builder = rdb_builder_mysql
+        assert rdb_builder.rdb.get_table_names() == []
+        rdb_builder.build_database()
+        assert rdb_builder.rdb.get_table_names() == test_schema_table_names
+
+        rdb_updater = rdb_updater_mysql
+        rdb_updater.update_database(table_names=["Patient"], chunk_size=1)
+
+        table = rdb_updater.rdb.query_table("Patient")
+        assert len(table.index) == 8

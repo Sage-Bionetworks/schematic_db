@@ -13,6 +13,7 @@ from schematic_db.rdb.rdb import (
 from schematic_db.manifest_store.manifest_store import ManifestStore
 from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.utils.api_utils import ManifestMetadataList
+from schematic_db.utils.dataframe_utils import split_table_into_chunks
 
 
 logging.getLogger(__name__)
@@ -111,13 +112,19 @@ class RDBUpdater:
         self.manifest_store = manifest_store
 
     def update_database(
-        self, method: UpdateMethod = "upsert", table_names: list[str] | None = None
+        self,
+        method: UpdateMethod = "upsert",
+        table_names: list[str] | None = None,
+        chunk_size: int | None = None,
     ) -> None:
         """Updates all tables in database
 
         Args:
             method (UpdateMethod): The method used to update each table. Defaults to "upsert".
             table_names (list[str] | None): If not None, only these tables will be updated
+            chunk_size (int | None): When updating a database table, this splits the the input
+                table into chunks first. Each table will be split into chunks with row number equal
+                to this parameter. This can be used when the update includes large tables.
         """
         logging.info("Updating database")
         tables_to_update = self.manifest_store.create_sorted_table_name_list()
@@ -126,10 +133,15 @@ class RDBUpdater:
                 table for table in tables_to_update if table in table_names
             ]
         for name in tables_to_update:
-            self.update_table(name, method=method)
+            self.update_table(name, method=method, chunk_size=chunk_size)
         logging.info("Database updated")
 
-    def update_table(self, table_name: str, method: UpdateMethod = "upsert") -> None:
+    def update_table(
+        self,
+        table_name: str,
+        method: UpdateMethod = "upsert",
+        chunk_size: int | None = None,
+    ) -> None:
         """
         Updates a table in the database based on one or more manifests.
         If any of the manifests don't exist a warning will be raised.
@@ -137,6 +149,9 @@ class RDBUpdater:
         Args:
             table_name (str): The name of the table to be updated
             method (UpdateMethod): The method used to update each table. Defaults to "upsert".
+            chunk_size (int | None): When updating a database table, this splits the the input
+                table into chunks first. The table will be split into chunks with row number equal
+                to this parameter. This can be used when the update includes large tables.
         """
         manifest_ids = self.manifest_store.get_manifest_ids(table_name)
 
@@ -150,10 +165,16 @@ class RDBUpdater:
             return
 
         for manifest_id in manifest_ids:
-            self._update_table_with_manifest_id(table_name, manifest_id, method)
+            self._update_table_with_manifest_id(
+                table_name, manifest_id, method, chunk_size
+            )
 
     def _update_table_with_manifest_id(
-        self, table_name: str, manifest_id: str, method: UpdateMethod = "upsert"
+        self,
+        table_name: str,
+        manifest_id: str,
+        method: UpdateMethod = "upsert",
+        chunk_size: int | None = None,
     ) -> None:
         """Updates a table in the database with a manifest
 
@@ -161,6 +182,9 @@ class RDBUpdater:
             table_name (str): The name of the table
             manifest_id (str): The id of the manifest
             method (UpdateMethod): The method used to update each table. Defaults to "upsert".
+            chunk_size (int | None): When updating a database table, this splits the the input
+                table into chunks first. The table will be split into chunks with row number equal
+                to this parameter. This can be used when the update includes large tables.
 
         Raises:
             ManifestPrimaryKeyError: Raised when the manifest table is missing its primary key
@@ -181,7 +205,7 @@ class RDBUpdater:
         normalized_table = self._normalize_table(manifest_table, table_schema)
 
         self._update_table_with_manifest(
-            normalized_table, table_name, manifest_id, method
+            normalized_table, table_name, manifest_id, method, chunk_size
         )
 
     def _download_manifest(self, table_name: str, manifest_id: str) -> pd.DataFrame:
@@ -227,12 +251,13 @@ class RDBUpdater:
         table.reset_index(inplace=True, drop=True)
         return table
 
-    def _update_table_with_manifest(
+    def _update_table_with_manifest(  # pylint: disable=too-many-arguments
         self,
         table: pd.DataFrame,
         table_name: str,
         manifest_id: str,
         method: UpdateMethod = "upsert",
+        chunk_size: int | None = None,
     ) -> None:
         """Updates the database table with the input table and performs logging
 
@@ -241,19 +266,25 @@ class RDBUpdater:
             table_name (str): The name of the table to be upserted into
             manifest_id (str): The id of the manifest
             method (UpdateMethod): The method used to update each table. Defaults to "upsert".
+            chunk_size (int | None): When updating a database table, this splits the the input
+                table into chunks first. The table will be split into chunks with row number equal
+                to this parameter. This can be used when the update includes large tables.
 
         Raises:
             UpdateError: Raised when there is an UpsertDatabaseError or InsertDatabaseError caught
             ValueError: Raised when method is not one of ['insert', 'upsert']
         """
         logging.info(
-            f"Updating manifest; table name: {table_name}; manifest id: {manifest_id}"
+            f"Updating table with manifest; table name: {table_name}; manifest id: {manifest_id}"
         )
+        split_tables = split_table_into_chunks(table, chunk_size)
         try:
-            if method == "upsert":
-                self.rdb.upsert_table_rows(table_name, table)
-            else:
-                self.rdb.insert_table_rows(table_name, table)
+            for i, split_table in enumerate(split_tables):
+                logging.info(f"Updating table chunk no. #{i}")
+                if method == "upsert":
+                    self.rdb.upsert_table_rows(table_name, split_table)
+                else:
+                    self.rdb.insert_table_rows(table_name, split_table)
         except InsertDatabaseError as exc:
             raise UpdateError(table_name, manifest_id) from exc
-        logging.info("Finished updating manifest")
+        logging.info("Finished updating table")
