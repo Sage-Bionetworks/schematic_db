@@ -17,13 +17,14 @@ postgres:
 """
 
 from collections.abc import Generator
+from copy import copy
 import pytest
 import pandas as pd
 from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.rdb.rdb import RelationalDatabase
 from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
-from schematic_db.rdb.sql_alchemy_database import SQLAlchemyDatabase
+from schematic_db.rdb.sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
 from schematic_db.rdb.rdb import InsertDatabaseError
 
 
@@ -34,6 +35,35 @@ def fixture_sql_databases(
 ) -> Generator[list[RelationalDatabase], None, None]:
     """Yields a list of databases to test"""
     yield [mysql_database, postgres_database]
+
+
+@pytest.mark.fast
+class TestInit:
+    """Test creation of database objects"""
+
+    def test_postgres(self, postgres_config: SQLConfig) -> None:
+        """Test using no port and with port as imput"""
+
+        config1 = copy(postgres_config)
+        database1 = PostgresDatabase(config1)
+        assert database1.get_table_names() == []
+
+        config2 = copy(postgres_config)
+        config2.port = 5432
+        database2 = PostgresDatabase(config2)
+        assert database2.get_table_names() == []
+
+    def test_mysql(self, mysql_config: SQLConfig) -> None:
+        """Test using no port and with port as imput"""
+
+        config1 = copy(mysql_config)
+        database1 = MySQLDatabase(config1)
+        assert database1.get_table_names() == []
+
+        config2 = copy(mysql_config)
+        config2.port = 5432
+        database2 = MySQLDatabase(config2)
+        assert database2.get_table_names() == []
 
 
 @pytest.mark.fast

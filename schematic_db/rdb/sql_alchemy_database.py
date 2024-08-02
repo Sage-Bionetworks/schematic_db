@@ -116,6 +116,7 @@ class SQLConfig:
     password: str
     host: str
     name: str
+    port: int | None = None
 
 
 class SQLAlchemyDatabase(
@@ -154,6 +155,7 @@ class SQLAlchemyDatabase(
         self.password = config.password
         self.host = config.host
         self.name = config.name
+        self.port = config.port
         self.verbose = verbose
         self.db_type_string = db_type_string
         self.create_database()
@@ -164,7 +166,13 @@ class SQLAlchemyDatabase(
 
     def create_database(self) -> None:
         """Creates the database"""
-        url = f"{self.db_type_string}://{self.username}:{self.password}@{self.host}/{self.name}"
+        if self.port:
+            url = (
+                f"{self.db_type_string}://{self.username}:{self.password}"
+                f"@{self.host}:{self.port}/{self.name}"
+            )
+        else:
+            url = f"{self.db_type_string}://{self.username}:{self.password}@{self.host}/{self.name}"
         db_exists = sqlalchemy_utils.functions.database_exists(url)
         if not db_exists:
             sqlalchemy_utils.functions.create_database(url)
