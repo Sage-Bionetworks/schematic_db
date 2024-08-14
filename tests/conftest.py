@@ -234,7 +234,7 @@ def fixture_test_schema2(test_schema_csv_url: str) -> Generator[Schema, None, No
                 "primary_key": "id",
                 "columns": [
                     {
-                        "column_name": "sex",
+                        "name": "sex",
                         "datatype": "str",
                         "required": True,
                         "index": True,

@@ -2,7 +2,6 @@
 
 from typing import Generator, Any
 import pytest
-from deprecation import fail_if_not_removed
 from pydantic import ValidationError
 from schematic_db.db_schema.db_schema import (
     DatabaseSchema,
@@ -12,11 +11,15 @@ from schematic_db.db_schema.db_schema import (
 )
 from schematic_db.schema.schema import (
     Schema,
-    DatabaseConfig,
     SchemaConfig,
     ColumnSchematicError,
 )
-from schematic_db.schema.database_config import DatabaseTableConfig
+from schematic_db.schema.database_config import (
+    DatabaseConfig,
+    TableConfig,
+    ColumnConfig,
+    DATATYPES,
+)
 
 # pylint: disable=protected-access
 
@@ -42,13 +45,13 @@ def fixture_database_config() -> Generator[DatabaseConfig, None, None]:
             ],
             "columns": [
                 {
-                    "column_name": "att2",
+                    "name": "att2",
                     "datatype": "str",
                     "required": True,
                     "index": True,
                 },
                 {
-                    "column_name": "att3",
+                    "name": "att3",
                     "datatype": "int",
                     "required": False,
                     "index": False,
@@ -63,7 +66,7 @@ def fixture_database_config() -> Generator[DatabaseConfig, None, None]:
             "foreign_keys": None,
             "columns": [
                 {
-                    "column_name": "dataset_type",
+                    "name": "dataset_type",
                     "datatype": "str",
                     "required": True,
                     "index": True,
@@ -75,10 +78,10 @@ def fixture_database_config() -> Generator[DatabaseConfig, None, None]:
     yield obj
 
 
-@pytest.fixture(name="database_object_config")
-def fixture_database_object_config() -> Generator[DatabaseTableConfig, None, None]:
-    """Yields a DatabaseTableConfig"""
-    obj = DatabaseTableConfig(
+@pytest.fixture(name="table_config")
+def fixture_table_config() -> Generator[TableConfig, None, None]:
+    """Yields a TableConfig"""
+    obj = TableConfig(
         name="object1",
         primary_key="att1",
         foreign_keys=[
@@ -93,6 +96,27 @@ def fixture_database_object_config() -> Generator[DatabaseTableConfig, None, Non
                 "foreign_column_name": "att1",
             },
         ],
+    )
+    yield obj
+
+
+@pytest.fixture(name="column_config1")
+def fixture_column_config1() -> Generator[ColumnConfig, None, None]:
+    """Yields a ColumnConfig"""
+    obj = ColumnConfig(
+        name="col1",
+        datatype=DATATYPES["str"],
+        required=False,
+        index=False,
+    )
+    yield obj
+
+
+@pytest.fixture(name="column_config2")
+def fixture_column_config2() -> Generator[ColumnConfig, None, None]:
+    """Yields a ColumnConfig"""
+    obj = ColumnConfig(
+        name="col2",
     )
     yield obj
 
@@ -119,10 +143,18 @@ class TestSchemaConfig:
 class TestDatabaseConfig:
     """Testing for DatabaseConfig"""
 
-    @fail_if_not_removed
-    def test_init1(self, database_object_config: DatabaseTableConfig) -> None:
-        """Testing for init"""
-        obj1 = database_object_config
+    def test_column_config(
+        self, column_config1: ColumnConfig, column_config2: ColumnConfig
+    ) -> None:
+        """Testing for ColumnConfig"""
+        assert column_config1
+        assert column_config1.index is False
+        assert column_config2
+        assert column_config2.index is None
+
+    def test_table_cofnig(self, table_config: TableConfig) -> None:
+        """Testing for TableConfig"""
+        obj1 = table_config
         assert obj1
 
     def test_get_primary_key(self, database_config: DatabaseConfig) -> None:
@@ -130,7 +162,6 @@ class TestDatabaseConfig:
         obj = database_config
         assert obj.get_primary_key("object1") == "att1"
 
-    @fail_if_not_removed
     def test_get_foreign_keys(self, database_config: DatabaseConfig) -> None:
         """Testing for get_foreign_keys"""
         obj = database_config
@@ -138,7 +169,6 @@ class TestDatabaseConfig:
         assert obj.get_foreign_keys("object2") is None
         assert obj.get_foreign_keys("object3") is None
 
-    @fail_if_not_removed
     def test_get_attributes(self, database_config: DatabaseConfig) -> None:
         """Testing for get_attributes"""
         obj = database_config

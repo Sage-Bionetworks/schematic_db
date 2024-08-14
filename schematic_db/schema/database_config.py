@@ -3,10 +3,9 @@ A config for database specific items
 """
 
 from typing import Any, Optional
-from deprecation import deprecated
+from pydantic.dataclasses import dataclass
 from schematic_db.db_schema.db_schema import (
     ForeignKeySchema,
-    ColumnSchema,
     ColumnDatatype,
 )
 
@@ -19,14 +18,24 @@ DATATYPES = {
 }
 
 
-@deprecated(
-    deprecated_in="0.0.27",
-    details=(
-        "Functionality will be accomplished with future Schematic API calls. "
-        "This will be sunsetted in ~1.0 .",
-    ),
-)
-class DatabaseTableConfig:  # pylint: disable=too-few-public-methods
+@dataclass()
+class ColumnConfig:
+    """
+    A config for a table column (attribute).
+    Properties:
+        name (str): The name of the column
+        datatype (ColumnDatatype | None): The data type of the column
+        required: (bool | None): If the columne is required
+        index: (bool | None): If the column should be indexed
+    """
+
+    name: str
+    datatype: ColumnDatatype | None = None
+    required: bool | None = None
+    index: bool | None = None
+
+
+class TableConfig:  # pylint: disable=too-few-public-methods
     """A config for database specific items for one table"""
 
     def __init__(
@@ -56,56 +65,14 @@ class DatabaseTableConfig:  # pylint: disable=too-few-public-methods
             self.columns = None
         else:
             self.columns = [
-                ColumnSchema(
-                    name=column["column_name"],
+                ColumnConfig(
+                    name=column["name"],
                     datatype=DATATYPES[column["datatype"]],
                     required=column["required"],
                     index=column["index"],
                 )
                 for column in columns
             ]
-
-    def _check_column_names(self) -> None:
-        """Checks that column names are not duplicated
-
-        Raises:
-            ValueError: Raised when there are duplicate column names
-        """
-        column_names = self._get_column_names()
-        if column_names is not None:
-            if len(column_names) != len(list(set(column_names))):
-                raise ValueError("There are duplicate column names")
-
-    def _get_column_names(self) -> list[str] | None:
-        """Gets the list of column names in the config
-
-        Returns:
-            list[str]: A list of column names
-        """
-        if self.columns is not None:
-            return [column.name for column in self.columns]
-        return None
-
-    def _check_foreign_key_name(self) -> None:
-        """Checks that foreign keys are not duplicated
-
-        Raises:
-            ValueError: Raised when there are duplicate foreign keys
-        """
-        foreign_keys_names = self._get_foreign_key_names()
-        if foreign_keys_names is not None:
-            if len(foreign_keys_names) != len(list(set(foreign_keys_names))):
-                raise ValueError("There are duplicate column names")
-
-    def _get_foreign_key_names(self) -> list[str] | None:
-        """Gets the list of foreign key names in the config
-
-        Returns:
-            list[str]: A list of foreign key names
-        """
-        if self.foreign_keys is not None:
-            return [key.name for key in self.foreign_keys]
-        return None
 
 
 class DatabaseConfig:
@@ -115,9 +82,7 @@ class DatabaseConfig:
         """
         Init
         """
-        self.tables: list[DatabaseTableConfig] = [
-            DatabaseTableConfig(**table) for table in tables
-        ]
+        self.tables: list[TableConfig] = [TableConfig(**table) for table in tables]
         self._check_table_names()
 
     def get_primary_key(self, table_name: str) -> str | None:
@@ -144,19 +109,19 @@ class DatabaseConfig:
         table = self._get_table_by_name(table_name)
         return None if table is None else table.foreign_keys
 
-    def get_columns(self, table_name: str) -> list[ColumnSchema] | None:
+    def get_columns(self, table_name: str) -> list[ColumnConfig] | None:
         """Gets the columns for an table
 
         Args:
             table_name (str): The name of the table
 
         Returns:
-            Optional[list[ColumnSchema]]: The list of columns
+            list[ColumnConfig] | None: The list of columns or None if the table doesn't exist
         """
         table = self._get_table_by_name(table_name)
         return None if table is None else table.columns
 
-    def get_column(self, table_name: str, column_name: str) -> ColumnSchema | None:
+    def get_column(self, table_name: str, column_name: str) -> ColumnConfig | None:
         """Gets a column for a table
 
         Args:
@@ -174,14 +139,14 @@ class DatabaseConfig:
             return None
         return columns[0]
 
-    def _get_table_by_name(self, table_name: str) -> Optional[DatabaseTableConfig]:
+    def _get_table_by_name(self, table_name: str) -> Optional[TableConfig]:
         """Gets the config for the table if it exists
 
         Args:
             table_name (str): The name of the table
 
         Returns:
-            Optional[DatabaseTableConfig]: The config for the table if it exists
+            Optional[TableConfig]: The config for the table if it exists
         """
         tables = [table for table in self.tables if table.name == table_name]
         if len(tables) == 0:
