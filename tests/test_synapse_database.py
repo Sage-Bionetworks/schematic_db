@@ -12,10 +12,10 @@ from schematic_db.rdb.synapse_database import (
     SynapseDatabase,
     SynapseDatabaseDropTableError,
     InputDataframeMissingColumn,
+    create_synapse_column,
 )
 from schematic_db.synapse.synapse import Synapse
-from schematic_db.db_schema.db_schema import TableSchema
-from schematic_db.db_schema.db_schema import DatabaseSchema
+from schematic_db.db_schema.db_schema import DatabaseSchema, TableSchema, ColumnDatatype
 
 
 @pytest.fixture(name="mock_synapse_database")
@@ -77,6 +77,17 @@ def fixture_synapse_with_filled_tables(
     obj.synapse.insert_table_rows(synapse_id2, table_two)
     obj.synapse.insert_table_rows(synapse_id3, table_three)
     yield obj
+
+
+class TestHelpers:  # pylint: disable=too-few-public-methods
+    """Testing for helper functions"""
+
+    def test_create_synapse_column(self) -> None:
+        """Testing for SynapseDatabase.create_synapse_column"""
+        column1 = create_synapse_column("name", ColumnDatatype.TEXT)
+        assert column1
+        column2 = create_synapse_column("name", ColumnDatatype.SYNAPSE_STRING_LIST)
+        assert column2
 
 
 class TestMockSynapseDatabase:
@@ -171,6 +182,23 @@ class TestMockSynapseDatabase:
 
 class TestSynapseDatabase:
     """Testing for SynapseDatabase"""
+
+    def test_add_table(
+        self,
+        synapse_database: SynapseDatabase,
+        synapse_table_one_schema: TableSchema,
+    ) -> None:
+        """Testing for SynapseDatabase.add_table"""
+        obj = synapse_database
+        obj.add_table(synapse_table_one_schema)
+        tables = obj.synapse._get_table_data()
+        assert len(tables) == 1
+        columns: list[sc.Column] = list(obj.synapse.syn.getColumns(tables[0]["id"]))
+        string_list_col = [col for col in columns if col.name == "string_list_one_col"][
+            0
+        ]
+        assert string_list_col.maximumSize == 49
+        assert string_list_col.maximumListLength == 99
 
     def test_drop_all_tables(self, synapse_with_empty_tables: SynapseDatabase) -> None:
         """Testing for SynapseDatabase.drop_all_tables()"""
@@ -285,15 +313,16 @@ class TestSynapseDatabase:
             "foreign_keys",
         ]
 
-    def get_database_schema(self, synapse_with_empty_tables: SynapseDatabase) -> None:
+    def test_get_database_schema(
+        self, synapse_with_empty_tables: SynapseDatabase
+    ) -> None:
         """Testing for SynapseDatabase.get_database_schema"""
         obj = synapse_with_empty_tables
         database_schema = obj.get_database_schema()
-        assert database_schema.get_schema_names == [
+        assert database_schema.get_schema_names() == [
             "table_one",
             "table_three",
             "table_two",
-            "test_table_one",
         ]
 
     def test_get_table_schema(self, synapse_with_empty_tables: SynapseDatabase) -> None:
@@ -377,21 +406,21 @@ class TestSynapseDatabase:
 
         table1 = obj.query_table("table_one")
         assert table1["pk_one_col"].tolist() == ["key1", "key2", "key3"]
-        assert table1["string_one_col"].tolist() == ["a", "b", np.nan]
+        assert table1["text_one_col"].tolist() == ["a", "b", np.nan]
 
-        upsert_table1 = pd.DataFrame({"pk_one_col": ["key1"], "string_one_col": ["a"]})
+        upsert_table1 = pd.DataFrame({"pk_one_col": ["key1"], "text_one_col": ["a"]})
         obj.upsert_table_rows("table_one", upsert_table1)
         table2 = obj.query_table("table_one")
         assert table2["pk_one_col"].tolist() == ["key1", "key2", "key3"]
-        assert table2["string_one_col"].tolist() == ["a", "b", np.nan]
+        assert table2["text_one_col"].tolist() == ["a", "b", np.nan]
 
         upsert_table2 = pd.DataFrame(
-            {"pk_one_col": ["key3", "key4"], "string_one_col": ["c", "d"]}
+            {"pk_one_col": ["key3", "key4"], "text_one_col": ["c", "d"]}
         )
         obj.upsert_table_rows("table_one", upsert_table2)
         table3 = obj.query_table("table_one")
         assert table3["pk_one_col"].tolist() == ["key1", "key2", "key3", "key4"]
-        assert table3["string_one_col"].tolist() == ["a", "b", "c", "d"]
+        assert table3["text_one_col"].tolist() == ["a", "b", "c", "d"]
 
     def test__upsert_table_rows(
         self,

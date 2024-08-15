@@ -12,13 +12,29 @@ from schematic_db.utils.validators import string_is_not_empty
 
 
 class ColumnDatatype(Enum):
-    """A generic datatype that should be supported by all database types."""
+    """
+    Either A generic datatype that should be supported by all database types,
+    or a type specific to a certian type of database
+    """
 
+    # generic datatypes usable by any database
     TEXT = "text"
     DATE = "date"
     INT = "int"
     FLOAT = "float"
     BOOLEAN = "boolean"
+    # Synapse specific datatypes
+    SYNAPSE_STRING = "synapse_string"
+    SYNAPSE_FILE_HANDLE_ID = "synapse_file_handle_id"
+    SYNAPSE_ENTITY_ID = "synapse_entity_id"
+    SYNAPSE_LINK = "synapse_link"
+    SYNAPSE_USER_ID = "synapse_user_id"
+    SYNAPSE_STRING_LIST = "synapse_string_list"
+    SYNAPSE_DATE_LIST = "synapse_date_list"
+    SYNAPSE_INT_LIST = "synapse_int_list"
+    SYNAPSE_BOOLEAN_LIST = "synapse_boolean_list"
+    SYNAPSE_ENTITY_ID_LIST = "synapse_entity_id_list"
+    SYNAPSE_USER_ID_LIST = "synapse_user_id_list"
 
 
 @dataclass()
@@ -29,7 +45,8 @@ class ColumnSchema:
     datatype: ColumnDatatype
     required: bool = False
     index: bool = False
-
+    string_size_max: int | None = None
+    list_length_max: int | None = None
     _validate_name = field_validator("name")(string_is_not_empty)
 
 

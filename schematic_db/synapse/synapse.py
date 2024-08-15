@@ -96,14 +96,14 @@ class Synapse:  # pylint: disable=too-many-public-methods
         Returns:
             list[str]: A list of table names
         """
-        tables = self._get_tables()
+        tables = self._get_table_data()
         return [table["name"] for table in tables]
 
-    def _get_tables(self) -> list[synapseclient.Table]:
+    def _get_table_data(self) -> list[dict[str, Any]]:
         """Gets the list of Synapse table entities for the project
 
         Returns:
-            list[synapseclient.Table]: A list of all Synapse table entities
+            list[dict[str, Any]]: A list of all Synapse tables as dicts
         """
         project = self.syn.get(self.project_id)
         return list(self.syn.getChildren(project, includeTypes=["table"]))
@@ -135,7 +135,7 @@ class Synapse:  # pylint: disable=too-many-public-methods
         Returns:
             str: A synapse id
         """
-        tables = self._get_tables()
+        tables = self._get_table_data()
         matching_tables = [table for table in tables if table["name"] == table_name]
         if len(matching_tables) == 0:
             raise SynapseTableNameError("No matching tables with name:", table_name)
@@ -154,7 +154,7 @@ class Synapse:  # pylint: disable=too-many-public-methods
         Returns:
             str: The name of the table with the synapse id
         """
-        tables = self._get_tables()
+        tables = self._get_table_data()
         return [table["name"] for table in tables if table["id"] == synapse_id][0]
 
     def query_table(

@@ -159,15 +159,22 @@ def create_column_schemas(column_annotations: list[str]) -> list[ColumnSchema]:
     ]
 
 
-def create_synapse_column(name: str, datatype: ColumnDatatype) -> sc.Column:
+def create_synapse_column(
+    name: str,
+    datatype: ColumnDatatype,
+    max_size: int | None = None,
+    max_list_length: int | None = None,
+) -> sc.Column:
     """Creates a Synapse column object
 
     Args:
         name (str): The name of the column
         datatype (ColumnDatatype): The datatype of the column
+        max_size (int | None): The max size for "STRING" columns
+        max_list_length (int | None): The max list length for "LIST" columns
 
     Returns:
-        sc.Column: _description_
+        sc.Column: A synapse column object
     """
     datatypes = {
         ColumnDatatype.TEXT: partial(sc.Column, columnType="LARGETEXT"),
@@ -175,9 +182,30 @@ def create_synapse_column(name: str, datatype: ColumnDatatype) -> sc.Column:
         ColumnDatatype.INT: partial(sc.Column, columnType="INTEGER"),
         ColumnDatatype.FLOAT: partial(sc.Column, columnType="DOUBLE"),
         ColumnDatatype.BOOLEAN: partial(sc.Column, columnType="BOOLEAN"),
+        ColumnDatatype.SYNAPSE_STRING: partial(sc.Column, columnType="STRING"),
+        ColumnDatatype.SYNAPSE_FILE_HANDLE_ID: partial(
+            sc.Column, columnType="FILEHANDLEID"
+        ),
+        ColumnDatatype.SYNAPSE_ENTITY_ID: partial(sc.Column, columnType="ENTITYID"),
+        ColumnDatatype.SYNAPSE_LINK: partial(sc.Column, columnType="LINK"),
+        ColumnDatatype.SYNAPSE_USER_ID: partial(sc.Column, columnType="USERID"),
+        ColumnDatatype.SYNAPSE_DATE_LIST: partial(sc.Column, columnType="DATE_LIST"),
+        ColumnDatatype.SYNAPSE_INT_LIST: partial(sc.Column, columnType="INTEGER_LIST"),
+        ColumnDatatype.SYNAPSE_BOOLEAN_LIST: partial(
+            sc.Column, columnType="BOOLEAN_LIST"
+        ),
+        ColumnDatatype.SYNAPSE_STRING_LIST: partial(
+            sc.Column, columnType="STRING_LIST"
+        ),
+        ColumnDatatype.SYNAPSE_ENTITY_ID_LIST: partial(
+            sc.Column, columnType="ENTITYID_LIST"
+        ),
+        ColumnDatatype.SYNAPSE_USER_ID_LIST: partial(
+            sc.Column, columnType="USERID_LIST"
+        ),
     }
     func = datatypes[datatype]
-    return func(name=name)
+    return func(name=name, maximumSize=max_size, maximumListLength=max_list_length)
 
 
 class SynapseDatabase(RelationalDatabase):
@@ -312,7 +340,9 @@ class SynapseDatabase(RelationalDatabase):
         table_names = self.synapse.get_table_names()
         table_name = table_schema.name
         columns = [
-            create_synapse_column(att.name, att.datatype)
+            create_synapse_column(
+                att.name, att.datatype, att.string_size_max, att.list_length_max
+            )
             for att in table_schema.columns
         ]
 
