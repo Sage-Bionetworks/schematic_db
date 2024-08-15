@@ -156,6 +156,60 @@ Note: This is a cascading delete. Any rows that reference rows in the dataframe 
 Note: This is also recursive. Rows in tables that reference rows in tables that reference the rows in the dataframe and so on, will also be deleted.
 
 
+#### Configuring your database schema
+
+In general Schematic DB will use your data model to determine the database schema. If you want to change that behavior you can use a [DatabaseConfig](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schema/database_config.py/) object to do this.
+
+Create the object like
+```python
+
+from schematic_db.schema import Schema, SchemaConfig
+from schematic_db.database_config import DatabaseConfig
+
+data = [
+    {
+        "name": "object1",
+        "primary_key": "att1",
+        "foreign_keys": [
+            {
+                "column_name": "att2",
+                "foreign_table_name": "object2",
+                "foreign_column_name": "att1",
+            },
+            {
+                "column_name": "att3",
+                "foreign_table_name": "object3",
+                "foreign_column_name": "att1",
+            },
+        ],
+        "columns": [
+            {
+                "name": "att2",
+                "datatype": "str",
+                "required": True,
+                "index": True,
+            },
+            {
+                "name": "att3",
+                "datatype": "int",
+                "required": False,
+                "index": False,
+            },
+        ],
+    },
+    {"name": "object2", "primary_key": "att1"},
+    {"name": "object3", "primary_key": "att1"},
+]
+database_config = DatabaseConfig(data)
+
+config = SchemaConfig(
+        schema_url = "https://raw.githubusercontent.com/Sage-Bionetworks/Schematic-DB-Test-Schemas/main/test_schema.jsonld"
+    )
+schema = Schema(config=config, database_config=database_config)
+
+```
+
+
 ## Local Development
 
 ### Setup
