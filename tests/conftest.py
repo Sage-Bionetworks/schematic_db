@@ -325,19 +325,41 @@ def fixture_rdb_queryer_mysql(
     yield obj
 
 
-@pytest.fixture(scope="session")
-def table_one() -> Generator[pd.DataFrame, None, None]:
+@pytest.fixture(scope="session", name="table_one")
+def fixture_table_one() -> Generator[pd.DataFrame, None, None]:
     """
     Yields a pd.Dataframe.
     """
     dataframe = pd.DataFrame(
         {
             "pk_one_col": ["key1", "key2", "key3"],
-            "string_one_col": ["a", "b", np.nan],
+            "text_one_col": ["a", "b", np.nan],
             "int_one_col": [1, pd.NA, 3],
             "double_one_col": [1.1, 2.2, np.nan],
             "date_one_col": [datetime(2022, 8, 2), np.nan, datetime(2022, 8, 2)],
             "bool_one_col": [pd.NA, True, False],
+        }
+    )
+    dataframe = dataframe.astype({"int_one_col": "Int64", "bool_one_col": "boolean"})
+    dataframe["date_one_col"] = pd.to_datetime(dataframe["date_one_col"]).dt.date
+    yield dataframe
+
+
+@pytest.fixture(scope="session", name="synapse_table_one")
+def fixture_synapse_table_one() -> Generator[pd.DataFrame, None, None]:
+    """
+    Yields a pd.Dataframe.
+    """
+    dataframe = pd.DataFrame(
+        {
+            "pk_one_col": ["key1", "key2", "key3"],
+            "text_one_col": ["a", "b", np.nan],
+            "int_one_col": [1, pd.NA, 3],
+            "double_one_col": [1.1, 2.2, np.nan],
+            "date_one_col": [datetime(2022, 8, 2), np.nan, datetime(2022, 8, 2)],
+            "bool_one_col": [pd.NA, True, False],
+            "string_one_col": ["a", "b", np.nan],
+            "string_list_one_col": ["[a,b,c]", "[d,f]", np.nan],
         }
     )
     dataframe = dataframe.astype({"int_one_col": "Int64", "bool_one_col": "boolean"})
@@ -360,7 +382,7 @@ def fixture_table_one_schema() -> Generator[TableSchema, None, None]:
                 index=True,
             ),
             ColumnSchema(
-                name="string_one_col",
+                name="text_one_col",
                 datatype=ColumnDatatype.TEXT,
                 required=False,
                 index=True,
@@ -384,16 +406,82 @@ def fixture_table_one_schema() -> Generator[TableSchema, None, None]:
     yield schema
 
 
+@pytest.fixture(scope="session", name="synapse_table_one_schema")
+def fixture_synapse_table_one_schema() -> Generator[TableSchema, None, None]:
+    """
+    Yields a TableSchema object with one primary and no foreign keys
+    """
+    schema = TableSchema(
+        name="table_one",
+        columns=[
+            ColumnSchema(
+                name="pk_one_col",
+                datatype=ColumnDatatype.TEXT,
+                required=True,
+                index=True,
+            ),
+            ColumnSchema(
+                name="text_one_col",
+                datatype=ColumnDatatype.TEXT,
+                required=False,
+                index=True,
+            ),
+            ColumnSchema(
+                name="int_one_col", datatype=ColumnDatatype.INT, required=False
+            ),
+            ColumnSchema(
+                name="double_one_col", datatype=ColumnDatatype.FLOAT, required=False
+            ),
+            ColumnSchema(
+                name="date_one_col", datatype=ColumnDatatype.DATE, required=False
+            ),
+            ColumnSchema(
+                name="bool_one_col", datatype=ColumnDatatype.BOOLEAN, required=False
+            ),
+            ColumnSchema(
+                name="string_one_col",
+                datatype=ColumnDatatype.SYNAPSE_STRING,
+                required=False,
+            ),
+            ColumnSchema(
+                name="string_list_one_col",
+                datatype=ColumnDatatype.SYNAPSE_STRING_LIST,
+                required=False,
+                string_size_max=49,
+                list_length_max=99,
+            ),
+        ],
+        primary_key="pk_one_col",
+        foreign_keys=[],
+    )
+    yield schema
+
+
 @pytest.fixture(name="table_one_columns", scope="session")
 def fixture_table_one_columns() -> Generator[list[sc.Column], None, None]:
     """Yields a list of synapse columns for table one"""
     yield [
         sc.Column(name="pk_one_col", columnType="LARGETEXT"),
-        sc.Column(name="string_one_col", columnType="LARGETEXT"),
+        sc.Column(name="text_one_col", columnType="LARGETEXT"),
         sc.Column(name="int_one_col", columnType="INTEGER"),
         sc.Column(name="double_one_col", columnType="DOUBLE"),
         sc.Column(name="date_one_col", columnType="DATE"),
         sc.Column(name="bool_one_col", columnType="BOOLEAN"),
+    ]
+
+
+@pytest.fixture(name="synapse_table_one_columns", scope="session")
+def fixture_synapse_table_one_columns() -> Generator[list[sc.Column], None, None]:
+    """Yields a list of synapse columns for table one"""
+    yield [
+        sc.Column(name="pk_one_col", columnType="LARGETEXT"),
+        sc.Column(name="text_one_col", columnType="LARGETEXT"),
+        sc.Column(name="int_one_col", columnType="INTEGER"),
+        sc.Column(name="double_one_col", columnType="DOUBLE"),
+        sc.Column(name="date_one_col", columnType="DATE"),
+        sc.Column(name="bool_one_col", columnType="BOOLEAN"),
+        sc.Column(name="string_one_col", columnType="STRING"),
+        sc.Column(name="string_list_one_col", columnType="STRING_LIST"),
     ]
 
 

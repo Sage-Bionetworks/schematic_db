@@ -176,6 +176,26 @@ class TestDatabaseConfig:
         assert obj.get_columns("object2") is None
         assert obj.get_columns("object3") is None
 
+    def test_max_type_values(self) -> None:
+        """Testing for string_size_max and list_length_max"""
+        data = [
+            {
+                "name": "object1",
+                "columns": [
+                    {
+                        "name": "att",
+                        "datatype": "synapse_string_list",
+                        "required": True,
+                        "index": True,
+                        "string_size_max": 1,
+                        "list_length_max": 1,
+                    },
+                ],
+            },
+        ]
+        obj = DatabaseConfig(data)
+        assert obj
+
 
 class TestSchema:
     """Testing for Schema"""

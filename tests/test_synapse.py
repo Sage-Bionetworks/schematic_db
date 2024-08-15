@@ -8,7 +8,7 @@ from schematic_db.db_schema.db_schema import TableSchema
 from schematic_db.synapse.synapse import Synapse
 
 SYNAPSE_LOGIN_METHOD = "synapseclient.Synapse.login"
-SCHEMATIC_GET_TABLES_METHOD = "schematic_db.synapse.synapse.Synapse._get_tables"
+SCHEMATIC_GET_TABLES_METHOD = "schematic_db.synapse.synapse.Synapse._get_table_data"
 
 
 @pytest.fixture(name="synapse_with_test_table_one", scope="class")
@@ -79,9 +79,7 @@ class TestMockSynapse:
         """Testing for Synapse.get_table_names"""
         tables = [{"name": "table1", "id": "syn1"}, {"name": "table2", "id": "syn2"}]
         mocker.patch(SYNAPSE_LOGIN_METHOD, return_value=None)
-        mocker.patch(
-            "schematic_db.synapse.synapse.Synapse._get_tables", return_value=tables
-        )
+        mocker.patch(SCHEMATIC_GET_TABLES_METHOD, return_value=tables)
         obj = Synapse("", "")
         assert obj.get_table_names() == ["table1", "table2"]
 
@@ -147,13 +145,15 @@ class TestSynapseGetters:
         """Testing for Synapse.get_table_names()"""
         assert synapse_with_test_table_one.get_table_names() == ["test_table_one"]
 
-    def test_get_column_table_names(
+    def test_get_table_column_names(
         self, synapse_with_test_table_one: Synapse, table_one_schema: TableSchema
     ) -> None:
         """Testing for Synapse.get_table_column_names()"""
-        assert sorted(
+        expected_column_names = sorted(table_one_schema.get_column_names())
+        tested_column_names = sorted(
             synapse_with_test_table_one.get_table_column_names("test_table_one")
-        ) == sorted(table_one_schema.get_column_names())
+        )
+        assert tested_column_names == expected_column_names
 
     def test_get_table_id_and_name(self, synapse_with_test_table_one: Synapse) -> None:
         """Testing for Synapse.get_table_id_from_name()"""

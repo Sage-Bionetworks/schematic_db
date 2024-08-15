@@ -9,12 +9,24 @@ from schematic_db.db_schema.db_schema import (
     ColumnDatatype,
 )
 
-
+# used to translate types from the Schematic API or config to the geneirc ENUM
 DATATYPES = {
     "str": ColumnDatatype.TEXT,
     "float": ColumnDatatype.FLOAT,
     "int": ColumnDatatype.INT,
     "date": ColumnDatatype.DATE,
+    "boolean": ColumnDatatype.BOOLEAN,
+    "synapse_string": ColumnDatatype.SYNAPSE_STRING,
+    "synapse_file_handle_id": ColumnDatatype.SYNAPSE_FILE_HANDLE_ID,
+    "synapse_entity_id": ColumnDatatype.SYNAPSE_ENTITY_ID,
+    "synapse_link": ColumnDatatype.SYNAPSE_LINK,
+    "synapse_user_id": ColumnDatatype.SYNAPSE_USER_ID,
+    "synapse_string_list": ColumnDatatype.SYNAPSE_STRING_LIST,
+    "synapse_date_list": ColumnDatatype.SYNAPSE_DATE_LIST,
+    "synapse_int_list": ColumnDatatype.SYNAPSE_INT_LIST,
+    "synapse_boolean_list": ColumnDatatype.SYNAPSE_BOOLEAN_LIST,
+    "synapse_entity_id_list": ColumnDatatype.SYNAPSE_ENTITY_ID_LIST,
+    "synapse_user_id_list": ColumnDatatype.SYNAPSE_USER_ID_LIST,
 }
 
 
@@ -27,12 +39,18 @@ class ColumnConfig:
         datatype (ColumnDatatype | None): The data type of the column
         required: (bool | None): If the columne is required
         index: (bool | None): If the column should be indexed
+        string_size_max: (int | None) Max size for string columns if used
+        list_length_max: (int | None) Max size for list column ength if used
+
+
     """
 
     name: str
     datatype: ColumnDatatype | None = None
     required: bool | None = None
     index: bool | None = None
+    string_size_max: int | None = None
+    list_length_max: int | None = None
 
 
 class TableConfig:  # pylint: disable=too-few-public-methods

@@ -235,9 +235,17 @@ class Schema:
         # first the config is checked for if the column should be indexed,
         # and if not there, defaults to false
         index = column.index if column and column.index is not None else False
+        # check if config exists, and if not default to None for both max values
+        string_size_max = column.string_size_max if column else None
+        list_length_max = column.list_length_max if column else None
 
         return ColumnSchema(
-            name=column_name, datatype=datatype, required=required, index=index
+            name=column_name,
+            datatype=datatype,
+            required=required,
+            index=index,
+            string_size_max=string_size_max,
+            list_length_max=list_length_max,
         )
 
     def _is_column_required(self, column_name: str, table_name: str) -> bool:
