@@ -217,15 +217,35 @@ class Schema:
             ColumnSchema: The schema for the column
         """
         column = self.database_config.get_column(table_name, column_name)
-        # Use column config if provided
-        if column is not None:
-            return column
-        # Create column config if not provided
+
+        # first the config is checked for datatype
+        # and if not there, gotten from schematic
+        datatype = (
+            column.datatype
+            if column and column.datatype is not None
+            else self._get_column_datatype(column_name, table_name)
+        )
+        # first the config is checked for if the column is required,
+        # and if not there, gotten from schematic
+        required = (
+            column.required
+            if column and column.required is not None
+            else self._is_column_required(column_name, table_name)
+        )
+        # first the config is checked for if the column should be indexed,
+        # and if not there, defaults to false
+        index = column.index if column and column.index is not None else False
+        # check if config exists, and if not default to None for both max values
+        string_size_max = column.string_size_max if column else None
+        list_length_max = column.list_length_max if column else None
+
         return ColumnSchema(
             name=column_name,
-            datatype=self._get_column_datatype(column_name, table_name),
-            required=self._is_column_required(column_name, table_name),
-            index=False,
+            datatype=datatype,
+            required=required,
+            index=index,
+            string_size_max=string_size_max,
+            list_length_max=list_length_max,
         )
 
     def _is_column_required(self, column_name: str, table_name: str) -> bool:
