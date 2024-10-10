@@ -15,6 +15,7 @@ postgres:
   host: "localhost"
 
 """
+
 from typing import Generator
 from copy import copy
 import pytest
