@@ -251,7 +251,7 @@ class RDBUpdater:
         table.reset_index(inplace=True, drop=True)
         return table
 
-    def _update_table_with_manifest(  # pylint: disable=too-many-arguments
+    def _update_table_with_manifest(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         table: pd.DataFrame,
         table_name: str,
