@@ -13,6 +13,9 @@ from schematic_db.manifest_store.api_manifest_store import APIManifestStore
 from schematic_db.query_store.query_store import QueryStore
 from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
 
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+
 
 @pytest.fixture(scope="module", name="rdb_builder_mysql")
 def fixture_rdb_builder_mysql(
@@ -116,7 +119,7 @@ def fixture_rdb_queryer_postgres(
 class TestIntegration1:
     """Integration tests with upserts"""
 
-    def test_mysql(  # pylint: disable=too-many-arguments
+    def test_mysql(
         self,
         rdb_builder_mysql: RDBBuilder,
         rdb_updater_mysql: RDBUpdater,
@@ -146,7 +149,7 @@ class TestIntegration1:
         rdb_queryer.store_query_results(path)
         assert rdb_queryer.query_store.get_table_names() == test_schema_table_names
 
-    def test_postgres(  # pylint: disable=too-many-arguments
+    def test_postgres(
         self,
         rdb_builder_postgres: RDBBuilder,
         rdb_updater_postgres: RDBUpdater,
@@ -202,7 +205,7 @@ class TestIntegration1:
 class TestIntegration2:
     """Integration tests with inserts"""
 
-    def test_mysql(  # pylint: disable=too-many-arguments
+    def test_mysql(
         self,
         rdb_builder_mysql: RDBBuilder,
         rdb_updater_mysql: RDBUpdater,
@@ -219,7 +222,7 @@ class TestIntegration2:
             table = rdb_updater.rdb.query_table(name)
             assert len(table.index) > 0
 
-    def test_postgres(  # pylint: disable=too-many-arguments
+    def test_postgres(
         self,
         rdb_builder_postgres: RDBBuilder,
         rdb_updater_postgres: RDBUpdater,
@@ -240,7 +243,7 @@ class TestIntegration2:
 class TestIntegration3:  # pylint: disable=too-few-public-methods
     """Integration tests with upserts only update one table"""
 
-    def test_mysql(  # pylint: disable=too-many-arguments
+    def test_mysql(
         self,
         rdb_builder_mysql: RDBBuilder,
         rdb_updater_mysql: RDBUpdater,
@@ -266,7 +269,7 @@ class TestIntegration3:  # pylint: disable=too-few-public-methods
 class TestIntegration4:  # pylint: disable=too-few-public-methods
     """Integration tests with chunking patient table"""
 
-    def test_mysql(  # pylint: disable=too-many-arguments
+    def test_mysql(
         self,
         rdb_builder_mysql: RDBBuilder,
         rdb_updater_mysql: RDBUpdater,

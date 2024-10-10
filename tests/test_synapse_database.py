@@ -1,6 +1,8 @@
 """Fixtures for all tests"""
 
 # pylint: disable=protected-access
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 
 from typing import Generator
 from unittest.mock import patch, call, Mock
@@ -41,7 +43,7 @@ def fixture_synapse_no_extra_tables(
 
 
 @pytest.fixture(name="synapse_with_empty_tables")
-def fixture_synapse_with_empty_tables(  # pylint: disable=too-many-arguments
+def fixture_synapse_with_empty_tables(
     synapse_database: SynapseDatabase,
     table_one_schema: TableSchema,
     table_two_schema: TableSchema,
@@ -267,7 +269,7 @@ class TestSynapseDatabase:
         annos3 = obj.synapse.get_entity_annotations(synapse_id3)
         assert not list(annos3.keys())
 
-    def test_annotate_table(  # pylint: disable=too-many-arguments
+    def test_annotate_table(
         self,
         synapse_database: SynapseDatabase,
         table_one_schema: TableSchema,

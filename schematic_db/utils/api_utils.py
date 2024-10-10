@@ -15,7 +15,7 @@ from schematic_db.utils.types import DisplayLabelType
 class SchematicAPIError(Exception):
     """When schematic API response status code is anything other than 200"""
 
-    def __init__(  # pylint:disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         endpoint_url: str,
         status_code: int,
