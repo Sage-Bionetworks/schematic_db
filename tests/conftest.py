@@ -28,8 +28,11 @@ from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.synapse_database import SynapseDatabase
 from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
 from schematic_db.synapse.synapse import Synapse
-from schematic_db.schema.schema import Schema, SchemaConfig
-from schematic_db.schema.database_config import DatabaseConfig
+from schematic_db.schema_generator.schema_generator import (
+    SchemaGenerator,
+    SchemaGeneratorConfig,
+)
+from schematic_db.schema_generator.database_config import DatabaseConfig
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(TESTS_DIR, "data")
@@ -97,14 +100,16 @@ def fixture_test_schema_csv_url() -> Generator[str, None, None]:
     yield url
 
 
+TEST_SCHEMA_JSON_URL = (
+    "https://raw.githubusercontent.com/Sage-Bionetworks/"
+    "Schematic-DB-Test-Schemas/main/test_schema.jsonld"
+)
+
+
 @pytest.fixture(scope="session", name="test_schema_json_url")
 def fixture_test_schema_json_url() -> Generator[str, None, None]:
     """Yields the url for the main test schema json"""
-    url = (
-        "https://raw.githubusercontent.com/Sage-Bionetworks/"
-        "Schematic-DB-Test-Schemas/main/test_schema.jsonld"
-    )
-    yield url
+    yield TEST_SCHEMA_JSON_URL
 
 
 @pytest.fixture(scope="session", name="test_schema_display_name_json_url")
@@ -213,20 +218,28 @@ def fixture_test_synapse_asset_view_id() -> Generator[str, None, None]:
     yield "syn47997084"
 
 
-@pytest.fixture(scope="session", name="test_schema1")
-def fixture_test_schema1(
+@pytest.fixture(scope="session", name="schema_generator1")
+def fixture_schema_generator1(
     test_schema_csv_url: str,
-) -> Generator[Schema, None, None]:
-    """Yields a Schema using the database specific test schema"""
-    config = SchemaConfig(test_schema_csv_url)
-    obj = Schema(config)
+) -> Generator[SchemaGenerator, None, None]:
+    """
+    Yields a SchemaGenerator using the database specific test schema.
+    Does not uses a database config
+    """
+    config = SchemaGeneratorConfig(test_schema_csv_url)
+    obj = SchemaGenerator(config)
     yield obj
 
 
-@pytest.fixture(scope="session", name="test_schema2")
-def fixture_test_schema2(test_schema_csv_url: str) -> Generator[Schema, None, None]:
-    """Yields a Schema using the database specific test schema"""
-    config = SchemaConfig(test_schema_csv_url)
+@pytest.fixture(scope="session", name="schema_generator2")
+def fixture_schema_generator2(
+    test_schema_csv_url: str,
+) -> Generator[SchemaGenerator, None, None]:
+    """
+    Yields a SchemaGenerator using the database specific test schema.
+    This uses a database config
+    """
+    config = SchemaGeneratorConfig(test_schema_csv_url)
     database_config = DatabaseConfig(
         [
             {
@@ -254,7 +267,7 @@ def fixture_test_schema2(test_schema_csv_url: str) -> Generator[Schema, None, No
             },
         ]
     )
-    obj = Schema(config, database_config=database_config)
+    obj = SchemaGenerator(config, database_config=database_config)
     yield obj
 
 

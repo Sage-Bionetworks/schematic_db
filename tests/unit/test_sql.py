@@ -42,7 +42,7 @@ class TestInit:
     """Test creation of database objects"""
 
     def test_postgres(self, postgres_config: SQLConfig) -> None:
-        """Test using no port and with port as imput"""
+        """Test using no port and with port as input"""
 
         config1 = copy(postgres_config)
         database1 = PostgresDatabase(config1)
@@ -54,7 +54,7 @@ class TestInit:
         assert database2.get_table_names() == []
 
     def test_mysql(self, mysql_config: SQLConfig) -> None:
-        """Test using no port and with port as imput"""
+        """Test using no port and with port as input"""
 
         config1 = copy(mysql_config)
         database1 = MySQLDatabase(config1)

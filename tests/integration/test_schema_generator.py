@@ -9,12 +9,12 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
     ColumnDatatype,
 )
-from schematic_db.schema.schema import (
-    Schema,
-    SchemaConfig,
+from schematic_db.schema_generator.schema_generator import (
+    SchemaGenerator,
+    SchemaGeneratorConfig,
     ColumnSchematicError,
 )
-from schematic_db.schema.database_config import (
+from schematic_db.schema_generator.database_config import (
     DatabaseConfig,
     TableConfig,
     ColumnConfig,
@@ -122,18 +122,18 @@ def fixture_column_config2() -> Generator[ColumnConfig, None, None]:
 
 
 @pytest.mark.fast
-class TestSchemaConfig:
-    """Testing for SchemaConfig"""
+class TestSchemaGeneratorConfig:
+    """Testing for SchemaGeneratorConfig"""
 
     def test_url_validator(self) -> None:
         """Testing for validators"""
         with pytest.raises(ValidationError):
-            SchemaConfig(schema_url="xxx.jsonld")
+            SchemaGeneratorConfig(schema_url="xxx.jsonld")
 
     def test_jsonld_validator(self) -> None:
         """Testing for validators"""
         with pytest.raises(ValidationError):
-            SchemaConfig(
+            SchemaGeneratorConfig(
                 schema_url="https://raw.githubusercontent.com/Sage-Bionetworks/"
                 "Schematic-DB-Test-Schemas/main/README.md"
             )
@@ -197,12 +197,12 @@ class TestDatabaseConfig:
         assert obj
 
 
-class TestSchema:
-    """Testing for Schema"""
+class TestSchemaGenerator:
+    """Testing for SchemaGenerator"""
 
-    def test_init(self, test_schema1: Schema) -> None:
-        """Testing for Schema.__init__"""
-        obj = test_schema1
+    def test_init(self, schema_generator1: SchemaGenerator) -> None:
+        """Testing for SchemaGenerator.__init__"""
+        obj = schema_generator1
         config = obj.get_database_schema()
         assert isinstance(config, DatabaseSchema)
         assert config.get_schema_names() == [
@@ -211,9 +211,9 @@ class TestSchema:
             "BulkRnaSeq",
         ]
 
-    def test_create_column_schemas(self, test_schema1: Schema) -> None:
-        """Testing for Schema.attributes()"""
-        obj = test_schema1
+    def test_create_column_schemas(self, schema_generator1: SchemaGenerator) -> None:
+        """Testing for SchemaGenerator.attributes()"""
+        obj = schema_generator1
         assert obj._create_column_schemas("Patient") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
@@ -272,9 +272,9 @@ class TestSchema:
             ),
         ]
 
-    def test_create_foreign_keys(self, test_schema1: Schema) -> None:
-        """Testing for Schema.create_foreign_keys()"""
-        obj = test_schema1
+    def test_create_foreign_keys(self, schema_generator1: SchemaGenerator) -> None:
+        """Testing for SchemaGenerator.create_foreign_keys()"""
+        obj = schema_generator1
         assert obj._create_foreign_keys("Patient") == []
         assert obj._create_foreign_keys("Biospecimen") == [
             ForeignKeySchema(
@@ -291,9 +291,9 @@ class TestSchema:
             )
         ]
 
-    def test_is_column_required(self, test_schema1: Schema) -> None:
-        """Testing for Schema.is_column_required"""
-        obj = test_schema1
+    def test_is_column_required(self, schema_generator1: SchemaGenerator) -> None:
+        """Testing for SchemaGenerator.is_column_required"""
+        obj = schema_generator1
         assert obj._is_column_required("id", "Patients")
         assert not obj._is_column_required("weight", "Patients")
         with pytest.raises(
@@ -305,9 +305,9 @@ class TestSchema:
         ):
             obj._is_column_required("NOT_A_COLUMN", "Patients")
 
-    def test_get_column_datatype(self, test_schema1: Schema) -> None:
-        """Testing for Schema.get_column_datatype"""
-        obj = test_schema1
+    def test_get_column_datatype(self, schema_generator1: SchemaGenerator) -> None:
+        """Testing for SchemaGenerator.get_column_datatype"""
+        obj = schema_generator1
         assert obj._get_column_datatype("id", "Patients") == ColumnDatatype.TEXT
         assert obj._get_column_datatype("weight", "Patients") == ColumnDatatype.FLOAT
 
@@ -315,9 +315,9 @@ class TestSchema:
 class TestSchema2:
     """Testing for Schema"""
 
-    def test_init(self, test_schema2: Schema) -> None:
+    def test_init(self, schema_generator2: SchemaGenerator) -> None:
         """Testing for Schema.__init__"""
-        obj = test_schema2
+        obj = schema_generator2
         database_schema = obj.get_database_schema()
         assert isinstance(database_schema, DatabaseSchema)
         assert database_schema.get_schema_names() == [
@@ -326,9 +326,9 @@ class TestSchema2:
             "BulkRnaSeq",
         ]
 
-    def test_create_column_schemas(self, test_schema2: Schema) -> None:
+    def test_create_column_schemas(self, schema_generator2: SchemaGenerator) -> None:
         """Testing for Schema.attributes()"""
-        obj = test_schema2
+        obj = schema_generator2
         assert obj._create_column_schemas("Patient") == [
             ColumnSchema(
                 name="id", datatype=ColumnDatatype.TEXT, required=True, index=False
@@ -387,9 +387,9 @@ class TestSchema2:
             ),
         ]
 
-    def test_create_foreign_keys(self, test_schema2: Schema) -> None:
-        """Testing for Schema.create_foreign_keys()"""
-        obj = test_schema2
+    def test_create_foreign_keys(self, schema_generator2: SchemaGenerator) -> None:
+        """Testing for SchemaGenerator.create_foreign_keys()"""
+        obj = schema_generator2
         assert obj._create_foreign_keys("Patient") == []
         assert obj._create_foreign_keys("Biospecimen") == [
             ForeignKeySchema(

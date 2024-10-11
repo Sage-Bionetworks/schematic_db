@@ -14,7 +14,7 @@ from schematic_db.utils.validators import string_is_not_empty
 class ColumnDatatype(Enum):
     """
     Either A generic datatype that should be supported by all database types,
-    or a type specific to a certian type of database
+    or a type specific to a certain type of database
     """
 
     # generic datatypes usable by any database

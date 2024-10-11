@@ -7,7 +7,7 @@ from schematic_db.rdb.mysql import MySQLDatabase
 from schematic_db.rdb.postgres import PostgresDatabase
 from schematic_db.rdb.synapse_database import SynapseDatabase
 from schematic_db.rdb_builder.rdb_builder import RDBBuilder
-from schematic_db.schema.schema import Schema
+from schematic_db.schema_generator.schema_generator import SchemaGenerator
 from schematic_db.rdb_updater.rdb_updater import RDBUpdater
 from schematic_db.manifest_store.api_manifest_store import APIManifestStore
 from schematic_db.query_store.query_store import QueryStore
@@ -19,30 +19,30 @@ from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
 
 @pytest.fixture(scope="module", name="rdb_builder_mysql")
 def fixture_rdb_builder_mysql(
-    mysql_database: MySQLDatabase, test_schema2: Schema
+    mysql_database: MySQLDatabase, schema_generator2: SchemaGenerator
 ) -> Generator[RDBBuilder, None, None]:
     """Yields a RDBBuilder with a mysql database and test schema"""
-    obj = RDBBuilder(rdb=mysql_database, schema=test_schema2)
+    obj = RDBBuilder(rdb=mysql_database, schema_generator=schema_generator2)
     yield obj
     obj.rdb.drop_all_tables()
 
 
 @pytest.fixture(scope="module", name="rdb_builder_postgres")
 def fixture_rdb_builder_postgres(
-    postgres_database: PostgresDatabase, test_schema2: Schema
+    postgres_database: PostgresDatabase, schema_generator2: SchemaGenerator
 ) -> Generator[RDBBuilder, None, None]:
     """Yields a RDBBuilder with a mysql database and test schema"""
-    obj = RDBBuilder(rdb=postgres_database, schema=test_schema2)
+    obj = RDBBuilder(rdb=postgres_database, schema_generator=schema_generator2)
     yield obj
     obj.rdb.drop_all_tables()
 
 
 @pytest.fixture(scope="module", name="rdb_builder_synapse")
 def fixture_rdb_builder_synapse(
-    synapse_database: SynapseDatabase, test_schema2: Schema
+    synapse_database: SynapseDatabase, schema_generator2: SchemaGenerator
 ) -> Generator[RDBBuilder, None, None]:
     """Yields a RDBBuilder with a synapse database and test schema"""
-    obj = RDBBuilder(rdb=synapse_database, schema=test_schema2)
+    obj = RDBBuilder(rdb=synapse_database, schema_generator=schema_generator2)
     yield obj
     synapse_database.delete_all_tables()
 

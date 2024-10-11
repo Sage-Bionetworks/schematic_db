@@ -20,20 +20,20 @@ If using Schematic DB as part of a package you will want setup the `pyproject.to
 
 ### Usage
 
-#### Schema object
+#### Schema Generator object
 
-The Schema class interacts with the [Schematic API](https://schematic.api.sagebionetworks.org/v1/ui/). It is used to create a database schema from a schema in json ld form.
+The Schema Generator class interacts with the [Schematic API](https://schematic.api.sagebionetworks.org/v1/ui/). It is used to create a database schema from a schema in json ld form.
 
 It is assumed that you have setup a Synapse project where your manifests exist.
 
 To create the schema:
 
 ```python
-from schematic_db.schema import Schema, SchemaConfig
-config = SchemaConfig(
+from schematic_db.schema import SchemaGenerator, SchemaGeneratorConfig
+config = SchemaGeneratorConfig(
         schema_url = "https://raw.githubusercontent.com/Sage-Bionetworks/Schematic-DB-Test-Schemas/main/test_schema.jsonld"
     )
-schema = Schema(config)
+schema = SchemaGenerator(config)
 ```
 
 #### Manifest Store object
@@ -95,12 +95,12 @@ database =  SynapseDatabase(
 
 #### Building the database
 
-The [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class is responsible for building the database schema. Assuming you've built a Schema object, and RelationalDatabase object as described above, to build the database:
+The [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class is responsible for building the database schema. Assuming you've built a SchemaGenerator object, and RelationalDatabase object as described above, to build the database:
 
 ```python
 from schematic_db.rdb_builder.rdb_builder import RDBBuilder
 
-rdb_builder = RDBBuilder(rdb=database, schema=schema)
+rdb_builder = RDBBuilder(rdb=database, schema_generator=schema_generator)
 rdb_builder.build_database()
 ```
 
@@ -155,12 +155,12 @@ The dataframe must contain the primary key of the table, the values in the prima
 Note: This is a cascading delete. Any rows that reference rows in the dataframe will also be deleted.
 Note: This is also recursive. Rows in tables that reference rows in tables that reference the rows in the dataframe and so on, will also be deleted.
 
-
 #### Configuring your database schema
 
 In general Schematic DB will use your data model to determine the database schema. If you want to change that behavior you can use a [DatabaseConfig](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schema/database_config.py/) object to do this.
 
 Create the object like
+
 ```python
 
 from schematic_db.schema import Schema, SchemaConfig
@@ -208,7 +208,6 @@ config = SchemaConfig(
 schema = Schema(config=config, database_config=database_config)
 
 ```
-
 
 ## Local Development
 
@@ -296,9 +295,9 @@ Schematic db uses pdoc to generate documentation from docstrings. This exists [h
 
 The [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) class is used to store data for the database in form agnostic to the type. It is cerated by a [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) object, and used by the various relational database classes.
 
-##### Schema
+##### Schema Generator
 
-The [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) class is used to interact with the Schematic API to create a generic representation of the database from the schema. This is stored as a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) object. The Schema is used by the [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class.
+The [SchemaGenerator](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema_generator/schema_generator.py) class is used to interact with the Schematic API to create a generic representation of the database from the schema. This is stored as a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) object. The Schema is used by the [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class.
 
 ##### Manifest Store
 
@@ -333,7 +332,7 @@ The [SynapseQueryStore](https://github.com/Sage-Bionetworks/schematic_db/blob/ma
 
 ##### RDB Builder
 
-The [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class is responsible for building the database schema. It uses a [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) object to create a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_config/db_config.py). This is used to build each table using a [RelationalDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/rdb.py) object.
+The [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class is responsible for building the database schema. It uses a [SchemaGenerator](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema_generator/schema_generator.py) object to create a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_config/db_config.py). This is used to build each table using a [RelationalDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/rdb.py) object.
 
 ##### RDB Updater
 
