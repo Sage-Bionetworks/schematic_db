@@ -2,7 +2,7 @@
 
 # pylint: disable=logging-fstring-interpolation
 import logging
-from schematic_db.rdb.rdb import RelationalDatabase
+from schematic_db.databases.database_interface import Database
 from schematic_db.schema_generator.schema_generator import (
     SchemaGenerator,
     DatabaseSchema,
@@ -15,10 +15,10 @@ logging.getLogger(__name__)
 class RDBBuilder:  # pylint: disable=too-few-public-methods
     """Builds a database schema"""
 
-    def __init__(self, rdb: RelationalDatabase, schema_generator: SchemaGenerator) -> None:
+    def __init__(self, rdb: Database, schema_generator: SchemaGenerator) -> None:
         """
         Args:
-            rdb (RelationalDatabase): A relational database object
+            rdb (Database): A relational database object
             schema (Schema): A Schema object
         """
         self.rdb = rdb

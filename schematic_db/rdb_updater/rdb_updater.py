@@ -6,8 +6,8 @@ import logging
 from typing import Literal
 
 import pandas as pd
-from schematic_db.rdb.rdb import (
-    RelationalDatabase,
+from schematic_db.databases.database_interface import (
+    Database,
     InsertDatabaseError,
 )
 from schematic_db.manifest_store.manifest_store import ManifestStore
@@ -102,7 +102,7 @@ class ManifestPrimaryKeyError(Exception):
 class RDBUpdater:
     """An for updating a database."""
 
-    def __init__(self, rdb: RelationalDatabase, manifest_store: ManifestStore) -> None:
+    def __init__(self, rdb: Database, manifest_store: ManifestStore) -> None:
         """
         Args:
             rdb (RelationalDatabase): A relational database object to be updated

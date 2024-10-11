@@ -11,7 +11,7 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
 )
 from .sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
-from .rdb import InsertDatabaseError
+from .database_interface import InsertDatabaseError
 
 
 class MySQLDatabase(SQLAlchemyDatabase):

@@ -22,10 +22,10 @@ from schematic_db.manifest_store.manifest_store import ManifestStoreConfig
 
 from schematic_db.query_store.query_store import QueryStore
 from schematic_db.query_store.synapse_query_store import SynapseQueryStore
-from schematic_db.rdb.sql_alchemy_database import SQLConfig
-from schematic_db.rdb.mysql import MySQLDatabase
-from schematic_db.rdb.postgres import PostgresDatabase
-from schematic_db.rdb.synapse_database import SynapseDatabase
+from schematic_db.databases.sql_alchemy_database import SQLConfig
+from schematic_db.databases.mysql import MySQLDatabase
+from schematic_db.databases.postgres import PostgresDatabase
+from schematic_db.databases.synapse_database import SynapseDatabase
 from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
 from schematic_db.synapse.synapse import Synapse
 from schematic_db.schema_generator.schema_generator import (

@@ -3,9 +3,9 @@
 from typing import Generator
 import os
 import pytest
-from schematic_db.rdb.mysql import MySQLDatabase
-from schematic_db.rdb.postgres import PostgresDatabase
-from schematic_db.rdb.synapse_database import SynapseDatabase
+from schematic_db.databases.mysql import MySQLDatabase
+from schematic_db.databases.postgres import PostgresDatabase
+from schematic_db.databases.synapse_database import SynapseDatabase
 from schematic_db.rdb_builder.rdb_builder import RDBBuilder
 from schematic_db.schema_generator.schema_generator import SchemaGenerator
 from schematic_db.rdb_updater.rdb_updater import RDBUpdater

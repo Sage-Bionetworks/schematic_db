@@ -11,7 +11,7 @@ from schematic_db.db_schema.db_schema import (
     ColumnDatatype,
 )
 from schematic_db.synapse.synapse import Synapse
-from .rdb import RelationalDatabase
+from .database_interface import Database
 
 CONFIG_DATATYPES = {
     "text": ColumnDatatype.TEXT,
@@ -208,7 +208,7 @@ def create_synapse_column(
     return func(name=name, maximumSize=max_size, maximumListLength=max_list_length)
 
 
-class SynapseDatabase(RelationalDatabase):
+class SynapseDatabase(Database):
     """Represents a database stored as Synapse tables"""
 
     def __init__(self, auth_token: str, project_id: str) -> None:

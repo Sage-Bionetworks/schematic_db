@@ -59,16 +59,16 @@ config = ManifestStoreConfig(
 manifest_store = APIManifestStore(config)
 ```
 
-#### Relational database objects
+#### Database objects
 
 The various database objects are how Schematic DB interacts with the underlying database
 
 For a SQL based database:
 
 ```python
-from schematic_db.rdb.sql_alchemy_database import SQLConfig
-from schematic_db.rdb.mysql import MySQLDatabase
-from schematic_db.rdb.postgres import PostgresDatabase
+from schematic_db.databases.sql_alchemy_database import SQLConfig
+from schematic_db.databases.mysql import MySQLDatabase
+from schematic_db.databases.postgres import PostgresDatabase
 
 config = SQLConfig(
         username="username",
@@ -85,7 +85,7 @@ database = MySQLDatabase(config)
 For a Synapse based database:
 
 ```python
-from schematic_db.rdb.synapse_database import SynapseDatabase
+from schematic_db.databases.synapse_database import SynapseDatabase
 
 database =  SynapseDatabase(
     project_id="syn1,
@@ -314,15 +314,15 @@ The [SchemaGraph](https://github.com/Sage-Bionetworks/schematic_db/blob/main/sch
 
 The [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class if a facade for the SynapseClient library. It is used by several classes.
 
-##### Relational Database
+##### Database
 
-The [RelationalDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/rdb.py) is an Abstract Base Class. This means it is meant to be inherited from and not used. It provides no functionality, just as interface. Inheriting from it implies that child class must implement it's methods with the same signature. This is done so that all the database classes work the same.
+The [Database](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/database_interface.py) is an Abstract Base Class. This means it is meant to be inherited from and not used. It provides no functionality, just as interface. Inheriting from it implies that child class must implement it's methods with the same signature. This is done so that all the database classes work the same.
 
-The [SQLAlchemyDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/sql_alchemy_database.py) is not meant to be used, only be inherited from. It provides generic  SQLALchemy functionality.
+The [SQLAlchemyDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/sql_alchemy_database.py) is not meant to be used, only be inherited from. It provides generic  SQLALchemy functionality.
 
-The [MySQL](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/mysql.py) and [Postgres](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/postgres.py) classes both inherit from the SQLAlchemyDatabase and so inherit it's code and the RelationDatabase interface.
+The [MySQL](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/mysql.py) and [Postgres](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/postgres.py) classes both inherit from the SQLAlchemyDatabase and so inherit it's code and the RelationDatabase interface.
 
-The [SynapseDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/synapse_database.py) inherits from the RelationDatabase, so it implements the RelationDatabase interface. It uses the [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class. This is both experimental and deprecated.
+The [SynapseDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/synapse_database.py) inherits from the RelationDatabase, so it implements the RelationDatabase interface. It uses the [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class. This is both experimental and deprecated.
 
 ##### Query Store
 

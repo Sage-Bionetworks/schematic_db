@@ -21,18 +21,18 @@ from copy import copy
 import pytest
 import pandas as pd
 from schematic_db.db_schema.db_schema import TableSchema
-from schematic_db.rdb.rdb import RelationalDatabase
-from schematic_db.rdb.mysql import MySQLDatabase
-from schematic_db.rdb.postgres import PostgresDatabase
-from schematic_db.rdb.sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
-from schematic_db.rdb.rdb import InsertDatabaseError
+from schematic_db.databases.database_interface import Database
+from schematic_db.databases.mysql import MySQLDatabase
+from schematic_db.databases.postgres import PostgresDatabase
+from schematic_db.databases.sql_alchemy_database import SQLAlchemyDatabase, SQLConfig
+from schematic_db.databases.database_interface import InsertDatabaseError
 
 
 @pytest.fixture(name="sql_databases", scope="module")
 def fixture_sql_databases(
     mysql_database: MySQLDatabase,
     postgres_database: PostgresDatabase,
-) -> Generator[list[RelationalDatabase], None, None]:
+) -> Generator[list[Database], None, None]:
     """Yields a list of databases to test"""
     yield [mysql_database, postgres_database]
 

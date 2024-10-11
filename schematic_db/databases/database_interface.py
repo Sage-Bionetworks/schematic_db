@@ -1,4 +1,6 @@
-"""RelationalDatabase"""
+"""
+This class is an interface for database objects
+"""
 
 from abc import ABC, abstractmethod
 import pandas as pd
@@ -27,8 +29,8 @@ class InsertDatabaseError(Exception):
         return msg
 
 
-class RelationalDatabase(ABC):
-    """An interface for relational database types"""
+class Database(ABC):
+    """An interface for database types"""
 
     @abstractmethod
     def get_table_names(self) -> list[str]:
