@@ -28,7 +28,7 @@ class DBQueryer:
         self,
         db: Database,
         query_store: QueryStore,
-    ):
+    ) -> None:
         """
         Args:
             db (Database): A database object to query

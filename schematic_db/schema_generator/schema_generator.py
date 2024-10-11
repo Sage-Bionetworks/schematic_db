@@ -50,7 +50,7 @@ class MoreThanOneTypeRule(Exception):
         self,
         column_name: str,
         type_rules: list[str],
-    ):
+    ) -> None:
         """
         Args:
             column_name (str): The name of the column
@@ -75,7 +75,7 @@ class ColumnSchematicError(Exception):
         self,
         column_name: str,
         table_name: str,
-    ):
+    ) -> None:
         """
         Args:
             column_name (str): The name of the column

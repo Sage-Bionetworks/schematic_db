@@ -31,7 +31,7 @@ class SynapseDatabaseMissingTableAnnotationsError(Exception):
         super().__init__(self.message)
 
     def __str__(self) -> str:
-        return f"{self.message}; " f"name: {self.table_name};"
+        return f"{self.message}; name: {self.table_name};"
 
 
 class InputDataframeMissingColumn(Exception):

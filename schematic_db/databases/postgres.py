@@ -23,7 +23,7 @@ class PostgresDatabase(SQLAlchemyDatabase):
         self,
         config: SQLConfig,
         verbose: bool = False,
-    ):
+    ) -> None:
         """Init
 
         Args:

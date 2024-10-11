@@ -22,7 +22,7 @@ class TestAPIUtilHelpers:  # pylint: disable=too-few-public-methods
     def test_create_schematic_api_response(
         self,
         test_schema_csv_url: str,
-        secrets_dict: dict,
+        secrets_dict: dict[str, dict[str, str]],
     ) -> None:
         """Testing for create_schematic_api_response"""
         response = create_schematic_api_response(
@@ -109,7 +109,7 @@ class TestAPIUtils:
 
     def test_get_project_manifests(
         self,
-        secrets_dict: dict,
+        secrets_dict: dict[str, dict[str, str]],
         test_synapse_project_id: str,
         test_synapse_asset_view_id: str,
     ) -> None:
@@ -121,7 +121,7 @@ class TestAPIUtils:
         )
         assert len(manifest_metadata.metadata_list) == 5
 
-    def test_download_manifest(self, secrets_dict: dict) -> None:
+    def test_download_manifest(self, secrets_dict: dict[str, dict[str, str]]) -> None:
         "Testing for download_manifest"
         manifest = download_manifest(
             secrets_dict["synapse"]["auth_token"],
