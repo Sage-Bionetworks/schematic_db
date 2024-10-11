@@ -1,4 +1,4 @@
-"""RDBBuilder"""
+"""DB Builder"""
 
 # pylint: disable=logging-fstring-interpolation
 import logging
@@ -12,16 +12,16 @@ from schematic_db.schema_generator.schema_generator import (
 logging.getLogger(__name__)
 
 
-class RDBBuilder:  # pylint: disable=too-few-public-methods
+class DBBuilder:  # pylint: disable=too-few-public-methods
     """Builds a database schema"""
 
-    def __init__(self, rdb: Database, schema_generator: SchemaGenerator) -> None:
+    def __init__(self, db: Database, schema_generator: SchemaGenerator) -> None:
         """
         Args:
-            rdb (Database): A relational database object
+            db (Database): A database object
             schema (Schema): A Schema object
         """
-        self.rdb = rdb
+        self.db = db
         self.schema_generator = schema_generator
 
     def build_database(self) -> None:
@@ -34,7 +34,7 @@ class RDBBuilder:  # pylint: disable=too-few-public-methods
     def _drop_all_tables(self) -> None:
         """Drops all tables from database and performs logging"""
         logging.info("Dropping all tables")
-        self.rdb.drop_all_tables()
+        self.db.drop_all_tables()
         logging.info("Dropped all tables")
 
     def _get_database_schema(self) -> DatabaseSchema:
@@ -57,5 +57,5 @@ class RDBBuilder:  # pylint: disable=too-few-public-methods
         logging.info("Building database")
         for table_schema in database_schema.table_schemas:
             logging.info(f"Adding table to database schema: {table_schema.name}")
-            self.rdb.add_table(table_schema)
+            self.db.add_table(table_schema)
         logging.info("Database built")

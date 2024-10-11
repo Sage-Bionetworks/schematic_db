@@ -1,5 +1,5 @@
 """DB schema
-These are a set of classes for defining a database table in a dialect agnostic way.
+These are a set of classes for defining a database schema in a dialect agnostic way.
 """
 
 from enum import Enum

@@ -1,4 +1,4 @@
-"""RDB Queryer"""
+"""DB Queryer"""
 
 import pandas as pd
 from schematic_db.databases.database_interface import Database
@@ -21,20 +21,20 @@ class DuplicateColumnError(Exception):
         return f"{self.message}: {self.table_name}"
 
 
-class RDBQueryer:
+class DBQueryer:
     """Queries a database and uploads the results to a query store."""
 
     def __init__(
         self,
-        rdb: Database,
+        db: Database,
         query_store: QueryStore,
     ):
         """
         Args:
-            rdb (RelationalDatabase): A relational database object to query
+            db (Database): A database object to query
             query_store (QueryStore): A query store object that will store the results of the query
         """
-        self.rdb = rdb
+        self.db = db
         self.query_store = query_store
 
     def store_query_results(self, csv_path: str) -> None:
@@ -59,7 +59,7 @@ class RDBQueryer:
         Raises:
             DuplicateColumnError: Raised when the query result has duplicate columns
         """
-        query_result = self.rdb.execute_sql_query(query)
+        query_result = self.db.execute_sql_query(query)
         column_names = list(query_result.columns)
         if len(column_names) != len(set(column_names)):
             raise DuplicateColumnError(table_name)

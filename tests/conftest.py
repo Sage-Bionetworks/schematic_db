@@ -26,7 +26,7 @@ from schematic_db.databases.sql_alchemy_database import SQLConfig
 from schematic_db.databases.mysql import MySQLDatabase
 from schematic_db.databases.postgres import PostgresDatabase
 from schematic_db.databases.synapse_database import SynapseDatabase
-from schematic_db.rdb_queryer.rdb_queryer import RDBQueryer
+from schematic_db.db_queryer import DBQueryer
 from schematic_db.synapse.synapse import Synapse
 from schematic_db.schema_generator.schema_generator import (
     SchemaGenerator,
@@ -326,13 +326,13 @@ def fixture_synapse_test_query_store(
 # config objects and pandas dataframes
 
 
-@pytest.fixture(scope="module", name="rdb_queryer_mysql")
-def fixture_rdb_queryer_mysql(
+@pytest.fixture(scope="module", name="db_queryer_mysql")
+def fixture_db_queryer_mysql(
     mysql: MySQLDatabase, synapse_query_store: QueryStore
-) -> Generator[RDBQueryer, None, None]:
+) -> Generator[DBQueryer, None, None]:
     """Yields a RDBQueryer"""
-    obj = RDBQueryer(
-        rdb=mysql,
+    obj = DBQueryer(
+        db=mysql,
         query_store=synapse_query_store,
     )
     yield obj

@@ -1,4 +1,4 @@
-"""RDBUpdater"""
+"""DB Updater"""
 
 # pylint: disable=logging-fstring-interpolation
 import warnings
@@ -99,16 +99,16 @@ class ManifestPrimaryKeyError(Exception):
         )
 
 
-class RDBUpdater:
+class DBUpdater:
     """An for updating a database."""
 
-    def __init__(self, rdb: Database, manifest_store: ManifestStore) -> None:
+    def __init__(self, db: Database, manifest_store: ManifestStore) -> None:
         """
         Args:
-            rdb (RelationalDatabase): A relational database object to be updated
+            db (Database): A database object to be updated
             manifest_store (ManifestStore): A manifest store object to get manifests from
         """
-        self.rdb = rdb
+        self.db = db
         self.manifest_store = manifest_store
 
     def update_database(
@@ -190,7 +190,7 @@ class RDBUpdater:
             ManifestPrimaryKeyError: Raised when the manifest table is missing its primary key
             UpsertError: Raised when there is an UpsertDatabaseError caught
         """
-        table_schema = self.rdb.get_table_schema(table_name)
+        table_schema = self.db.get_table_schema(table_name)
 
         manifest_table = self._download_manifest(table_name, manifest_id)
 
@@ -282,9 +282,9 @@ class RDBUpdater:
             for i, split_table in enumerate(split_tables):
                 logging.info(f"Updating table chunk no. #{i}")
                 if method == "upsert":
-                    self.rdb.upsert_table_rows(table_name, split_table)
+                    self.db.upsert_table_rows(table_name, split_table)
                 else:
-                    self.rdb.insert_table_rows(table_name, split_table)
+                    self.db.insert_table_rows(table_name, split_table)
         except InsertDatabaseError as exc:
             raise UpdateError(table_name, manifest_id) from exc
         logging.info("Finished updating table")
