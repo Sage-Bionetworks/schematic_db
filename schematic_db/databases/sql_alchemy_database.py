@@ -14,7 +14,7 @@ from schematic_db.db_schema.db_schema import (
     ColumnSchema,
     ForeignKeySchema,
 )
-from .rdb import RelationalDatabase, InsertDatabaseError
+from .database_interface import Database, InsertDatabaseError
 
 
 class DataframeKeyError(Exception):
@@ -119,9 +119,7 @@ class SQLConfig:
     port: int | None = None
 
 
-class SQLAlchemyDatabase(
-    RelationalDatabase
-):  # pylint: disable=too-many-instance-attributes
+class SQLAlchemyDatabase(Database):  # pylint: disable=too-many-instance-attributes
     """
     - Represents a sql database via sqlalchemy.
     - Implements the RelationalDatabase interface.

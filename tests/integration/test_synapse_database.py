@@ -10,7 +10,7 @@ import pytest
 import pandas as pd
 import numpy as np
 import synapseclient as sc  # type: ignore
-from schematic_db.rdb.synapse_database import (
+from schematic_db.databases.synapse_database import (
     SynapseDatabase,
     SynapseDatabaseDropTableError,
     InputDataframeMissingColumn,

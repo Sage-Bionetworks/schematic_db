@@ -1,4 +1,7 @@
-"""Schema class"""
+"""
+Schema Generator class
+This class generates a generic database schema using the Schematic API
+"""
 
 # pylint: disable=duplicate-code
 
@@ -47,7 +50,7 @@ class MoreThanOneTypeRule(Exception):
         self,
         column_name: str,
         type_rules: list[str],
-    ):
+    ) -> None:
         """
         Args:
             column_name (str): The name of the column
@@ -72,7 +75,7 @@ class ColumnSchematicError(Exception):
         self,
         column_name: str,
         table_name: str,
-    ):
+    ) -> None:
         """
         Args:
             column_name (str): The name of the column
@@ -90,9 +93,9 @@ class ColumnSchematicError(Exception):
 
 
 @dataclass()
-class SchemaConfig:
+class SchemaGeneratorConfig:
     """
-    A config for a Schema.
+    A config for a SchemaGenerator.
     Properties:
         schema_url (str): A url to the jsonld schema file
         display_label_type (DisplayLabelType): The type of label used for display purposes
@@ -105,7 +108,7 @@ class SchemaConfig:
     _validate_url2 = field_validator("schema_url")(is_data_model_file)
 
 
-class Schema:
+class SchemaGenerator:
     """
     The Schema class interacts with the Schematic API to create a DatabaseSchema
      table.
@@ -113,8 +116,8 @@ class Schema:
 
     def __init__(
         self,
-        config: SchemaConfig,
-        database_config: DatabaseConfig = DatabaseConfig([]),
+        config: SchemaGeneratorConfig,
+        database_config: DatabaseConfig | None = None,
     ) -> None:
         """
         The Schema class handles interactions with the schematic API.
@@ -126,7 +129,10 @@ class Schema:
              future. A config describing optional database specific columns.
 
         """
-        self.database_config = database_config
+        if database_config is None:
+            self.database_config = DatabaseConfig([])
+        else:
+            self.database_config = database_config
         self.schema_url = config.schema_url
         self.display_label_type = config.display_label_type
         self.schema_graph = SchemaGraph(config.schema_url, config.display_label_type)
@@ -358,10 +364,10 @@ class Schema:
         # Uses the schema graph to find tables the current table depends on
         parent_table_names = self.schema_graph.get_neighbors(table_name)
         # Each parent of the current table needs a foreign key to that parent
-        return [self._create_foreign_key(name) for name in parent_table_names]
+        return [self._create_foreign_key_schema(name) for name in parent_table_names]
 
-    def _create_foreign_key(self, foreign_table_name: str) -> ForeignKeySchema:
-        """Creates a foreign key table
+    def _create_foreign_key_schema(self, foreign_table_name: str) -> ForeignKeySchema:
+        """Creates a foreign key schema
 
         Args:
             foreign_table_name (str): The name of the table the foreign key is referring to.
@@ -371,8 +377,12 @@ class Schema:
         """
         # Assume the foreign key name is <table_name>_id where the table name is the
         #  name of the table the column the foreign key is in
+        # For example if the foreign table was "Patient" then the column in table with the
+        #  foreign key would be "Patient_id"
         column_name = self._get_column_name(f"{foreign_table_name}_id")
 
+        # Attempt to get the foreign key  tables primary key.
+        # If the database config doesn't contain this information default to "id"
         attempt = self.database_config.get_primary_key(foreign_table_name)
         foreign_column_name = "id" if attempt is None else attempt
 

@@ -1,25 +1,28 @@
-"""RDBBuilder"""
+"""DB Builder"""
 
 # pylint: disable=logging-fstring-interpolation
 import logging
-from schematic_db.rdb.rdb import RelationalDatabase
-from schematic_db.schema.schema import Schema, DatabaseSchema
+from schematic_db.databases.database_interface import Database
+from schematic_db.schema_generator.schema_generator import (
+    SchemaGenerator,
+    DatabaseSchema,
+)
 
 
 logging.getLogger(__name__)
 
 
-class RDBBuilder:  # pylint: disable=too-few-public-methods
+class DBBuilder:  # pylint: disable=too-few-public-methods
     """Builds a database schema"""
 
-    def __init__(self, rdb: RelationalDatabase, schema: Schema) -> None:
+    def __init__(self, db: Database, schema_generator: SchemaGenerator) -> None:
         """
         Args:
-            rdb (RelationalDatabase): A relational database object
+            db (Database): A database object
             schema (Schema): A Schema object
         """
-        self.rdb = rdb
-        self.schema = schema
+        self.db = db
+        self.schema_generator = schema_generator
 
     def build_database(self) -> None:
         """Builds the database based on the schema."""
@@ -31,7 +34,7 @@ class RDBBuilder:  # pylint: disable=too-few-public-methods
     def _drop_all_tables(self) -> None:
         """Drops all tables from database and performs logging"""
         logging.info("Dropping all tables")
-        self.rdb.drop_all_tables()
+        self.db.drop_all_tables()
         logging.info("Dropped all tables")
 
     def _get_database_schema(self) -> DatabaseSchema:
@@ -41,7 +44,7 @@ class RDBBuilder:  # pylint: disable=too-few-public-methods
             DatabaseSchema: A generic schema for the database
         """
         logging.info("Getting database schema")
-        database_schema = self.schema.get_database_schema()
+        database_schema = self.schema_generator.get_database_schema()
         logging.info("Got database schema")
         return database_schema
 
@@ -54,5 +57,5 @@ class RDBBuilder:  # pylint: disable=too-few-public-methods
         logging.info("Building database")
         for table_schema in database_schema.table_schemas:
             logging.info(f"Adding table to database schema: {table_schema.name}")
-            self.rdb.add_table(table_schema)
+            self.db.add_table(table_schema)
         logging.info("Database built")

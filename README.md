@@ -20,20 +20,20 @@ If using Schematic DB as part of a package you will want setup the `pyproject.to
 
 ### Usage
 
-#### Schema object
+#### Schema Generator object
 
-The Schema class interacts with the [Schematic API](https://schematic.api.sagebionetworks.org/v1/ui/). It is used to create a database schema from a schema in json ld form.
+The Schema Generator class interacts with the [Schematic API](https://schematic.api.sagebionetworks.org/v1/ui/). It is used to create a database schema from a schema in json ld form.
 
 It is assumed that you have setup a Synapse project where your manifests exist.
 
 To create the schema:
 
 ```python
-from schematic_db.schema import Schema, SchemaConfig
-config = SchemaConfig(
+from schematic_db.schema import SchemaGenerator, SchemaGeneratorConfig
+config = SchemaGeneratorConfig(
         schema_url = "https://raw.githubusercontent.com/Sage-Bionetworks/Schematic-DB-Test-Schemas/main/test_schema.jsonld"
     )
-schema = Schema(config)
+schema = SchemaGenerator(config)
 ```
 
 #### Manifest Store object
@@ -59,16 +59,16 @@ config = ManifestStoreConfig(
 manifest_store = APIManifestStore(config)
 ```
 
-#### Relational database objects
+#### Database objects
 
 The various database objects are how Schematic DB interacts with the underlying database
 
 For a SQL based database:
 
 ```python
-from schematic_db.rdb.sql_alchemy_database import SQLConfig
-from schematic_db.rdb.mysql import MySQLDatabase
-from schematic_db.rdb.postgres import PostgresDatabase
+from schematic_db.databases.sql_alchemy_database import SQLConfig
+from schematic_db.databases.mysql import MySQLDatabase
+from schematic_db.databases.postgres import PostgresDatabase
 
 config = SQLConfig(
         username="username",
@@ -85,7 +85,7 @@ database = MySQLDatabase(config)
 For a Synapse based database:
 
 ```python
-from schematic_db.rdb.synapse_database import SynapseDatabase
+from schematic_db.databases.synapse_database import SynapseDatabase
 
 database =  SynapseDatabase(
     project_id="syn1,
@@ -95,24 +95,24 @@ database =  SynapseDatabase(
 
 #### Building the database
 
-The [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class is responsible for building the database schema. Assuming you've built a Schema object, and RelationalDatabase object as described above, to build the database:
+The [DBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_builder.py) class is responsible for building the database schema. Assuming you've built a SchemaGenerator object, and RelationalDatabase object as described above, to build the database:
 
 ```python
-from schematic_db.rdb_builder.rdb_builder import RDBBuilder
+from schematic_db.db_builder import DBBuilder
 
-rdb_builder = RDBBuilder(rdb=database, schema=schema)
-rdb_builder.build_database()
+db_builder = DBBuilder(db=database, schema_generator=schema_generator)
+db_builder.build_database()
 ```
 
 #### Updating the database
 
-The [RDBUpdater](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_updater/rdb_updater.py) class is responsible for updating the database when there are new or updated manifests. It does NOT update the schema. Assuming you've built a ManifestStore object, and RelationalDatabase object as described above, to update the database:
+The [DBUpdater](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_updater.py) class is responsible for updating the database when there are new or updated manifests. It does NOT update the schema. Assuming you've built a ManifestStore object, and Database object as described above, to update the database:
 
 ```python
-from schematic_db.rdb_updater.rdb_updater import RDBUpdater
+from schematic_db.db_updater import DBUpdater
 
-RDBUpdater(rdb=database, manifest_store=manifest_store)
-rdb_updater.update_database()
+DBUpdater(db=database, manifest_store=manifest_store)
+db_updater.update_database()
 ```
 
 #### Dropping tables
@@ -155,12 +155,12 @@ The dataframe must contain the primary key of the table, the values in the prima
 Note: This is a cascading delete. Any rows that reference rows in the dataframe will also be deleted.
 Note: This is also recursive. Rows in tables that reference rows in tables that reference the rows in the dataframe and so on, will also be deleted.
 
-
 #### Configuring your database schema
 
 In general Schematic DB will use your data model to determine the database schema. If you want to change that behavior you can use a [DatabaseConfig](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schema/database_config.py/) object to do this.
 
 Create the object like
+
 ```python
 
 from schematic_db.schema import Schema, SchemaConfig
@@ -208,7 +208,6 @@ config = SchemaConfig(
 schema = Schema(config=config, database_config=database_config)
 
 ```
-
 
 ## Local Development
 
@@ -296,9 +295,9 @@ Schematic db uses pdoc to generate documentation from docstrings. This exists [h
 
 The [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) class is used to store data for the database in form agnostic to the type. It is cerated by a [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) object, and used by the various relational database classes.
 
-##### Schema
+##### Schema Generator
 
-The [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) class is used to interact with the Schematic API to create a generic representation of the database from the schema. This is stored as a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) object. The Schema is used by the [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class.
+The [SchemaGenerator](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema_generator/schema_generator.py) class is used to interact with the Schematic API to create a generic representation of the database from the schema. This is stored as a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_schema/db_schema.py) object. The Schema is used by the [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class.
 
 ##### Manifest Store
 
@@ -315,15 +314,15 @@ The [SchemaGraph](https://github.com/Sage-Bionetworks/schematic_db/blob/main/sch
 
 The [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class if a facade for the SynapseClient library. It is used by several classes.
 
-##### Relational Database
+##### Database
 
-The [RelationalDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/rdb.py) is an Abstract Base Class. This means it is meant to be inherited from and not used. It provides no functionality, just as interface. Inheriting from it implies that child class must implement it's methods with the same signature. This is done so that all the database classes work the same.
+The [Database](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/database_interface.py) is an Abstract Base Class. This means it is meant to be inherited from and not used. It provides no functionality, just as interface. Inheriting from it implies that child class must implement it's methods with the same signature. This is done so that all the database classes work the same.
 
-The [SQLAlchemyDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/sql_alchemy_database.py) is not meant to be used, only be inherited from. It provides generic  SQLALchemy functionality.
+The [SQLAlchemyDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/sql_alchemy_database.py) is not meant to be used, only be inherited from. It provides generic  SQLALchemy functionality.
 
-The [MySQL](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/mysql.py) and [Postgres](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/postgres.py) classes both inherit from the SQLAlchemyDatabase and so inherit it's code and the RelationDatabase interface.
+The [MySQL](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/mysql.py) and [Postgres](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/postgres.py) classes both inherit from the SQLAlchemyDatabase and so inherit it's code and the RelationDatabase interface.
 
-The [SynapseDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/synapse_database.py) inherits from the RelationDatabase, so it implements the RelationDatabase interface. It uses the [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class. This is both experimental and deprecated.
+The [SynapseDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases/synapse_database.py) inherits from the RelationDatabase, so it implements the RelationDatabase interface. It uses the [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class. This is both experimental and deprecated.
 
 ##### Query Store
 
@@ -331,14 +330,14 @@ The [QueryStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/sche
 
 The [SynapseQueryStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/synapse_database.py) inherits from the QueryStore, so it implements its interface. It uses the [Synapse](https://github.com/Sage-Bionetworks/schematic_db/tree/main/schematic_db/synapse) class.
 
-##### RDB Builder
+##### DB Builder
 
-The [RDBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_builder/rdb_builder.py) class is responsible for building the database schema. It uses a [Schema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema/schema.py) object to create a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_config/db_config.py). This is used to build each table using a [RelationalDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/rdb.py) object.
+The [DBBuilder](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_builder.py) class is responsible for building the database schema. It uses a [SchemaGenerator](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/schema_generator/schema_generator.py) object to create a [DatabaseSchema](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_config/db_config.py). This is used to build each table using a [Database](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases) object.
 
-##### RDB Updater
+##### DB Updater
 
-The [RDBUpdater](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_updater/rdb_updater.py) class is responsible for updating the database when there are new or updated manifests. It does NOT update the schema. It uses a [ManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/manifest_store.py) to download the manifests and a [RelationalDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/rdb.py) object to update the database.
+The [DBUpdater](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_updater.py) class is responsible for updating the database when there are new or updated manifests. It does NOT update the schema. It uses a [ManifestStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/manifest_store/manifest_store.py) to download the manifests and a [Database](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases) object to update the database.
 
-##### RDB Queryer
+##### DB Queryer
 
-The [RDBQueryer](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb_queryer/rdb_queryer.py) class is used to query the database and store the results. It uses a [RelationalDatabase](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/rdb/rdb.py) object to query the database, and a [QueryStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/query_store/query_store.py) object to store the result.
+The [DBQueryer](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/db_queryer.py) class is used to query the database and store the results. It uses a [Database](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/databases) object to query the database, and a [QueryStore](https://github.com/Sage-Bionetworks/schematic_db/blob/main/schematic_db/query_store/query_store.py) object to store the result.
